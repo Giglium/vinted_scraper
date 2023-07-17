@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vinted_scraper"
+version = "1.0.0"
+description = "A very simple Python package that scrapes the Vinted website to retrieve information about its items."
+readme = "README.md"
+requires-python = ">= 3.9"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Giglium"}
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Education",
+]
+dependencies = [
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.2"
+]
+
+[tool.isort]
+profile = "black"
+
+[project.urls]
+Changelog = "https://github.com/Giglium/vinted_scraper/releases"
+Documentation = "https://github.com/Giglium/vinted_scraper"
+Homepage = "https://github.com/Giglium/vinted_scraper"
+Issues = "https://github.com/Giglium/vinted_scraper/issues"
+Source = "https://github.com/Giglium/vinted_scraper"

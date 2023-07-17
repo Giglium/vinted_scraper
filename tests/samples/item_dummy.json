@@ -1,0 +1,80 @@
+{
+  "id": "item id",
+  "title": "a Games",
+  "description": "a very beautiful game",
+  "is_reserved": 0,
+  "is_closed": 0,
+  "is_for_swap": false,
+  "active_bid_count": 0,
+  "item_closing_action": null,
+  "currency": "EUR",
+  "created_at_ts": "2023-07-06T16:40:45+02:00",
+  "photos": [
+    {
+      "id": "a photo id 1",
+      "url": "https://fakeulr.com",
+      "image_no": 1,
+      "dominant_color": "#787376",
+      "dominant_color_opaque": "#D7D5D6",
+      "is_main": true,
+      "is_suspicious": false,
+      "full_size_url": "https://fakeulr.com"
+    },
+    {
+      "id": "a photo id 2",
+      "url": "https://fakeulr.com",
+      "image_no": 1,
+      "dominant_color": "#787376",
+      "dominant_color_opaque": "#D7D5D6",
+      "is_main": true,
+      "is_suspicious": false,
+      "full_size_url": "https://fakeulr.com"
+    }
+  ],
+  "thumbnail": null,
+  "price": 20.0,
+  "favourite_count": 17,
+  "is_favourite": false,
+  "view_count": 78,
+  "url": "https://fakeulr.com",
+  "status": "Good",
+  "service_fee": 1.7,
+  "total_item_price": 21.7,
+  "user": {
+    "id": "a user id",
+    "login": "user",
+    "business": false,
+    "profile_url": null,
+    "photo": {
+      "id": "a photo id 3",
+      "url": "https://fakeulr.com",
+      "image_no": null,
+      "dominant_color": "#31abc2",
+      "dominant_color_opaque": "#C1E6ED",
+      "is_main": null,
+      "is_suspicious": false,
+      "full_size_url": "https://fakeulr.com"
+    },
+    "item_count": 50,
+    "followers_count": 28,
+    "following_count": 9,
+    "positive_feedback_count": 25,
+    "neutral_feedback_count": 0,
+    "negative_feedback_count": 3,
+    "feedback_count": 28,
+    "feedback_reputation": 0.9199999999999999,
+    "city": "Rome",
+    "last_logged_on_ts": "2023-07-16T19:27:35+02:00",
+    "locale": "it-fr"
+  },
+  "brand_dto": {
+    "title": "Games",
+    "slug": "game",
+    "path": "/brand/game"
+  },
+  "color1": null,
+  "color2": null,
+  "description_attributes": [],
+  "localization": "none"
+}
+

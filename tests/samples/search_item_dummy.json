@@ -1,0 +1,35 @@
+{
+  "id": "item id",
+  "title": "a games",
+  "price": "15.0",
+  "is_visible": 1,
+  "discount": null,
+  "currency": "EUR",
+  "brand_title": "Games",
+  "is_for_swap": false,
+  "user": {
+    "id": "user id",
+    "login": "user",
+    "business": false,
+    "profile_url": "https://www.fakeurl.com",
+    "photo": {
+      "id": "photo id",
+      "width": 450,
+      "height": 800,
+      "temp_uuid": null,
+      "url": "https://fakeurl.com",
+      "is_hidden": false,
+      "extra": {}
+    },
+    "favourite_count": 36,
+    "is_favourite": false,
+    "favourite_group_id": null,
+    "badge": null,
+    "conversion": null,
+    "service_fee": "1.45",
+    "total_item_price": "16.45",
+    "view_count": 0,
+    "size_title": "",
+    "content_source": "search"
+  }
+}

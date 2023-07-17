@@ -1,0 +1,28 @@
+---
+name: Update dependency Reminder
+
+on:
+  schedule:
+    - cron: 0 6 1 1 *
+
+jobs:
+  create_issue:
+    name: Create reminder issue
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Create dependency update issue
+        uses: imjohnbo/issue-bot@v3
+        with:
+          assignees: "giglium"
+          labels: "feature"
+          title: "[Reminder] Update project dependency"
+          body: |
+            # Update project dependency
+            
+            So, it's time to check and update all dependency in the project.
+          pinned: false
+          close-previous: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
