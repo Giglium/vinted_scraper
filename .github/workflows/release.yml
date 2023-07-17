@@ -1,0 +1,55 @@
+---
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: make py.update
+
+      - name: Run tests
+        run: make test
+
+      - name: Build the package
+        run: make build
+
+      - name: Find the package File
+        id: find_file
+        run: |
+          FILE=$(find "$(realpath ./dist)" -type f -name "*.whl")
+          FILE=$(echo "$FILE" | tr -d '[:space:]')
+          echo "FILE_PATH=$FILE" >> "$GITHUB_ENV"
+          FILE_PREFIX=$(echo "$FILE" | grep -oP '^.*/\K[^/]+-\d+\.\d+\.\d+')
+          echo "FILE_NAME=$FILE_PREFIX" >> "$GITHUB_ENV"
+
+      - name: Upload whl file to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.FILE_PATH }}
+          asset_name: ${{ env.FILE_NAME }}.whl
+          tag: ${{ github.ref }}
+          overwrite: true
+
+      - name: Publish the package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

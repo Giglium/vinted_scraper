@@ -1,0 +1,5 @@
+[submodule "build-tools"]
+	path = build-tools
+	url = https://github.com/giglium/build-tools
+	branch = main
+
