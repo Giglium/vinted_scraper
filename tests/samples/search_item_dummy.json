@@ -1,7 +1,9 @@
 {
   "id": "item id",
   "title": "a games",
-  "price": "15.0",
+  "price": {
+    "amount": "15.0", "currency_code": "USD"
+  },
   "is_visible": 1,
   "discount": null,
   "currency": "EUR",
@@ -26,8 +28,8 @@
     "favourite_group_id": null,
     "badge": null,
     "conversion": null,
-    "service_fee": "1.45",
-    "total_item_price": "16.45",
+    "service_fee": {"amount": "1.45", "currency_code": "USD"},
+    "total_item_price": {"amount": "16.45", "currency_code": "USD"},
     "view_count": 0,
     "size_title": "",
     "content_source": "search"
