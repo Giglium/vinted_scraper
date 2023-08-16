@@ -110,27 +110,50 @@ class VintedItem:
         self.thumbnail: Optional[VintedPhoto] = (
             VintedPhoto(data["photo"]) if data.get("photo") else None
         )
-        self.price: Optional[float] = (
-            float(data["price"]["amount"]) if data.get("price") is not None else None
-        )
-        self.currency: Optional[str] = (
-            data["price"]["currency_code"] if data.get("price") is not None else None
-        )
+        try:
+            self.price: Optional[float] = (
+                float(data["price"]["amount"])
+                if data.get("price") is not None
+                else None
+            )
+            self.currency: Optional[str] = (
+                data["price"]["currency_code"]
+                if data.get("price") is not None
+                else None
+            )
+            self.service_fee: Optional[float] = (
+                float(data["service_fee"]["amount"])
+                if data.get("service_fee") is not None
+                else None
+            )
+            self.total_item_price: Optional[float] = (
+                float(data["total_item_price"]["amount"])
+                if data.get("total_item_price") is not None
+                else None
+            )
+        except TypeError:
+            self.price: Optional[float] = (
+                float(data["price"]) if data.get("price") is not None else None
+            )
+            self.currency: Optional[str] = (
+                data["currency"] if data.get("currency") is not None else None
+            )
+            self.service_fee: Optional[str] = (
+                float(data["service_fee"])
+                if data.get("service_fee") is not None
+                else None
+            )
+            self.total_item_price: Optional[str] = (
+                float(data["total_item_price"])
+                if data.get("total_item_price") is not None
+                else None
+            )
+
         self.favourite_count: Optional[int] = data.get("favourite_count", None)
         self.is_favourite: Optional[bool] = data.get("is_favourite", None)
         self.view_count: Optional[int] = data.get("view_count", None)
         self.url: Optional[str] = data.get("url", None)
         self.status: Optional[str] = data.get("status", None)
-        self.service_fee: Optional[float] = (
-            float(data["service_fee"]["amount"])
-            if data.get("service_fee") is not None
-            else None
-        )
-        self.total_item_price: Optional[float] = (
-            float(data["total_item_price"]["amount"])
-            if data.get("total_item_price") is not None
-            else None
-        )
         self.user: Optional[VintedUser] = (
             VintedUser(data["user"]) if data.get("user") else None
         )
