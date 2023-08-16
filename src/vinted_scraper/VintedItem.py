@@ -103,7 +103,6 @@ class VintedItem:
         self.is_for_swap: Optional[bool] = data.get("is_for_swap", None)
         self.active_bid_count: Optional[int] = data.get("active_bid_count", None)
         self.item_closing_action: Optional[str] = data.get("item_closing_action", None)
-        self.currency: Optional[str] = data.get("currency", None)
         self.created_at_ts: Optional[int] = data.get("created_at_ts", None)
         self.photos: List[VintedPhoto] = [
             VintedPhoto(p) for p in data.get("photos", [])
@@ -112,7 +111,10 @@ class VintedItem:
             VintedPhoto(data["photo"]) if data.get("photo") else None
         )
         self.price: Optional[float] = (
-            float(data["price"]) if data.get("price") is not None else None
+            float(data["price"]["amount"]) if data.get("price") is not None else None
+        )
+        self.currency: Optional[str] = (
+            data["price"]["currency_code"] if data.get("price") is not None else None
         )
         self.favourite_count: Optional[int] = data.get("favourite_count", None)
         self.is_favourite: Optional[bool] = data.get("is_favourite", None)
@@ -120,10 +122,12 @@ class VintedItem:
         self.url: Optional[str] = data.get("url", None)
         self.status: Optional[str] = data.get("status", None)
         self.service_fee: Optional[float] = (
-            float(data["service_fee"]) if data.get("service_fee") is not None else None
+            float(data["service_fee"]["amount"])
+            if data.get("service_fee") is not None
+            else None
         )
         self.total_item_price: Optional[float] = (
-            float(data["total_item_price"])
+            float(data["total_item_price"]["amount"])
             if data.get("total_item_price") is not None
             else None
         )
