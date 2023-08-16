@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vinted_scraper"
-version = "1.0.0"
+version = "1.1.0"
 description = "A very simple Python package that scrapes the Vinted website to retrieve information about its items."
 readme = "README.md"
 requires-python = ">= 3.9"
