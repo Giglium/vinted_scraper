@@ -1,4 +1,6 @@
 import json
+import os
+import random
 from typing import Dict, List, Optional
 
 import requests
@@ -70,13 +72,16 @@ def _curl(url: str, params: Optional[Dict] = None) -> bytes:
     :param url: the Vinted url to fetch
     :param params: an optional Dictionary with all the query parameters to append at the request. Default value: None.
     """
-    headers = {
-        # This one is the most common user agent right now
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
-        AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-    }
+    headers = {"User-Agent": get_random_user_agent()}
     response = requests.get(url, params=params, headers=headers)
     if 200 == response.status_code:
         return response.content
     else:
         raise RuntimeError(f"Cannot perform search, error code: {response.status_code}")
+
+
+def get_random_user_agent():
+    with open(os.path.join(os.path.dirname(__file__), "agents.json"), "r") as file:
+        data = json.load(file)
+        random_agent = random.choice(data)
+        return random_agent["ua"]

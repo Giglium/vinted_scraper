@@ -3,6 +3,7 @@
 ROOT := $(shell pwd)
 PROJECT_FOLDER := $(ROOT)/src
 BUILD_TOOLS_FOLDER := $(ROOT)/build-tools
+MODULE_NAME := vinted_scraper
 TECHNOLOGY := python
 
 include $(BUILD_TOOLS_FOLDER)/common.mk
@@ -34,6 +35,10 @@ init: py.init git.hooks.setup
 
 .PHONY: update
 update: py.update git.submodules
+
+.PHONY: update.user.agent
+update.user.agent:
+	curl -s "https://www.useragents.me/#most-common-mobile-useragents-json-csv" | grep -A 20 'id="most-common-mobile-useragents-json-csv"' | grep -A 15 'class="col-lg-6"' | grep -o '<textarea class="form-control" rows="8">.*</textarea>' | sed -E 's/<textarea class="form-control" rows="8">//;s/<\/textarea>//' > $(PROJECT_FOLDER)/$(MODULE_NAME)/agents.json
 
 .PHONY: coverage
 coverage:
