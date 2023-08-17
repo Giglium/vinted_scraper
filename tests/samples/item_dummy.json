@@ -32,16 +32,14 @@
     }
   ],
   "thumbnail": null,
-  "price": {
-    "amount": "20.0", "currency_code": "USD"
-  },
+  "price": 20.0,
   "favourite_count": 17,
   "is_favourite": false,
   "view_count": 78,
   "url": "https://fakeulr.com",
   "status": "Good",
-  "service_fee": {"amount": "1.7", "currency_code": "USD"},
-  "total_item_price": {"amount": "21.7", "currency_code": "USD"},
+  "service_fee": 1.7,
+  "total_item_price": 21.7,
   "user": {
     "id": "a user id",
     "login": "user",
