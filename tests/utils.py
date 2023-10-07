@@ -1,53 +1,6 @@
 import json
 import os
-from typing import Dict, Tuple
-
-
-def get_dummy_search_data() -> Tuple[Dict, bytes]:
-    """
-    Load dummy search data
-    """
-    data = _read_data_from_file("search_item_dummy")
-    return (
-        data,
-        f"""
-             <script type="application/json" data-js-react-on-rails-store="MainStore">
-            {{
-                "items": {{
-                    "catalogItems": {{
-                        "byId": {{
-                            "dummyId": {json.dumps(data)}
-                        }}
-                    }}
-                }}
-            }}
-            </script>
-""".encode(),
-    )
-
-
-def get_dummy_item_data() -> Tuple[Dict, bytes]:
-    """
-    Load dummy item data
-    """
-    data = _read_data_from_file("item_dummy")
-    return (
-        data,
-        f"""
-         <script type="application/json" data-component-name="ItemDetails">
-        {{
-            "item": {json.dumps(data)}
-        }}
-        </script>
-""".encode(),
-    )
-
-
-def get_empty_data() -> bytes:
-    """
-    Get an empty HTML where no data can be scraped
-    """
-    return "<html><body><script><!-- --></script></body></html>".encode()
+from typing import Dict
 
 
 def _read_data_from_file(filename: str) -> Dict:

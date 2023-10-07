@@ -1,37 +1,97 @@
 {
-  "id": "item id",
-  "title": "a games",
-  "price": {
-    "amount": "15.0", "currency_code": "USD"
-  },
-  "is_visible": 1,
-  "discount": null,
-  "currency": "EUR",
-  "brand_title": "Games",
-  "is_for_swap": false,
-  "user": {
-    "id": "user id",
-    "login": "user",
-    "business": false,
-    "profile_url": "https://www.fakeurl.com",
-    "photo": {
-      "id": "photo id",
-      "width": 450,
-      "height": 800,
-      "temp_uuid": null,
-      "url": "https://fakeurl.com",
-      "is_hidden": false,
-      "extra": {}
-    },
-    "favourite_count": 36,
-    "is_favourite": false,
-    "favourite_group_id": null,
-    "badge": null,
-    "conversion": null,
-    "service_fee": {"amount": "1.45", "currency_code": "USD"},
-    "total_item_price": {"amount": "16.45", "currency_code": "USD"},
-    "view_count": 0,
-    "size_title": "",
-    "content_source": "search"
-  }
+  "items": [
+    {
+      "id": "item id",
+      "title": "a game ",
+      "price": "4.5",
+      "is_visible": 1,
+      "discount": null,
+      "currency": "USD",
+      "brand_title": "NO LABEL",
+      "is_for_swap": false,
+      "user": {
+        "id": "user id",
+        "login": "username",
+        "business": false,
+        "profile_url": "https://www.fakeurl.com",
+        "photo": {
+          "id": "img id",
+          "width": 600,
+          "height": 800,
+          "temp_uuid": null,
+          "url": "https://www.fakeurl.com/a.jpg",
+          "dominant_color": "#31abc2",
+          "dominant_color_opaque": "#C1E6ED",
+          "thumbnails": [
+            {
+              "type": "thumb310",
+              "url": "https://www.fakeurl.com/a.jpg",
+              "width": 310,
+              "height": 310,
+              "original_size": null
+            }
+          ],
+          "is_suspicious": false,
+          "orientation": null,
+          "high_resolution": {
+            "id": "high_resolution_id",
+            "timestamp": 1683722338,
+            "orientation": null
+          },
+          "full_size_url": "https://www.fakeurl.com/a.jpg",
+          "is_hidden": false,
+          "extra": {}
+        }
+      },
+      "url": "https://www.fakeurl.com/item/item_id",
+      "promoted": false,
+      "photo": {
+        "id": "photo_id",
+        "image_no": 1,
+        "width": 600,
+        "height": 800,
+        "dominant_color": "#9A896A",
+        "dominant_color_opaque": "#E1DCD2",
+        "url": "https://www.fakeurl.com/a.jpg",
+        "is_main": true,
+        "thumbnails": [
+          {
+            "type": "thumb70x100",
+            "url": "https://www.fakeurl.com/a.jpg",
+            "width": 70,
+            "height": 100,
+            "original_size": null
+          }
+        ],
+        "high_resolution": {
+          "id": "high_resolution_id",
+          "timestamp": 1696452426,
+          "orientation": null
+        },
+        "is_suspicious": false,
+        "full_size_url": "https://www.fakeurl.com/a.jpg",
+        "is_hidden": false,
+        "extra": {}
+      },
+      "favourite_count": 4,
+      "is_favourite": false,
+      "badge": null,
+      "conversion": null,
+      "service_fee": "0.93",
+      "total_item_price": "5.43",
+      "view_count": 0,
+      "size_title": "",
+      "content_source": "search",
+      "search_tracking_params": {
+        "score": 39.74531,
+        "matched_queries": [
+          "next_search",
+          "full_text_search",
+          "interpretation_0",
+          "boost_by_newest_items",
+          "reranked_by_score"
+        ]
+      }
+    }
+  ]
 }
