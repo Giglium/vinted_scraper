@@ -1,6 +1,24 @@
 import json
 import os
 from typing import Dict
+from unittest.mock import MagicMock, patch
+
+import requests
+
+# isort: split
+from src.vinted_scraper import VintedWrapper
+
+
+def get_200_response() -> MagicMock:
+    response_200 = MagicMock(spec=requests.Response)
+    response_200.status_code = 200
+    response_200.headers = {"Set-Cookie": "secure, _vinted_fr_session=test"}
+    return response_200
+
+
+def get_wrapper(url: str) -> VintedWrapper:
+    with patch("requests.get", return_value=get_200_response()):
+        return VintedWrapper(url)
 
 
 def _read_data_from_file(filename: str) -> Dict:

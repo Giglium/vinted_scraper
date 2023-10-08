@@ -39,6 +39,15 @@ class VintedWrapper:
         """
         return self._curl("/catalog/items", params=params)
 
+    def item(self, id: str, params: Optional[Dict] = None) -> Dict:
+        """
+        :param id:
+        :param params: an optional Dictionary with all the query parameters to append at the request.
+            Vinted support a search without any param but to perform a search you should add the `search_text` params.
+            Default value: None.
+        """
+        return self._curl(f"/items/{id}", params=params)
+
     def _curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict:
         """
         :param params: an optional Dictionary with all the query parameters to append at the request.

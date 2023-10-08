@@ -11,7 +11,8 @@ class TestQuickstarts(unittest.TestCase):
         try:
             wrapper = VintedWrapper("https://www.vinted.com")
             params = {"search_text": "board games"}
-            wrapper.search(params)
+            items = wrapper.search(params)
+            wrapper.item(items["items"][0]["id"])
         except Exception as e:
             self.fail(f"Quick raised an exception: {e}")
 

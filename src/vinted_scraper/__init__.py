@@ -1,3 +1,5 @@
+from .VintedWrapper import VintedWrapper  # noqa: F401
+
 # import json
 # import os
 # import random

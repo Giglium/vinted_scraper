@@ -16,27 +16,24 @@ class TestSearch(unittest.TestCase):
         """
         Test if the search call thr curl method with the right params
         """
-        obj = {"items": []}
+        obj = {"item": {}}
+        item_id = "id"
         self.wrapper._curl = Mock(return_value=obj)
 
-        params = {"search_text": "games"}
-
-        for x in [params, None]:
-            self.wrapper._curl = Mock(return_value=obj)
-            result = self.wrapper.search(x)
-            self.wrapper._curl.assert_called_once_with("/catalog/items", params=x)
-            self.assertEqual(result, obj)
+        self.wrapper._curl = Mock(return_value=obj)
+        result = self.wrapper.item(item_id)
+        self.wrapper._curl.assert_called_once_with(f"/items/{item_id}", params=None)
+        self.assertEqual(result, obj)
 
     def test_raw_search_error(self):
         """
         In this use case we test if the raw search can extract data from the HTML response.
         """
-        data = _read_data_from_file("search_item_dummy")
+        data = _read_data_from_file("item_dummy")
         self.response_200.content = json.dumps(data)
 
         with patch("requests.get", return_value=self.response_200):
-            params = {"search_text": "unit_test"}
-            self.assertEqual(data, self.wrapper.search(params))
+            self.assertEqual(data, self.wrapper.item("id"))
 
     def test_status_code_error(self):
         """
@@ -47,12 +44,4 @@ class TestSearch(unittest.TestCase):
         mock_response.headers = {}
 
         with patch("requests.get", return_value=mock_response):
-            self.assertRaises(RuntimeError, lambda: self.wrapper.search())
-
-    # TODO: implement retry
-    # def test_fetch_token_retry(self):
-    #     try:
-    #         wrapper = VintedWrapper(self.baseurl, session_cookie="invalid_cookie")
-    #         wrapper.search()
-    #     except Exception as e:
-    #         self.fail(f"exception: {e}")
+            self.assertRaises(RuntimeError, lambda: self.wrapper.item("id"))
