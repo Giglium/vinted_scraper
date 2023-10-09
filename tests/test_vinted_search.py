@@ -2,17 +2,20 @@ import json
 import unittest
 from unittest.mock import Mock, patch
 
+from src.vinted_scraper.models import VintedItem
+
 # isort: split
-from tests.utils import _read_data_from_file, get_200_response, get_wrapper
+from tests.utils import _read_data_from_file, get_200_response, get_scraper, get_wrapper
 
 
-class TestSearch(unittest.TestCase):
+class TestVintedSearch(unittest.TestCase):
     def setUp(self):
         self.baseurl = "https://fakeurl.com"
         self.response_200 = get_200_response()
         self.wrapper = get_wrapper(self.baseurl)
+        self.scrapper = get_scraper(self.baseurl)
 
-    def test_search_with_params(self):
+    def test_raw_search_with_params(self):
         """
         Test if the search call thr curl method with the right params
         """
@@ -27,7 +30,7 @@ class TestSearch(unittest.TestCase):
             self.wrapper._curl.assert_called_once_with("/catalog/items", params=x)
             self.assertEqual(result, obj)
 
-    def test_raw_search_error(self):
+    def test_search_error(self):
         """
         In this use case we test if the raw search can extract data from the HTML response.
         """
@@ -37,6 +40,10 @@ class TestSearch(unittest.TestCase):
         with patch("requests.get", return_value=self.response_200):
             params = {"search_text": "unit_test"}
             self.assertEqual(data, self.wrapper.search(params))
+            self.assertEqual(
+                [VintedItem(item) for item in data["items"]],
+                self.scrapper.search(params),
+            )
 
     def test_status_code_error(self):
         """

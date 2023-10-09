@@ -7,6 +7,7 @@ import requests
 
 # isort: split
 from src.vinted_scraper import VintedWrapper
+from src.vinted_scraper.vintedScraper import VintedScraper
 
 
 def get_200_response() -> MagicMock:
@@ -19,6 +20,11 @@ def get_200_response() -> MagicMock:
 def get_wrapper(url: str) -> VintedWrapper:
     with patch("requests.get", return_value=get_200_response()):
         return VintedWrapper(url)
+
+
+def get_scraper(url: str) -> VintedWrapper:
+    with patch("requests.get", return_value=get_200_response()):
+        return VintedScraper(url)
 
 
 def _read_data_from_file(filename: str) -> Dict:
