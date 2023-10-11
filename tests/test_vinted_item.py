@@ -2,19 +2,22 @@ import json
 import unittest
 from unittest.mock import Mock, patch
 
+from src.vinted_scraper.models import VintedItem
+
 # isort: split
-from tests.utils import _read_data_from_file, get_200_response, get_wrapper
+from tests.utils import _read_data_from_file, get_200_response, get_scraper, get_wrapper
 
 
-class TestSearch(unittest.TestCase):
+class TestItem(unittest.TestCase):
     def setUp(self):
         self.baseurl = "https://fakeurl.com"
         self.response_200 = get_200_response()
         self.wrapper = get_wrapper(self.baseurl)
+        self.scraper = get_scraper(self.baseurl)
 
-    def test_search_with_params(self):
+    def test_item_with_params(self):
         """
-        Test if the search call thr curl method with the right params
+        Test if the item method call the _curl method with the right params
         """
         obj = {"item": {}}
         item_id = "id"
@@ -25,9 +28,9 @@ class TestSearch(unittest.TestCase):
         self.wrapper._curl.assert_called_once_with(f"/items/{item_id}", params=None)
         self.assertEqual(result, obj)
 
-    def test_raw_search_error(self):
+    def test_get_item(self):
         """
-        In this use case we test if the raw search can extract data from the HTML response.
+        Test the item method
         """
         data = _read_data_from_file("item_dummy")
         self.response_200.content = json.dumps(data)
@@ -35,9 +38,12 @@ class TestSearch(unittest.TestCase):
         with patch("requests.get", return_value=self.response_200):
             self.assertEqual(data, self.wrapper.item("id"))
 
+        with patch("requests.get", return_value=self.response_200):
+            self.assertEqual(VintedItem(data["item"]), self.scraper.item("id"))
+
     def test_status_code_error(self):
         """
-        In this use case we test when we receive a response that has not a 200 status code.
+        Test the case when a status code different from 200 is returned by the web service
         """
         mock_response = Mock()
         mock_response.status_code = 404

@@ -20,6 +20,8 @@ class VintedImage:
     high_resolution: Optional[VintedHighResolution] = None
     full_size_url: Optional[str] = None
     is_hidden: Optional[bool] = None
+    image_no: Optional[int] = None
+    is_main: Optional[bool] = None
 
     def __init__(self, json_data=None):
         if json_data is not None:
@@ -29,7 +31,7 @@ class VintedImage:
             if high_resolution_data:
                 self.high_resolution = VintedHighResolution(high_resolution_data)
 
-            thumbnails_data = json_data.get("thumbnails")
-
-            if thumbnails_data:
-                self.thumbnails = [VintedMedia(thumbnails_data[0])]
+            if "thumbnails" in json_data:
+                self.thumbnails = [
+                    VintedMedia(media) for media in json_data.get("thumbnails")
+                ]

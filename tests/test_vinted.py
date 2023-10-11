@@ -35,6 +35,18 @@ class TestVinted(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             VintedScraper(baseurl)
 
+    def test_init_invalid_cookie(self):
+        """
+        Ensure that the initializer raises an error if it can find the session cookie
+        """
+        baseurl = "https://fakeurl.com"
+        response = get_200_response()
+        response.headers = {}
+
+        with self.assertRaises(RuntimeError):
+            with patch("requests.get", return_value=response):
+                VintedWrapper(baseurl)
+
 
 if __name__ == "__main__":
     unittest.main()

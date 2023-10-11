@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import requests
 
@@ -23,6 +23,19 @@ class VintedWrapper:
         )
 
     def _fetch_cookie(self) -> str:
+        """
+        Send an HTTP GET request to the self.base_url to fetch the session cookie.
+
+        :return: The session cookie extracted from the HTTP response headers.
+        :raises RuntimeError: If the session cookie cannot be fetched or doesn't match the expected format.
+
+        The method performs the following steps:
+        1. Sends an HTTP GET request to the base URL using the provided User-Agent header.
+        2. Retrieves the "Set-Cookie" header from the HTTP response.
+        3. Checks if the "Set-Cookie" header contains the expected session cookie format.
+        4. If a matching session cookie is found, it extracts and returns it.
+        5. If the session cookie cannot be fetched or doesn't match the expected format, it raises a RuntimeError.
+        """
         response = requests.get(self.baseurl, headers={"User-Agent": self.user_agent})
 
         session_cookie = response.headers.get("Set-Cookie")
@@ -31,27 +44,46 @@ class VintedWrapper:
 
         raise RuntimeError(f"Cannot fetch session cookie from {self.baseurl}")
 
-    def search(self, params: Optional[Dict] = None) -> Dict:
+    def search(self, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        :param params: an optional Dictionary with all the query parameters to append at the request.
-            Vinted support a search without any param but to perform a search you should add the `search_text` params.
+        Search for items on Vinted.
+
+        :param params: an optional Dictionary with all the query parameters to append to the request.
+            Vinted supports a search without any parameters, but to perform a search,
+            you should add the `search_text` parameter.
             Default value: None.
+        :return: A Dict that contains the JSON response with the search results.
         """
         return self._curl("/catalog/items", params=params)
 
-    def item(self, id: str, params: Optional[Dict] = None) -> Dict:
+    def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
-        :param id:
-        :param params: an optional Dictionary with all the query parameters to append at the request.
-            Vinted support a search without any param but to perform a search you should add the `search_text` params.
-            Default value: None.
-        """
-        return self._curl(f"/items/{id}", params=params)
+        Retrieve details of a specific item on Vinted.
 
-    def _curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict:
-        """
-        :param params: an optional Dictionary with all the query parameters to append at the request.
+        :param item_id: The unique identifier of the item to retrieve.
+        :param params: an optional Dictionary with all the query parameters to append to the request.
             Default value: None.
+        :return: A Dict that contains the JSON response with the item's details.
+        """
+        return self._curl(f"/items/{item_id}", params=params)
+
+    def _curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
+        """
+        Send an HTTP GET request to the specified endpoint.
+
+        :param endpoint: The endpoint to make the request to.
+        :param params: An optional dictionary with query parameters to include in the request.
+                       Default value: None.
+        :return: A dictionary containing the parsed JSON response from the endpoint.
+        :raises RuntimeError: If the HTTP response status code is not 200, indicating an error.
+
+        The method performs the following steps:
+        1. Constructs the HTTP headers, including the User-Agent and session Cookie.
+        2. Sends an HTTP GET request to the specified endpoint with the given parameters.
+        3. Checks if the HTTP response status code is 200 (indicating success).
+        4. If the response status code is 200, it parses the JSON content of the response
+            and returns it as a dictionary.
+        5. If the response status code is not 200, it raises a RuntimeError with an error message.
         """
         headers = {
             "User-Agent": self.user_agent,

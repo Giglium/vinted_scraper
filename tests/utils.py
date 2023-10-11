@@ -6,11 +6,13 @@ from unittest.mock import MagicMock, patch
 import requests
 
 # isort: split
-from src.vinted_scraper import VintedWrapper
-from src.vinted_scraper.vintedScraper import VintedScraper
+from src.vinted_scraper import VintedScraper, VintedWrapper
 
 
 def get_200_response() -> MagicMock:
+    """
+    :return: a mocked 200 response using MagicMock already configured
+    """
     response_200 = MagicMock(spec=requests.Response)
     response_200.status_code = 200
     response_200.headers = {"Set-Cookie": "secure, _vinted_fr_session=test"}
@@ -18,11 +20,19 @@ def get_200_response() -> MagicMock:
 
 
 def get_wrapper(url: str) -> VintedWrapper:
+    """
+    :param url: a valid https url like: "https://fakeurl.com"
+    :return: a VintedWrapper instance for testing
+    """
     with patch("requests.get", return_value=get_200_response()):
         return VintedWrapper(url)
 
 
 def get_scraper(url: str) -> VintedWrapper:
+    """
+    :param url: a valid https url like: "https://fakeurl.com"
+    :return: a VintedScraper instance for testing
+    """
     with patch("requests.get", return_value=get_200_response()):
         return VintedScraper(url)
 

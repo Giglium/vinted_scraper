@@ -17,7 +17,7 @@ class TestVintedSearch(unittest.TestCase):
 
     def test_raw_search_with_params(self):
         """
-        Test if the search call thr curl method with the right params
+        Test if the search method call the _curl method with the right params
         """
         obj = {"items": []}
         self.wrapper._curl = Mock(return_value=obj)
@@ -32,7 +32,7 @@ class TestVintedSearch(unittest.TestCase):
 
     def test_search_error(self):
         """
-        In this use case we test if the raw search can extract data from the HTML response.
+        Test the search method.
         """
         data = _read_data_from_file("search_item_dummy")
         self.response_200.content = json.dumps(data)
@@ -47,7 +47,7 @@ class TestVintedSearch(unittest.TestCase):
 
     def test_status_code_error(self):
         """
-        In this use case we test when we receive a response that has not a 200 status code.
+        Test the case when a status code different from 200 is returned by the web service
         """
         mock_response = Mock()
         mock_response.status_code = 404
@@ -56,8 +56,8 @@ class TestVintedSearch(unittest.TestCase):
         with patch("requests.get", return_value=mock_response):
             self.assertRaises(RuntimeError, lambda: self.wrapper.search())
 
-    # TODO: implement retry
-    # def test_fetch_token_retry(self):
+    # TODO: implement retry first
+    # def test_cookies_retry(self):
     #     try:
     #         wrapper = VintedWrapper(self.baseurl, session_cookie="invalid_cookie")
     #         wrapper.search()
