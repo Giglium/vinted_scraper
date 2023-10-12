@@ -10,7 +10,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  test_python_version:
     runs-on: ubuntu-latest
 
     strategy:
@@ -36,19 +36,18 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Install dependencies
-        run: python3 -m pip install --user --disable-pip-version-check -r requirements.txt
+        run: python3 -m pip install -r requirements.txt
 
       - name: Run tests
         run: make test
 
-  test_old:
+  test_old_python_version:
     runs-on: ubuntu-20.04
 
     strategy:
       fail-fast: false
       matrix:
         python:
-          - '3.5'
           - '3.6'
 
     steps:
@@ -63,10 +62,12 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Install dependencies
-        run: python -m pip install --user --disable-pip-version-check -r requirements.txt
+        run: python -m pip install -r requirements.txt
 
+      # Data Classes (https://peps.python.org/pep-0557/) was introduced in python 3.7
+      # To work around it, I need to install it with pip
       - name: Install dataclasses
-        run: python -m pip install --user --disable-pip-version-check dataclasses
+        run: python -m pip install dataclasses
 
       - name: Run tests
         run: make test
