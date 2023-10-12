@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 
-from .vintedWrapper import VintedWrapper
 from .models import VintedItem
+from .vintedWrapper import VintedWrapper
 
 
 class VintedScraper(VintedWrapper):
