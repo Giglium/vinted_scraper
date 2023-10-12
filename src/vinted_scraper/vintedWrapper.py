@@ -90,7 +90,7 @@ class VintedWrapper:
             "Cookie": f"_vinted_fr_session={self.session_cookie}",
         }
         response = requests.get(
-            f"{self.baseurl}/api/v2/{endpoint}", params=params, headers=headers
+            f"{self.baseurl}/api/v2{endpoint}", params=params, headers=headers
         )
 
         if 200 == response.status_code:

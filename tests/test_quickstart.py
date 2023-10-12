@@ -1,4 +1,5 @@
 import unittest
+from time import sleep
 
 from src.vinted_scraper.vintedScraper import VintedScraper
 from src.vinted_scraper.vintedWrapper import VintedWrapper
@@ -13,7 +14,12 @@ class TestQuickstarts(unittest.TestCase):
             wrapper = VintedWrapper("https://www.vinted.com")
             params = {"search_text": "board games"}
             items = wrapper.search(params)
-            wrapper.item(items["items"][0]["id"])
+            if len(items["items"]) > 0:
+                wrapper.item(items["items"][0]["id"])
+            else:
+                # when you call multiple times the search sometimes returns an empty result
+                sleep(1)
+                self.test_raw_quick_start()
         except Exception as e:
             self.fail(f"Quick raised an exception: {e}")
 
@@ -25,7 +31,12 @@ class TestQuickstarts(unittest.TestCase):
             scraper = VintedScraper("https://www.vinted.com")
             params = {"search_text": "board games"}
             items = scraper.search(params)
-            scraper.item(items[0].id)
+            if len(items) > 0:
+                scraper.item(items[0].id)
+            else:
+                # when you call multiple times the search sometimes returns an empty result
+                sleep(1)
+                self.test_quick_start()
         except Exception as e:
             self.fail(f"Quick raised an exception: {e}")
 
