@@ -20,7 +20,7 @@ The package offers the following functions:
 <details>
  <summary><code>search</code><code>(gets all the items present on the listing page)</code></summary>
 
- **Parameters**
+  **Parameters**
 
 > | name   | type     | data type | description                                    |
 > |--------|----------|-----------|------------------------------------------------|
@@ -30,7 +30,7 @@ The package offers the following functions:
 <details>
  <summary><code>item</code><code>(gets the information about an item, and its seller present on the item detail page)</code></summary>
  
- **Parameters**
+  **Parameters**
 
 > | name   | type     | data type | description                                   |
 > |--------|----------|-----------|-----------------------------------------------|

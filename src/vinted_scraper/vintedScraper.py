@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from . import VintedWrapper
+from .vintedWrapper import VintedWrapper
 from .models import VintedItem
 
 
