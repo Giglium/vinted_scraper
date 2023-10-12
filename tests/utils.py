@@ -1,53 +1,40 @@
 import json
 import os
-from typing import Dict, Tuple
+from typing import Dict
+from unittest.mock import MagicMock, patch
+
+import requests
+
+# isort: split
+from src.vinted_scraper import VintedScraper, VintedWrapper
 
 
-def get_dummy_search_data() -> Tuple[Dict, bytes]:
+def get_200_response() -> MagicMock:
     """
-    Load dummy search data
+    :return: a mocked 200 response using MagicMock already configured
     """
-    data = _read_data_from_file("search_item_dummy")
-    return (
-        data,
-        f"""
-             <script type="application/json" data-js-react-on-rails-store="MainStore">
-            {{
-                "items": {{
-                    "catalogItems": {{
-                        "byId": {{
-                            "dummyId": {json.dumps(data)}
-                        }}
-                    }}
-                }}
-            }}
-            </script>
-""".encode(),
-    )
+    response_200 = MagicMock(spec=requests.Response)
+    response_200.status_code = 200
+    response_200.headers = {"Set-Cookie": "secure, _vinted_fr_session=test"}
+    return response_200
 
 
-def get_dummy_item_data() -> Tuple[Dict, bytes]:
+def get_wrapper(url: str) -> VintedWrapper:
     """
-    Load dummy item data
+    :param url: a valid https url like: "https://fakeurl.com"
+    :return: a VintedWrapper instance for testing
     """
-    data = _read_data_from_file("item_dummy")
-    return (
-        data,
-        f"""
-         <script type="application/json" data-component-name="ItemDetails">
-        {{
-            "item": {json.dumps(data)}
-        }}
-        </script>
-""".encode(),
-    )
+    with patch("requests.get", return_value=get_200_response()):
+        return VintedWrapper(url)
 
 
-def get_empty_data() -> bytes:
+def get_scraper(url: str) -> VintedWrapper:
     """
-    Get an empty HTML where no data can be scraped
+    :param url: a valid https url like: "https://fakeurl.com"
+    :return: a VintedScraper instance for testing
     """
-    return "<html><body><script><!-- --></script></body></html>".encode()
+    with patch("requests.get", return_value=get_200_response()):
+        return VintedScraper(url)
 
 
 def _read_data_from_file(filename: str) -> Dict:

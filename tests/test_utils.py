@@ -1,12 +1,12 @@
 import unittest
 
-from src.vinted_scraper import get_random_user_agent
+from src.vinted_scraper.utils import get_random_user_agent
 
 
-class MyTestCase(unittest.TestCase):
+class TestUtils(unittest.TestCase):
     def test_random_user_agent(self):
         """
-        Ensure that the function doesn't raise any exceptions
+        Ensure that the user agent function doesn't raise any exceptions
         """
         try:
             get_random_user_agent()

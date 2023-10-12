@@ -14,58 +14,75 @@ You can install Vinted Scraper using pip:
     pip install vinted_scraper
 ```
 
+## Functions
+
+The package offers the following functions:
+<details>
+ <summary><code>search</code><code>(gets all the items present on the listing page)</code></summary>
+
+  **Parameters**
+
+> | name   | type     | data type | description                                    |
+> |--------|----------|-----------|------------------------------------------------|
+> | params | optional | Dict      | Query parameters like the pagination and so on |
+</details>
+
+<details>
+ <summary><code>item</code><code>(gets the information about an item, and its seller present on the item detail page)</code></summary>
+
+  **Parameters**
+
+> | name   | type     | data type | description                                   |
+> |--------|----------|-----------|-----------------------------------------------|
+> | id     | required | str       | The unique identifier of the item to retrieve |
+> | params | optional | Dict      | I don't know is they exist                    |
+</details>
+
 ## Usage
 
-The package offers two functions:
-
-1. The `search` function gets all the items present on the listing page
-2. The `get_item` function gets more information about an item, and its seller present on the item detail page.
-
-> If you want to parse and manage the scraped data directly you can use the `raw` functions.
-
-Here's the two-way of how to use the package:
-
-### Structured Data
-
-To obtain the scraped data as a `vinted_scraper.VintedItem`, so you can:
+To obtain the scraped data as a `vinted_scraper.models.VintedItem`, so you can:
 
 ```python
-import vinted_scraper
+import vinted_scraper.VintedScraper
 
 
 def main():
+    scraper = VintedScraper("https://www.vinted.com")  # init the scraper with the baseurl
     params = {
         "search_text": "board games"
         # Add other query parameters like the pagination and so on
     }
-    items = vinted_scraper.search("https://www.vinted.com/catalog", params)  # get all the items
+    items = scraper.search(params)  # get all the items
     item = items[0]  # get the first Item of the list
-    vinted_scraper.get_item(item.url)  # get more info about a particular product
+    scraper.item(item.id)  # get more info about a particular item
 
 
 if __name__ == "__main__":
     main()
 ```
 
-> Structured Data are parsed and converted into a `vinted_scraper.VintedItem` object. If some attributes are `None` means
-> that it wasn't found in the scrap. Also, I discard some attribute that I thought was useless.
+`VintedScraper` returns structured data that are parsed and converted into a `vinted_scraper.models.VintedItem` object.
+If some attributes are `None` means that it wasn't found in the response, maybe because they are returned from other
+API.
+Also, I discard some attribute that I thought was useless but feel free to open an issue or a PR to add them.
 
-### Raw Data
+If you want to manage the JSON response directly, you should use the `VintedWrapper` object instead of `VintedScraper`.
 
-To obtain the scraped data as a `Dict`, so you can:
+Here's the way of how to use it:
 
 ```python
-import vinted_scraper
+import vinted_scraper.VintedWrapper
 
 
 def main():
+    wrapper = VintedWrapper("https://www.vinted.com")  # init the scraper with the baseurl
     params = {
         "search_text": "board games"
         # Add other query parameters like the pagination and so on
     }
-    items = vinted_scraper.raw_search("https://www.vinted.com/catalog", params)  # get all the items
-    item = items[0]  # get the first Item of the list
-    vinted_scraper.get_raw_item(item["url"])  # get more info about the item
+    items = wrapper.search(params)  # get all the items
+    item = items["items"][0]  # get the first Item of the list
+    wrapper.item(item["id"])  # get more info about a particular item
 
 
 if __name__ == "__main__":

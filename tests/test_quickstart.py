@@ -1,30 +1,42 @@
 import unittest
+from time import sleep
 
-from src.vinted_scraper import get_item, get_raw_item, raw_search, search
+from src.vinted_scraper.vintedScraper import VintedScraper
+from src.vinted_scraper.vintedWrapper import VintedWrapper
 
 
-class MyTestCase(unittest.TestCase):
-    def test_quick_start(self):
+class TestQuickstarts(unittest.TestCase):
+    def test_raw_quick_start(self):
         """
-        Ensure that the function doesn't raise any exceptions
+        Ensure that the wrapper quickstart doesn't raise any exceptions
         """
         try:
+            wrapper = VintedWrapper("https://www.vinted.com")
             params = {"search_text": "board games"}
-            items = search("https://www.vinted.com/catalog", params)
-            item = items[0]
-            get_item(item.url)
+            items = wrapper.search(params)
+            if len(items["items"]) > 0:
+                wrapper.item(items["items"][0]["id"])
+            else:
+                # when you call multiple times the search sometimes returns an empty result
+                sleep(1)
+                self.test_raw_quick_start()
         except Exception as e:
             self.fail(f"Quick raised an exception: {e}")
 
-    def test_raw_quick_start(self):
+    def test_quick_start(self):
         """
-        Ensure that the function doesn't raise any exceptions
+        Ensure that the scrapper quickstart doesn't raise any exceptions
         """
         try:
+            scraper = VintedScraper("https://www.vinted.com")
             params = {"search_text": "board games"}
-            items = raw_search("https://www.vinted.com/catalog", params)
-            item = items[0]
-            get_raw_item(item["url"])
+            items = scraper.search(params)
+            if len(items) > 0:
+                scraper.item(items[0].id)
+            else:
+                # when you call multiple times the search sometimes returns an empty result
+                sleep(1)
+                self.test_quick_start()
         except Exception as e:
             self.fail(f"Quick raised an exception: {e}")
 
