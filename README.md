@@ -14,11 +14,13 @@ You can install Vinted Scraper using pip:
     pip install vinted_scraper
 ```
 
+> If you are on Python 3.6 you also have to install `dataclasses`: `pip install dataclasses`
+
 ## Functions
 
 The package offers the following functions:
 <details>
- <summary><code>search</code><code>(gets all the items present on the listing page)</code></summary>
+ <summary><code>search</code> - <code>(gets all the items present on the listing page)</code></summary>
 
   **Parameters**
 
@@ -28,7 +30,7 @@ The package offers the following functions:
 </details>
 
 <details>
- <summary><code>item</code><code>(gets the information about an item, and its seller present on the item detail page)</code></summary>
+ <summary><code>item</code> - <code>(gets the information about an item, and its seller present on the item detail page)</code></summary>
 
   **Parameters**
 
