@@ -29,7 +29,7 @@ The package offers the following functions:
 
 <details>
  <summary><code>item</code><code>(gets the information about an item, and its seller present on the item detail page)</code></summary>
- 
+
   **Parameters**
 
 > | name   | type     | data type | description                                   |
