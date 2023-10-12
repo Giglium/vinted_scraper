@@ -7,7 +7,7 @@ name = "vinted_scraper"
 version = "2.0.0"
 description = "A very simple Python package that scrapes the Vinted website to retrieve information about its items."
 readme = "README.md"
-requires-python = ">= 3.9"
+requires-python = ">= 2.7"
 license = {file = "LICENSE"}
 authors = [
     {name = "Giglium"}
@@ -20,7 +20,7 @@ classifiers = [
     "Intended Audience :: Education",
 ]
 dependencies = [
-    "requests>=2.31.0"
+    "requests"
 ]
 
 [tool.isort]
