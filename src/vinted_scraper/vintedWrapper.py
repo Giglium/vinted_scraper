@@ -39,8 +39,8 @@ class VintedWrapper:
         response = requests.get(self.baseurl, headers={"User-Agent": self.user_agent})
 
         session_cookie = response.headers.get("Set-Cookie")
-        if session_cookie and "secure, _vinted_fr_session=" in session_cookie:
-            return session_cookie.split("secure, _vinted_fr_session=")[1].split(";")[0]
+        if session_cookie and "_vinted_fr_session=" in session_cookie:
+            return session_cookie.split("_vinted_fr_session=")[1].split(";")[0]
 
         raise RuntimeError(f"Cannot fetch session cookie from {self.baseurl}")
 
