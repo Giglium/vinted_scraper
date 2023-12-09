@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
+from deprecated import deprecated
+
 from .vintedBrand import VintedBrand
 from .vintedImage import VintedImage
 from .vintedPaymentMethod import VintedPaymentMethod
@@ -20,7 +22,7 @@ class VintedItem:
     user: Optional[VintedUser] = None
     url: Optional[str] = None
     promoted: Optional[bool] = None
-    photo: Optional[VintedImage] = None
+    photos: Optional[List[VintedImage]] = None
     favourite_count: Optional[int] = None
     is_favourite: Optional[bool] = None
     badge: Optional[str] = None
@@ -124,6 +126,18 @@ class VintedItem:
     offline_verification: Optional[bool] = None
     offline_verification_fee: Optional[float] = None
 
+    @property
+    @deprecated(
+        version="2.1.0",
+        reason="Please use the `photos` attribute. "
+        "This attribute will be removed on the next major version of the module.",
+    )
+    def photo(self):
+        if self.photos and len(self.photos) > 0:
+            return self.photos[0]
+        else:
+            return None
+
     def __init__(self, json_data=None):
         if json_data is not None:
             self.__dict__.update(json_data)
@@ -132,7 +146,10 @@ class VintedItem:
                 self.user = VintedUser(json_data.get("user"))
 
             if "photo" in json_data:
-                self.photo = VintedImage(json_data.get("photo"))
+                self.photos = [VintedImage(json_data.get("photo"))]
+
+            if "photos" in json_data:
+                self.photos = [VintedImage(i) for i in json_data.get("photos")]
 
             if "accepted_pay_in_methods" in json_data:
                 self.accepted_pay_in_methods = [
