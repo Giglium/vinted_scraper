@@ -5,23 +5,25 @@ from src.vinted_scraper.vintedScraper import VintedScraper
 
 # isort: split
 from src.vinted_scraper.vintedWrapper import VintedWrapper
-from tests.utils import get_200_response
+from tests.utils import BASE_URL, get_200_response, get_404_response
 
 
 class TestVinted(unittest.TestCase):
+    def setUp(self):
+        self.baseurl = BASE_URL
+
     def test_init_valid_url(self):
         """
         Ensure that the initializer accepts a valid URL
         """
-        baseurl = "https://fakeurl.com"
 
         with patch("requests.get", return_value=get_200_response()):
-            wrapper = VintedWrapper(baseurl)
-            self.assertEqual(wrapper.baseurl, baseurl)
+            wrapper = VintedWrapper(self.baseurl)
+            self.assertEqual(wrapper.baseurl, self.baseurl)
 
         with patch("requests.get", return_value=get_200_response()):
-            wrapper = VintedScraper(baseurl)
-            self.assertEqual(wrapper.baseurl, baseurl)
+            wrapper = VintedScraper(self.baseurl)
+            self.assertEqual(wrapper.baseurl, self.baseurl)
 
     def test_init_invalid_url(self):
         """
@@ -39,13 +41,21 @@ class TestVinted(unittest.TestCase):
         """
         Ensure that the initializer raises an error if it can find the session cookie
         """
-        baseurl = "https://fakeurl.com"
         response = get_200_response()
-        response.headers = {}
+        response.headers = {}  # Reset the headers to force an invalid cookies
 
         with self.assertRaises(RuntimeError):
             with patch("requests.get", return_value=response):
-                VintedWrapper(baseurl)
+                VintedWrapper(self.baseurl)
+
+    def test_init_invalid_cookie_status_code(self):
+        """
+        Ensure that the initializer raises an error if it can find the session cookie because of a status code different
+         from 200.
+        """
+        with self.assertRaises(RuntimeError):
+            with patch("requests.get", return_value=get_404_response()):
+                VintedWrapper(self.baseurl)
 
 
 if __name__ == "__main__":

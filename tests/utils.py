@@ -1,12 +1,14 @@
 import json
 import os
-from typing import Dict
+from typing import Dict, Final
 from unittest.mock import MagicMock, patch
 
 import requests
 
 # isort: split
 from src.vinted_scraper import VintedScraper, VintedWrapper
+
+BASE_URL: Final = "https://fakeurl.com"
 
 
 def get_200_response() -> MagicMock:
@@ -17,6 +19,16 @@ def get_200_response() -> MagicMock:
     response_200.status_code = 200
     response_200.headers = {"Set-Cookie": "secure, _vinted_fr_session=test"}
     return response_200
+
+
+def get_404_response() -> MagicMock:
+    """
+    :return: a mocked 404 response using MagicMock already configured
+    """
+    response_404 = MagicMock(spec=requests.Response)
+    response_404.status_code = 404
+    response_404.headers = {}
+    return response_404
 
 
 def get_wrapper(url: str) -> VintedWrapper:

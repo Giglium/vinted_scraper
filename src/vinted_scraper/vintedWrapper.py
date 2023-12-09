@@ -37,10 +37,15 @@ class VintedWrapper:
         5. If the session cookie cannot be fetched or doesn't match the expected format, it raises a RuntimeError.
         """
         response = requests.get(self.baseurl, headers={"User-Agent": self.user_agent})
-
-        session_cookie = response.headers.get("Set-Cookie")
-        if session_cookie and "_vinted_fr_session=" in session_cookie:
-            return session_cookie.split("_vinted_fr_session=")[1].split(";")[0]
+        if 200 == response.status_code:
+            session_cookie = response.headers.get("Set-Cookie")
+            if session_cookie and "_vinted_fr_session=" in session_cookie:
+                return session_cookie.split("_vinted_fr_session=")[1].split(";")[0]
+        else:
+            raise RuntimeError(
+                f"Cannot fetch session cookie from {self.baseurl}, because of status code: {response.status_code} "
+                f"different from 200."
+            )
 
         raise RuntimeError(f"Cannot fetch session cookie from {self.baseurl}")
 
