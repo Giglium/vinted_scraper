@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Final
+from typing import Dict
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -8,7 +8,8 @@ import requests
 # isort: split
 from src.vinted_scraper import VintedScraper, VintedWrapper
 
-BASE_URL: Final = "https://fakeurl.com"
+# TODO: Change str to final when 3.6+ support is dropped, because final was introduced from 3.8.
+BASE_URL: str = "https://fakeurl.com"
 
 
 def get_200_response() -> MagicMock:
