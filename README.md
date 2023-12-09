@@ -2,6 +2,7 @@
 
 [![Package Version](https://img.shields.io/pypi/v/vinted_scraper.svg)](https://pypi.org/project/vinted_scraper/)
 [![Python Version](https://img.shields.io/pypi/pyversions/vinted_scraper.svg)](https://pypi.org/project/vinted_scraper/)
+[![codecov](https://codecov.io/gh/Giglium/vinted_scraper/graph/badge.svg?token=EB36V1AO72)](https://codecov.io/gh/Giglium/vinted_scraper)
 [![License](https://img.shields.io/pypi/l/vinted_scraper.svg)](https://github.com/Giglium/vinted_scraper/blob/main/LICENSE)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FGiglium%2Fvinted_scraper.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FGiglium%2Fvinted_scraper?ref=badge_shield)
 
