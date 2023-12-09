@@ -5,12 +5,18 @@ from unittest.mock import Mock, patch
 from src.vinted_scraper.models import VintedItem
 
 # isort: split
-from tests.utils import _read_data_from_file, get_200_response, get_scraper, get_wrapper
+from tests.utils import (
+    BASE_URL,
+    _read_data_from_file,
+    get_200_response,
+    get_scraper,
+    get_wrapper,
+)
 
 
 class TestVintedSearch(unittest.TestCase):
     def setUp(self):
-        self.baseurl = "https://fakeurl.com"
+        self.baseurl = BASE_URL
         self.response_200 = get_200_response()
         self.wrapper = get_wrapper(self.baseurl)
         self.scrapper = get_scraper(self.baseurl)

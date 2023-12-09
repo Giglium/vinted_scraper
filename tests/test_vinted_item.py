@@ -5,12 +5,19 @@ from unittest.mock import Mock, patch
 from src.vinted_scraper.models import VintedItem
 
 # isort: split
-from tests.utils import _read_data_from_file, get_200_response, get_scraper, get_wrapper
+from tests.utils import (
+    BASE_URL,
+    _read_data_from_file,
+    get_200_response,
+    get_404_response,
+    get_scraper,
+    get_wrapper,
+)
 
 
 class TestItem(unittest.TestCase):
     def setUp(self):
-        self.baseurl = "https://fakeurl.com"
+        self.baseurl = BASE_URL
         self.response_200 = get_200_response()
         self.wrapper = get_wrapper(self.baseurl)
         self.scraper = get_scraper(self.baseurl)
@@ -45,9 +52,6 @@ class TestItem(unittest.TestCase):
         """
         Test the case when a status code different from 200 is returned by the web service
         """
-        mock_response = Mock()
-        mock_response.status_code = 404
-        mock_response.headers = {}
 
-        with patch("requests.get", return_value=mock_response):
+        with patch("requests.get", return_value=get_404_response()):
             self.assertRaises(RuntimeError, lambda: self.wrapper.item("id"))
