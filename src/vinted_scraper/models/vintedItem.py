@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
-# pylint: disable=no-name-in-module
-# mypy: disable-error-code="attr-defined"
-from typing_extensions import deprecated
+from deprecated import deprecated
 
 from .vintedBrand import VintedBrand
 from .vintedImage import VintedImage
@@ -130,7 +128,9 @@ class VintedItem:
 
     @property
     @deprecated(
-        "Please use the `photos` attribute. This attribute will be removed on the next major version of the module."
+        version="2.1.0",
+        reason="Please use the `photos` attribute. "
+        "This attribute will be removed on the next major version of the module.",
     )
     def photo(self):
         if self.photos and len(self.photos) > 0:
