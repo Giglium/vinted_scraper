@@ -8,7 +8,22 @@ from .utils import get_random_user_agent
 
 
 class VintedWrapper:
-    def __init__(self, baseurl: str, agent=None, session_cookie=None):
+    def __init__(
+        self,
+        baseurl: str,
+        agent: Optional[str] = None,
+        session_cookie: Optional[str] = None,
+        proxies: Optional[Dict] = None,
+    ):
+        """
+        :param baseurl: (required) Base Vinted site url to use in the requests
+        :param agent: (optional) User agent to use on the requests
+        :param session_cookie: (optional) Vinted session cookie
+        :param proxies: (optional) Dictionary mapping protocol or protocol and
+        hostname to the URL of the proxy. For more info see:
+        https://requests.readthedocs.io/en/latest/user/advanced/#proxies
+        """
+
         self.baseurl = baseurl[:-1] if baseurl.endswith("/") else baseurl
 
         # Check if the URL is valid
@@ -21,6 +36,7 @@ class VintedWrapper:
         self.session_cookie = (
             session_cookie if session_cookie is not None else self._fetch_cookie()
         )
+        self.proxies = proxies
 
     def _fetch_cookie(self) -> str:
         """
@@ -95,7 +111,10 @@ class VintedWrapper:
             "Cookie": f"_vinted_fr_session={self.session_cookie}",
         }
         response = requests.get(
-            f"{self.baseurl}/api/v2{endpoint}", params=params, headers=headers
+            f"{self.baseurl}/api/v2{endpoint}",
+            params=params,
+            headers=headers,
+            proxies=self.proxies,
         )
 
         if 200 == response.status_code:
