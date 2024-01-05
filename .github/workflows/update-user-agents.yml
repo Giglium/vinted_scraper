@@ -1,0 +1,26 @@
+name: Update User Agents
+
+on:
+  schedule:
+    - cron: 0 6 1 * *
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: update the user agents list
+        run: make update.user.agent
+
+      - name: Open Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: "Update user agents"
+          body: "Update `agents.json`."
+          commit-message: Update agents.json
+          assignees: "giglium"
+          labels: "feature"
+          token: ${{ secrets.GITHUB_TOKEN }}

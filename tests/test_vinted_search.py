@@ -61,11 +61,3 @@ class TestVintedSearch(unittest.TestCase):
 
         with patch("requests.get", return_value=mock_response):
             self.assertRaises(RuntimeError, lambda: self.wrapper.search())
-
-    # TODO: implement retry first
-    # def test_cookies_retry(self):
-    #     try:
-    #         wrapper = VintedWrapper(self.baseurl, session_cookie="invalid_cookie")
-    #         wrapper.search()
-    #     except Exception as e:
-    #         self.fail(f"exception: {e}")
