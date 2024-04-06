@@ -2,7 +2,7 @@ name: Update User Agents
 
 on:
   schedule:
-    - cron: 0 6 1 * *
+    - cron: 0 6 1 */4 *
 
 permissions:
   pull-requests: write
