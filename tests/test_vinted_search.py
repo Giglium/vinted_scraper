@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring,missing-class-docstring,line-too-long
 import json
 import unittest
 from unittest.mock import Mock, patch
@@ -26,14 +27,18 @@ class TestVintedSearch(unittest.TestCase):
         Test if the search method call the _curl method with the right params
         """
         obj = {"items": []}
-        self.wrapper._curl = Mock(return_value=obj)
+        self.wrapper._curl = Mock(return_value=obj)  # pylint: disable=protected-access
 
         params = {"search_text": "games"}
 
         for x in [params, None]:
-            self.wrapper._curl = Mock(return_value=obj)
+            self.wrapper._curl = Mock(  # pylint: disable=protected-access
+                return_value=obj
+            )
             result = self.wrapper.search(x)
-            self.wrapper._curl.assert_called_once_with("/catalog/items", params=x)
+            self.wrapper._curl.assert_called_once_with(  # pylint: disable=protected-access
+                "/catalog/items", params=x
+            )
             self.assertEqual(result, obj)
 
     def test_search_error(self):
@@ -60,4 +65,4 @@ class TestVintedSearch(unittest.TestCase):
         mock_response.headers = {}
 
         with patch("requests.get", return_value=mock_response):
-            self.assertRaises(RuntimeError, lambda: self.wrapper.search())
+            self.assertRaises(RuntimeError, self.wrapper.search())

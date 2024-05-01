@@ -6,6 +6,8 @@ on:
     tags:
       - '*.*.*'
 
+permissions: read-all
+
 jobs:
   release:
     runs-on: ubuntu-latest

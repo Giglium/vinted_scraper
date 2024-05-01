@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring,missing-class-docstring
 import unittest
 from time import sleep
 
@@ -23,7 +24,7 @@ class TestQuickstarts(unittest.TestCase):
                 # when you call multiple times the search sometimes returns an empty result
                 sleep(1)
                 self.test_raw_quick_start()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self.fail(f"Quick raised an exception: {e}")
 
     def test_quick_start(self):
@@ -40,14 +41,14 @@ class TestQuickstarts(unittest.TestCase):
                 # when you call multiple times the search sometimes returns an empty result
                 sleep(1)
                 self.test_quick_start()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self.fail(f"Quick raised an exception: {e}")
 
     def test_cookies_retry(self):
         try:
             wrapper = VintedWrapper(self.baseurl, session_cookie="invalid_cookie")
             wrapper.search()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self.fail(f"exception: {e}")
 
 

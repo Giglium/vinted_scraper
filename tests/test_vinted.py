@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring,missing-class-docstring,line-too-long
 import unittest
 from unittest.mock import patch
 

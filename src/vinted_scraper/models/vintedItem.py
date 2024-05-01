@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring,invalid-name,missing-class-docstring
+# pylint: disable=too-many-instance-attributes,missing-function-docstring,import-error
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -135,8 +137,7 @@ class VintedItem:
     def photo(self):
         if self.photos and len(self.photos) > 0:
             return self.photos[0]
-        else:
-            return None
+        return None
 
     def __init__(self, json_data=None):
         if json_data is not None:
@@ -163,7 +164,7 @@ class VintedItem:
                 self.brand = VintedBrand()
                 self.brand.title = json_data.get("brand_title")
 
-        if type(json_data.get("price")) is dict:
+        if isinstance(json_data.get("price"), dict):
             self.price = float(json_data.get("price")["amount"])
             self.currency = json_data.get("price")["currency_code"]
         else:
