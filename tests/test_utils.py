@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring,missing-class-docstring,line-too-long
 import unittest
 
 from src.vinted_scraper.utils import get_random_user_agent
@@ -10,7 +11,7 @@ class TestUtils(unittest.TestCase):
         """
         try:
             get_random_user_agent()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self.fail(f"get_random_user_agent() raised an exception: {e}")
 
 

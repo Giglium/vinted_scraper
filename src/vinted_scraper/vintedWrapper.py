@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,invalid-name,missing-class-docstring,line-too-long,import-error
 import json
 import re
 from typing import Any, Dict, Optional
@@ -119,11 +120,11 @@ class VintedWrapper:
 
         if 200 == response.status_code:
             return json.loads(response.content)
-        elif 401 == response.status_code:
+        if 401 == response.status_code:
             # Fetch (maybe is expired?) the session cookie again and retry the API call
             self.session_cookie = self._fetch_cookie()
             return self._curl(endpoint, params)
-        else:
-            raise RuntimeError(
-                f"Cannot perform API call to endpoint {endpoint}, error code: {response.status_code}"
-            )
+
+        raise RuntimeError(
+            f"Cannot perform API call to endpoint {endpoint}, error code: {response.status_code}"
+        )

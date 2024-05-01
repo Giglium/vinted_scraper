@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,invalid-name,missing-class-docstring,too-many-instance-attributes
 from dataclasses import dataclass
 from typing import Optional
 

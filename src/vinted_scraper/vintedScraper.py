@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,invalid-name,missing-class-docstring,line-too-long
 from typing import Dict, List, Optional
 
 from .models import VintedItem
@@ -5,22 +6,22 @@ from .vintedWrapper import VintedWrapper
 
 
 class VintedScraper(VintedWrapper):
-    def __init__(
-        self,
-        baseurl: str,
-        agent: Optional[str] = None,
-        session_cookie: Optional[str] = None,
-        proxies: Optional[Dict] = None,
-    ):
-        """
-        :param baseurl: (required) Base Vinted site url to use in the requests
-        :param agent: (optional) User agent to use on the requests
-        :param session_cookie: (optional) Vinted session cookie
-        :param proxies: (optional) Dictionary mapping protocol or protocol and
-        hostname to the URL of the proxy. For more info see:
-        https://requests.readthedocs.io/en/latest/user/advanced/#proxies
-        """
-        super().__init__(baseurl, agent, session_cookie, proxies)
+    # def __init__(
+    #     self,
+    #     baseurl: str,
+    #     agent: Optional[str] = None,
+    #     session_cookie: Optional[str] = None,
+    #     proxies: Optional[Dict] = None,
+    # ):
+    #     """
+    #     :param baseurl: (required) Base Vinted site url to use in the requests
+    #     :param agent: (optional) User agent to use on the requests
+    #     :param session_cookie: (optional) Vinted session cookie
+    #     :param proxies: (optional) Dictionary mapping protocol or protocol and
+    #     hostname to the URL of the proxy. For more info see:
+    #     https://requests.readthedocs.io/en/latest/user/advanced/#proxies
+    #     """
+    #     super().__init__(baseurl, agent, session_cookie, proxies)
 
     def search(self, params: Optional[Dict] = None) -> List[VintedItem]:  # type: ignore
         """

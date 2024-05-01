@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring
 from .vintedBrand import VintedBrand  # noqa: F401
 from .vintedBundleDiscount import VintedBundleDiscount  # noqa: F401
 from .vintedBundleDiscount import VintedDiscount  # noqa: F401

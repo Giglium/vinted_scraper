@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring
 import unittest
 
 from src.vinted_scraper.models import VintedImage, VintedItem

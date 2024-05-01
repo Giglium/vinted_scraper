@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring
+# pylint: disable=missing-class-docstring,line-too-long
 import json
 import unittest
 from unittest.mock import Mock, patch
@@ -28,11 +30,13 @@ class TestItem(unittest.TestCase):
         """
         obj = {"item": {}}
         item_id = "id"
-        self.wrapper._curl = Mock(return_value=obj)
+        self.wrapper._curl = Mock(return_value=obj)  # pylint: disable=protected-access
 
-        self.wrapper._curl = Mock(return_value=obj)
+        self.wrapper._curl = Mock(return_value=obj)  # pylint: disable=protected-access
         result = self.wrapper.item(item_id)
-        self.wrapper._curl.assert_called_once_with(f"/items/{item_id}", params=None)
+        self.wrapper._curl.assert_called_once_with(  # pylint: disable=protected-access
+            f"/items/{item_id}", params=None
+        )
         self.assertEqual(result, obj)
 
     def test_get_item(self):
