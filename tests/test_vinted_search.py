@@ -65,4 +65,4 @@ class TestVintedSearch(unittest.TestCase):
         mock_response.headers = {}
 
         with patch("requests.get", return_value=mock_response):
-            self.assertRaises(RuntimeError, self.wrapper.search())
+            self.assertRaises(RuntimeError,  lambda: self.wrapper.search())
