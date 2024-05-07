@@ -34,7 +34,7 @@ build: py.build
 init: py.init git.hooks.setup
 
 .PHONY: update
-update: py.update git.submodules
+update: git.submodules py.update
 
 .PHONY: update.user.agent
 update.user.agent:

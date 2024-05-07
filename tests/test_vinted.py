@@ -57,6 +57,14 @@ class TestVinted(unittest.TestCase):
             with patch("requests.get", return_value=get_404_response()):
                 VintedWrapper(self.baseurl)
 
+    def test_retry(self):
+        with self.assertRaises(RuntimeError):
+            with patch("requests.get", return_value=get_404_response()) as mock_get:
+                VintedWrapper(self.baseurl)
+
+        # Asserting that requests.get was called 3 times (initial call + 2 retries)
+        self.assertEqual(mock_get.call_count, 3)
+
 
 if __name__ == "__main__":
     unittest.main()
