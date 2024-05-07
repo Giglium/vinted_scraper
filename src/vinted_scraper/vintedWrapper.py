@@ -1,5 +1,6 @@
 import json
 import re
+import time
 from typing import Any, Dict, Optional
 
 import requests
@@ -38,32 +39,31 @@ class VintedWrapper:
         )
         self.proxies = proxies
 
-    def _fetch_cookie(self) -> str:
+    def _fetch_cookie(self, retries: int = 3) -> str:
         """
-        Send an HTTP GET request to the self.base_url to fetch the session cookie.
+        Send an HTTP GET request to the self.base_url to fetch the session cookie with retries.
 
+        :param retries: Number of retries for the HTTP request.
         :return: The session cookie extracted from the HTTP response headers.
         :raises RuntimeError: If the session cookie cannot be fetched or doesn't match the expected format.
-
-        The method performs the following steps:
-        1. Sends an HTTP GET request to the base URL using the provided User-Agent header.
-        2. Retrieves the "Set-Cookie" header from the HTTP response.
-        3. Checks if the "Set-Cookie" header contains the expected session cookie format.
-        4. If a matching session cookie is found, it extracts and returns it.
-        5. If the session cookie cannot be fetched or doesn't match the expected format, it raises a RuntimeError.
         """
-        response = requests.get(self.baseurl, headers={"User-Agent": self.user_agent})
-        if 200 == response.status_code:
-            session_cookie = response.headers.get("Set-Cookie")
-            if session_cookie and "_vinted_fr_session=" in session_cookie:
-                return session_cookie.split("_vinted_fr_session=")[1].split(";")[0]
-        else:
-            raise RuntimeError(
-                f"Cannot fetch session cookie from {self.baseurl}, because of status code: {response.status_code} "
-                f"different from 200."
+        response = None
+        for _ in range(retries):
+            response = requests.get(
+                self.baseurl, headers={"User-Agent": self.user_agent}
             )
+            if response.status_code == 200:
+                session_cookie = response.headers.get("Set-Cookie")
+                if session_cookie and "_vinted_fr_session=" in session_cookie:
+                    return session_cookie.split("_vinted_fr_session=")[1].split(";")[0]
+            else:
+                # Exponential backoff before retrying
+                time.sleep(2**_)
 
-        raise RuntimeError(f"Cannot fetch session cookie from {self.baseurl}")
+        raise RuntimeError(
+            f"Cannot fetch session cookie from {self.baseurl}, because of "
+            f"status code: {response.status_code if response is not None else 'none'} different from 200."
+        )
 
     def search(self, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
