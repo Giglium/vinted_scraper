@@ -54,8 +54,8 @@ class VintedWrapper:
             )
             if response.status_code == 200:
                 session_cookie = response.headers.get("Set-Cookie")
-                if session_cookie and "_vinted_fr_session=" in session_cookie:
-                    return session_cookie.split("_vinted_fr_session=")[1].split(";")[0]
+                if session_cookie and "access_token_web=" in session_cookie:
+                    return session_cookie.split("access_token_web=")[1].split(";")[0]
             else:
                 # Exponential backoff before retrying
                 time.sleep(2**_)
@@ -108,7 +108,7 @@ class VintedWrapper:
         """
         headers = {
             "User-Agent": self.user_agent,
-            "Cookie": f"_vinted_fr_session={self.session_cookie}",
+            "Cookie": f"access_token_web={self.session_cookie}",
         }
         response = requests.get(
             f"{self.baseurl}/api/v2{endpoint}",
