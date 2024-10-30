@@ -18,7 +18,7 @@ def get_200_response() -> MagicMock:
     """
     response_200 = MagicMock(spec=requests.Response)
     response_200.status_code = 200
-    response_200.headers = {"Set-Cookie": "secure, _vinted_fr_session=test"}
+    response_200.headers = {"Set-Cookie": "secure, access_token_web=test"}
     return response_200
 
 
