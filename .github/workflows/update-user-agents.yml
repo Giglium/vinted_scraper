@@ -23,7 +23,7 @@ jobs:
         run: make update.user.agent
 
       - name: Open Pull Request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           title: "Update user agents"
           body: "Update `agents.json`."
