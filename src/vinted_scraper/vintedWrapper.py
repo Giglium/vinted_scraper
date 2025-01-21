@@ -35,14 +35,15 @@ class VintedWrapper:
 
         self.user_agent = agent if agent is not None else get_random_user_agent()
         self.session_cookie = (
-            session_cookie if session_cookie is not None else self._fetch_cookie()
+            session_cookie if session_cookie is not None else self._fetch_cookie(proxies=proxies)
         )
         self.proxies = proxies
 
-    def _fetch_cookie(self, retries: int = 3) -> str:
+    def _fetch_cookie(self, proxies: Optional[Dict] = None, retries: int = 3) -> str:
         """
         Send an HTTP GET request to the self.base_url to fetch the session cookie with retries.
 
+        :param proxies: Proxy configuration for the HTTP request.
         :param retries: Number of retries for the HTTP request.
         :return: The session cookie extracted from the HTTP response headers.
         :raises RuntimeError: If the session cookie cannot be fetched or doesn't match the expected format.
@@ -50,7 +51,9 @@ class VintedWrapper:
         response = None
         for _ in range(retries):
             response = requests.get(
-                self.baseurl, headers={"User-Agent": self.user_agent}
+                self.baseurl,
+                headers=self._extended_headers(),
+                proxies=proxies,
             )
             if response.status_code == 200:
                 session_cookie = response.headers.get("Set-Cookie")
@@ -106,10 +109,7 @@ class VintedWrapper:
             and returns it as a dictionary.
         5. If the response status code is not 200, it raises a RuntimeError with an error message.
         """
-        headers = {
-            "User-Agent": self.user_agent,
-            "Cookie": f"access_token_web={self.session_cookie}",
-        }
+        headers = self._extended_headers(include_cookie=True)
         response = requests.get(
             f"{self.baseurl}/api/v2{endpoint}",
             params=params,
@@ -117,13 +117,39 @@ class VintedWrapper:
             proxies=self.proxies,
         )
 
-        if 200 == response.status_code:
+        if response.status_code == 200:
             return json.loads(response.content)
-        elif 401 == response.status_code:
+        elif response.status_code == 401:
             # Fetch (maybe is expired?) the session cookie again and retry the API call
-            self.session_cookie = self._fetch_cookie()
+            self.session_cookie = self._fetch_cookie(proxies=self.proxies)
             return self._curl(endpoint, params)
         else:
             raise RuntimeError(
                 f"Cannot perform API call to endpoint {endpoint}, error code: {response.status_code}"
             )
+
+    def _extended_headers(self, include_cookie: bool = False) -> Dict[str, str]:
+        """
+        Generate a more comprehensive set of HTTP headers to avoid bot detection by Cloudflare.
+
+        :param include_cookie: Whether to include the session cookie in the headers.
+        :return: A dictionary of headers.
+        """
+        headers = {
+            "User-Agent": self.user_agent,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br", 
+            "Accept-Language": "en-US,en;q=0.5",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "DNT": "1",  # Do Not Track
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Origin": self.baseurl,
+            "Referer": self.baseurl,
+        }
+        if include_cookie and self.session_cookie:
+            headers["Cookie"] = f"access_token_web={self.session_cookie}"
+        return headers
