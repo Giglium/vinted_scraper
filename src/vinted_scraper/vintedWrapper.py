@@ -21,7 +21,7 @@ class VintedWrapper:
         :param agent: (optional) User agent to use on the requests
         :param session_cookie: (optional) Vinted session cookie
         :param proxies: (optional) Dictionary mapping protocol or protocol and
-        hostname to the URL of the proxy. For more info see:
+            hostname to the URL of the proxy. For more info see:
         https://requests.readthedocs.io/en/latest/user/advanced/#proxies
         """
 
@@ -34,21 +34,25 @@ class VintedWrapper:
             raise RuntimeError(f"{self.baseurl} is not a valid url, please check it!")
 
         self.user_agent = agent if agent is not None else get_random_user_agent()
-        self.session_cookie = (
-            session_cookie if session_cookie is not None else self._fetch_cookie(proxies=proxies)
-        )
         self.proxies = proxies
+        self.session_cookie = (
+            session_cookie if session_cookie is not None else self._fetch_cookie()
+        )
 
     def _fetch_cookie(self, proxies: Optional[Dict] = None, retries: int = 3) -> str:
         """
         Send an HTTP GET request to the self.base_url to fetch the session cookie with retries.
 
-        :param proxies: Proxy configuration for the HTTP request.
+        :param proxies: Optional proxy configuration for the HTTP request.
+            Use this if the proxy differs from the one set in the constructor.
+            This proxy will only be used to retrieve the session cookie.
         :param retries: Number of retries for the HTTP request.
         :return: The session cookie extracted from the HTTP response headers.
         :raises RuntimeError: If the session cookie cannot be fetched or doesn't match the expected format.
         """
         response = None
+        proxies = proxies if proxies is not None else self.proxies
+
         for _ in range(retries):
             response = requests.get(
                 self.baseurl,
@@ -121,7 +125,7 @@ class VintedWrapper:
             return json.loads(response.content)
         elif response.status_code == 401:
             # Fetch (maybe is expired?) the session cookie again and retry the API call
-            self.session_cookie = self._fetch_cookie(proxies=self.proxies)
+            self.session_cookie = self._fetch_cookie()
             return self._curl(endpoint, params)
         else:
             raise RuntimeError(
@@ -138,7 +142,7 @@ class VintedWrapper:
         headers = {
             "User-Agent": self.user_agent,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Encoding": "gzip, deflate, br", 
+            "Accept-Encoding": "gzip, deflate, br",
             "Accept-Language": "en-US,en;q=0.5",
             "Connection": "keep-alive",
             "Upgrade-Insecure-Requests": "1",
