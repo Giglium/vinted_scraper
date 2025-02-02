@@ -11,36 +11,42 @@ class VintedScraper(VintedWrapper):
         agent: Optional[str] = None,
         session_cookie: Optional[str] = None,
         proxies: Optional[Dict] = None,
+        verify_ssl: bool = True,
     ):
         """
+        Vinted scraping client with data model support
+        
         :param baseurl: (required) Base Vinted site url to use in the requests
         :param agent: (optional) User agent to use on the requests
         :param session_cookie: (optional) Vinted session cookie
-        :param proxies: (optional) Dictionary mapping protocol or protocol and
-        hostname to the URL of the proxy. For more info see:
-        https://requests.readthedocs.io/en/latest/user/advanced/#proxies
+        :param proxies: (optional) Proxy configuration for requests
+        :param verify_ssl: (optional) Verify SSL certificates. Recommended for security.
         """
-        super().__init__(baseurl, agent, session_cookie, proxies)
+        super().__init__(
+            baseurl=baseurl,
+            agent=agent,
+            session_cookie=session_cookie,
+            proxies=proxies,
+            verify_ssl=verify_ssl,
+        )
 
     def search(self, params: Optional[Dict] = None) -> List[VintedItem]:  # type: ignore
         """
-        Search for items on Vinted.
-
-        :param params: an optional Dictionary with all the query parameters to append to the request.
-            Vinted supports a search without any parameters, but to perform a search,
-            you should add the `search_text` parameter.
-            Default value: None.
-        :return: A list of VintedItem instances representing search results.
+        Search for items on Vinted with model conversion
+        
+        :param params: Dictionary with search parameters
+        :return: List of VintedItem objects
         """
-        return [VintedItem(item) for item in super().search(params)["items"]]
+        raw_results = super().search(params)
+        return [VintedItem(item) for item in raw_results.get("items", [])]
 
     def item(self, item_id: str, params: Optional[Dict] = None) -> VintedItem:  # type: ignore
         """
-        Retrieve details of a specific item on Vinted.
-
-        :param item_id: The unique identifier of the item to retrieve.
-        :param params: an optional Dictionary with all the query parameters to append to the request.
-            Default value: None.
-        :return: A VintedItem instance representing the item's details.
+        Get detailed item information with model conversion
+        
+        :param item_id: Vinted item ID
+        :param params: Additional query parameters
+        :return: VintedItem object
         """
-        return VintedItem(super().item(item_id, params)["item"])
+        raw_data = super().item(item_id, params)
+        return VintedItem(raw_data.get("item", {}))
