@@ -3,10 +3,12 @@ from typing import Dict, List, Optional
 from .models import VintedItem
 from .vintedWrapper import VintedWrapper
 
-"""
-Vinted client with data model support
-"""
+
 class VintedScraper(VintedWrapper):
+    """
+    Vinted client with data model support
+    """
+
     def __init__(
         self,
         baseurl: str,
