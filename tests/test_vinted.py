@@ -1,3 +1,4 @@
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -5,12 +6,13 @@ from src.vinted_scraper.vintedScraper import VintedScraper
 
 # isort: split
 from src.vinted_scraper.vintedWrapper import VintedWrapper
-from tests.utils import BASE_URL, get_200_response, get_404_response, get_wrapper
+from tests.utils import BASE_URL, get_200_response, get_404_response
 
 
 class TestVinted(unittest.TestCase):
     def setUp(self):
         self.baseurl = BASE_URL
+        self.pyversion = sys.version_info
 
     def test_init_valid_url(self):
         """
@@ -66,20 +68,24 @@ class TestVinted(unittest.TestCase):
         self.assertEqual(mock_get.call_count, 3)
 
     def test_ssl_verify_false(self):
-        with patch("requests.get", return_value=get_200_response()) as mock_get:
+        # Run it only if Python 3.8+ due to missing supporto to mock_get.call_args.kwargs
+        if self.pyversion.major == 3 and self.pyversion.minor >= 8:
+            with patch("requests.get", return_value=get_200_response()) as mock_get:
                 VintedWrapper(self.baseurl, ssl_verify=False)
 
-        mock_get.assert_called_once()
-    
-        self.assertEqual(mock_get.call_args.kwargs.get('verify'), False)
+            mock_get.assert_called_once()
+
+            self.assertEqual(mock_get.call_args.kwargs.get("verify"), False)
 
     def test_ssl_verify_true(self):
-        with patch("requests.get", return_value=get_200_response()) as mock_get:
+        # Run it only if Python 3.8+ due to missing supporto to mock_get.call_args.kwargs
+        if self.pyversion.major == 3 and self.pyversion.minor >= 8:
+            with patch("requests.get", return_value=get_200_response()) as mock_get:
                 VintedWrapper(self.baseurl)
 
-        mock_get.assert_called_once()
-    
-        self.assertEqual(mock_get.call_args.kwargs.get('verify'), True)
+            mock_get.assert_called_once()
+
+            self.assertEqual(mock_get.call_args.kwargs.get("verify"), True)
 
 
 if __name__ == "__main__":
