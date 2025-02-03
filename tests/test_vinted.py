@@ -5,7 +5,7 @@ from src.vinted_scraper.vintedScraper import VintedScraper
 
 # isort: split
 from src.vinted_scraper.vintedWrapper import VintedWrapper
-from tests.utils import BASE_URL, get_200_response, get_404_response
+from tests.utils import BASE_URL, get_200_response, get_404_response, get_wrapper
 
 
 class TestVinted(unittest.TestCase):
@@ -64,6 +64,22 @@ class TestVinted(unittest.TestCase):
 
         # Asserting that requests.get was called 3 times (initial call + 2 retries)
         self.assertEqual(mock_get.call_count, 3)
+
+    def test_ssl_verify_false(self):
+        with patch("requests.get", return_value=get_200_response()) as mock_get:
+                VintedWrapper(self.baseurl, ssl_verify=False)
+
+        mock_get.assert_called_once()
+    
+        self.assertEqual(mock_get.call_args.kwargs.get('verify'), False)
+
+    def test_ssl_verify_true(self):
+        with patch("requests.get", return_value=get_200_response()) as mock_get:
+                VintedWrapper(self.baseurl)
+
+        mock_get.assert_called_once()
+    
+        self.assertEqual(mock_get.call_args.kwargs.get('verify'), True)
 
 
 if __name__ == "__main__":

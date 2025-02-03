@@ -3,7 +3,9 @@ from typing import Dict, List, Optional
 from .models import VintedItem
 from .vintedWrapper import VintedWrapper
 
-
+"""
+Vinted client with data model support
+"""
 class VintedScraper(VintedWrapper):
     def __init__(
         self,
@@ -11,16 +13,20 @@ class VintedScraper(VintedWrapper):
         agent: Optional[str] = None,
         session_cookie: Optional[str] = None,
         proxies: Optional[Dict] = None,
+        ssl_verify: bool = True,
     ):
         """
         :param baseurl: (required) Base Vinted site url to use in the requests
         :param agent: (optional) User agent to use on the requests
         :param session_cookie: (optional) Vinted session cookie
         :param proxies: (optional) Dictionary mapping protocol or protocol and
-        hostname to the URL of the proxy. For more info see:
-        https://requests.readthedocs.io/en/latest/user/advanced/#proxies
+            hostname to the URL of the proxy. For more info see:
+            https://requests.readthedocs.io/en/latest/user/advanced/#proxies
+        :param sl_verify: (optional) If True, the SSL certificate will be verified;
+            if False, SSL verification will be skipped. Default: True.
+            see: https://docs.python-requests.org/en/latest/user/advanced/#ssl-cert-verification
         """
-        super().__init__(baseurl, agent, session_cookie, proxies)
+        super().__init__(baseurl, agent, session_cookie, proxies, ssl_verify)
 
     def search(self, params: Optional[Dict] = None) -> List[VintedItem]:  # type: ignore
         """
