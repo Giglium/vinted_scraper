@@ -15,6 +15,7 @@ class VintedWrapper:
         agent: Optional[str] = None,
         session_cookie: Optional[str] = None,
         proxies: Optional[Dict] = None,
+        ssl_verify: bool = True,
     ):
         """
         :param baseurl: (required) Base Vinted site url to use in the requests
@@ -23,6 +24,9 @@ class VintedWrapper:
         :param proxies: (optional) Dictionary mapping protocol or protocol and
             hostname to the URL of the proxy. For more info see:
         https://requests.readthedocs.io/en/latest/user/advanced/#proxies
+        :param sl_verify: (optional) If True, the SSL certificate will be verified;
+            if False, SSL verification will be skipped. Default: True.
+            see: https://docs.python-requests.org/en/latest/user/advanced/#ssl-cert-verification
         """
 
         self.baseurl = baseurl[:-1] if baseurl.endswith("/") else baseurl
@@ -35,6 +39,7 @@ class VintedWrapper:
 
         self.user_agent = agent if agent is not None else get_random_user_agent()
         self.proxies = proxies
+        self.ssl_verify = ssl_verify
         self.session_cookie = (
             session_cookie if session_cookie is not None else self._fetch_cookie()
         )
@@ -58,6 +63,7 @@ class VintedWrapper:
                 self.baseurl,
                 headers=self._extended_headers(),
                 proxies=proxies,
+                verify=self.ssl_verify,
             )
             if response.status_code == 200:
                 session_cookie = response.headers.get("Set-Cookie")
@@ -119,6 +125,7 @@ class VintedWrapper:
             params=params,
             headers=headers,
             proxies=self.proxies,
+            verify=self.ssl_verify,
         )
 
         if response.status_code == 200:
@@ -134,7 +141,7 @@ class VintedWrapper:
 
     def _extended_headers(self, include_cookie: bool = False) -> Dict[str, str]:
         """
-        Generate a more comprehensive set of HTTP headers to avoid bot detection by Cloudflare.
+        Generate browser-like HTTP headers to avoid bot detection by Cloudflare.
 
         :param include_cookie: Whether to include the session cookie in the headers.
         :return: A dictionary of headers.
