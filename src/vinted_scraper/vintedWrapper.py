@@ -8,7 +8,7 @@ import httpx
 from .utils import get_random_user_agent
 
 
-class VintedWrapper:
+class BaseWrapper:
     def __init__(
         self,
         baseurl: str,
@@ -24,7 +24,7 @@ class VintedWrapper:
         :param proxies: (optional) Dictionary mapping protocol or protocol and
             hostname to the URL of the proxy. For more info see:
         https://www.python-httpx.org/advanced/proxies/
-        :param sl_verify: (optional) If True, the SSL certificate will be verified;
+        :param ssl_verify: (optional) If True, the SSL certificate will be verified;
             if False, SSL verification will be skipped. Default: True.
             see: https://www.python-httpx.org/advanced/ssl/#enabling-and-disabling-verification
         """
@@ -76,6 +76,61 @@ class VintedWrapper:
         raise RuntimeError(
             f"Cannot fetch session cookie from {self.baseurl}, because of "
             f"status code: {response.status_code if response is not None else 'none'} different from 200."
+        )
+
+    def _extended_headers(self, include_cookie: bool = False) -> Dict[str, str]:
+        """
+        Generate browser-like HTTP headers to avoid bot detection by Cloudflare.
+
+        :param include_cookie: Whether to include the session cookie in the headers.
+        :return: A dictionary of headers.
+        """
+        headers = {
+            "User-Agent": self.user_agent,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "DNT": "1",  # Do Not Track
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Origin": self.baseurl,
+            "Referer": self.baseurl,
+        }
+        if include_cookie and self.session_cookie:
+            headers["Cookie"] = f"access_token_web={self.session_cookie}"
+        return headers
+
+
+class VintedWrapper(BaseWrapper):
+    def __init__(
+        self,
+        baseurl: str,
+        agent: Optional[str] = None,
+        session_cookie: Optional[str] = None,
+        proxies: Optional[Dict] = None,
+        ssl_verify: bool = True,
+    ):
+        """
+        :param baseurl: (required) Base Vinted site url to use in the requests
+        :param agent: (optional) User agent to use on the requests
+        :param session_cookie: (optional) Vinted session cookie
+        :param proxies: (optional) Dictionary mapping protocol or protocol and
+            hostname to the URL of the proxy. For more info see:
+        https://www.python-httpx.org/advanced/proxies/
+        :param ssl_verify: (optional) If True, the SSL certificate will be verified;
+            if False, SSL verification will be skipped. Default: True.
+            see: https://www.python-httpx.org/advanced/ssl/#enabling-and-disabling-verification
+        """
+        super().__init__(
+            baseurl=baseurl,
+            agent=agent,
+            session_cookie=session_cookie,
+            proxies=proxies,
+            ssl_verify=ssl_verify,
         )
 
     def search(self, params: Optional[Dict] = None) -> Dict[str, Any]:
@@ -138,29 +193,3 @@ class VintedWrapper:
             raise RuntimeError(
                 f"Cannot perform API call to endpoint {endpoint}, error code: {response.status_code}"
             )
-
-    def _extended_headers(self, include_cookie: bool = False) -> Dict[str, str]:
-        """
-        Generate browser-like HTTP headers to avoid bot detection by Cloudflare.
-
-        :param include_cookie: Whether to include the session cookie in the headers.
-        :return: A dictionary of headers.
-        """
-        headers = {
-            "User-Agent": self.user_agent,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Accept-Language": "en-US,en;q=0.5",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "DNT": "1",  # Do Not Track
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "none",
-            "Sec-Fetch-User": "?1",
-            "Origin": self.baseurl,
-            "Referer": self.baseurl,
-        }
-        if include_cookie and self.session_cookie:
-            headers["Cookie"] = f"access_token_web={self.session_cookie}"
-        return headers
