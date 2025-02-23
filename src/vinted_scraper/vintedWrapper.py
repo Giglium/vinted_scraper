@@ -16,6 +16,7 @@ class BaseWrapper:
         session_cookie: Optional[str] = None,
         proxies: Optional[Dict] = None,
         ssl_verify: bool = True,
+        timeout: int = 10,
     ):
         """
         :param baseurl: (required) Base Vinted site url to use in the requests
@@ -27,6 +28,7 @@ class BaseWrapper:
         :param ssl_verify: (optional) If True, the SSL certificate will be verified;
             if False, SSL verification will be skipped. Default: True.
             see: https://www.python-httpx.org/advanced/ssl/#enabling-and-disabling-verification
+        :param timeout: (optional) Timeout for the HTTP client
         """
 
         self.baseurl = baseurl[:-1] if baseurl.endswith("/") else baseurl
@@ -40,6 +42,7 @@ class BaseWrapper:
         self.user_agent = agent if agent is not None else get_random_user_agent()
         self.proxies = proxies
         self.ssl_verify = ssl_verify
+        self.timeout = timeout
         self.session_cookie = (
             session_cookie if session_cookie is not None else self._fetch_cookie()
         )
@@ -64,6 +67,7 @@ class BaseWrapper:
                 headers=self._extended_headers(),
                 proxy=proxies,
                 verify=self.ssl_verify,
+                timeout=self.timeout,
             )
             if response.status_code == 200:
                 session_cookie = response.headers.get("Set-Cookie")
@@ -113,6 +117,7 @@ class VintedWrapper(BaseWrapper):
         session_cookie: Optional[str] = None,
         proxies: Optional[Dict] = None,
         ssl_verify: bool = True,
+        timeout: int = 10,
     ):
         """
         :param baseurl: (required) Base Vinted site url to use in the requests
@@ -124,6 +129,7 @@ class VintedWrapper(BaseWrapper):
         :param ssl_verify: (optional) If True, the SSL certificate will be verified;
             if False, SSL verification will be skipped. Default: True.
             see: https://www.python-httpx.org/advanced/ssl/#enabling-and-disabling-verification
+        :param timeout: (optional) Timeout for the HTTP client
         """
         super().__init__(
             baseurl=baseurl,
@@ -131,6 +137,7 @@ class VintedWrapper(BaseWrapper):
             session_cookie=session_cookie,
             proxies=proxies,
             ssl_verify=ssl_verify,
+            timeout=timeout,
         )
 
     def search(self, params: Optional[Dict] = None) -> Dict[str, Any]:
@@ -181,6 +188,7 @@ class VintedWrapper(BaseWrapper):
             headers=headers,
             proxy=self.proxies,
             verify=self.ssl_verify,
+            timeout=self.timeout,
         )
 
         if response.status_code == 200:
@@ -203,6 +211,7 @@ class AsyncVintedWrapper(BaseWrapper):
         session_cookie: Optional[str] = None,
         proxies: Optional[Dict] = None,
         ssl_verify: bool = True,
+        timeout: int = 10,
     ):
         """
         :param baseurl: (required) Base Vinted site url to use in the requests
@@ -214,6 +223,7 @@ class AsyncVintedWrapper(BaseWrapper):
         :param ssl_verify: (optional) If True, the SSL certificate will be verified;
             if False, SSL verification will be skipped. Default: True.
             see: https://www.python-httpx.org/advanced/ssl/#enabling-and-disabling-verification
+        :param timeout: (optional) Timeout for the HTTP client
         """
         super().__init__(
             baseurl=baseurl,
@@ -221,6 +231,7 @@ class AsyncVintedWrapper(BaseWrapper):
             session_cookie=session_cookie,
             proxies=proxies,
             ssl_verify=ssl_verify,
+            timeout=timeout,
         )
 
     async def _async_fetch_cookie(self, proxies: Optional[Dict] = None, retries: int = 3) -> str:
@@ -242,6 +253,7 @@ class AsyncVintedWrapper(BaseWrapper):
                 headers=self._extended_headers(),
                 proxy=proxies,
                 verify=self.ssl_verify,
+                timeout=self.timeout,
             ) as client:
                 response = await client.get(self.baseurl)
                 if response.status_code == 200:
@@ -302,6 +314,7 @@ class AsyncVintedWrapper(BaseWrapper):
             headers=self._extended_headers(include_cookie=True),
             proxy=self.proxies,
             verify=self.ssl_verify,
+            timeout=self.timeout,
         ) as client:
             response = await client.get(
                 f"{self.baseurl}/api/v2{endpoint}",

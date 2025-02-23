@@ -16,6 +16,7 @@ class VintedScraper(VintedWrapper):
         session_cookie: Optional[str] = None,
         proxies: Optional[Dict] = None,
         ssl_verify: bool = True,
+        timeout: int = 10,
     ):
         """
         :param baseurl: (required) Base Vinted site url to use in the requests
@@ -27,8 +28,9 @@ class VintedScraper(VintedWrapper):
         :param ssl_verify: (optional) If True, the SSL certificate will be verified;
             if False, SSL verification will be skipped. Default: True.
             see: https://docs.python-requests.org/en/latest/user/advanced/#ssl-cert-verification
+        :param timeout: (optional) Timeout for the HTTP client
         """
-        super().__init__(baseurl, agent, session_cookie, proxies, ssl_verify)
+        super().__init__(baseurl, agent, session_cookie, proxies, ssl_verify, timeout)
 
     def search(self, params: Optional[Dict] = None) -> List[VintedItem]:  # type: ignore
         """
@@ -66,6 +68,7 @@ class AsyncVintedScraper(AsyncVintedWrapper):
         session_cookie: Optional[str] = None,
         proxies: Optional[Dict] = None,
         ssl_verify: bool = True,
+        timeout: int = 10,
     ):
         """
         :param baseurl: (required) Base Vinted site url to use in the requests
@@ -77,8 +80,9 @@ class AsyncVintedScraper(AsyncVintedWrapper):
         :param ssl_verify: (optional) If True, the SSL certificate will be verified;
             if False, SSL verification will be skipped. Default: True.
             see: https://docs.python-requests.org/en/latest/user/advanced/#ssl-cert-verification
+        :param timeout: (optional) Timeout for the HTTP client
         """
-        super().__init__(baseurl, agent, session_cookie, proxies, ssl_verify)
+        super().__init__(baseurl, agent, session_cookie, proxies, ssl_verify, timeout)
 
     async def search(self, params: Optional[Dict] = None) -> List[VintedItem]:  # type: ignore
         """
