@@ -27,7 +27,7 @@ classifiers = [
     "Intended Audience :: Education",
 ]
 dependencies = [
-    "requests",
+    "httpx",
     "deprecated"
 ]
 

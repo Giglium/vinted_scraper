@@ -3,7 +3,7 @@ import re
 import time
 from typing import Any, Dict, Optional
 
-import requests
+import httpx
 
 from .utils import get_random_user_agent
 
@@ -23,10 +23,10 @@ class VintedWrapper:
         :param session_cookie: (optional) Vinted session cookie
         :param proxies: (optional) Dictionary mapping protocol or protocol and
             hostname to the URL of the proxy. For more info see:
-        https://requests.readthedocs.io/en/latest/user/advanced/#proxies
+        https://www.python-httpx.org/advanced/proxies/
         :param sl_verify: (optional) If True, the SSL certificate will be verified;
             if False, SSL verification will be skipped. Default: True.
-            see: https://docs.python-requests.org/en/latest/user/advanced/#ssl-cert-verification
+            see: https://www.python-httpx.org/advanced/ssl/#enabling-and-disabling-verification
         """
 
         self.baseurl = baseurl[:-1] if baseurl.endswith("/") else baseurl
@@ -59,10 +59,10 @@ class VintedWrapper:
         proxies = proxies if proxies is not None else self.proxies
 
         for _ in range(retries):
-            response = requests.get(
+            response = httpx.get(
                 self.baseurl,
                 headers=self._extended_headers(),
-                proxies=proxies,
+                proxy=proxies,
                 verify=self.ssl_verify,
             )
             if response.status_code == 200:
@@ -120,11 +120,11 @@ class VintedWrapper:
         5. If the response status code is not 200, it raises a RuntimeError with an error message.
         """
         headers = self._extended_headers(include_cookie=True)
-        response = requests.get(
+        response = httpx.get(
             f"{self.baseurl}/api/v2{endpoint}",
             params=params,
             headers=headers,
-            proxies=self.proxies,
+            proxy=self.proxies,
             verify=self.ssl_verify,
         )
 
