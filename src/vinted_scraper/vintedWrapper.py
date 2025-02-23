@@ -1,4 +1,3 @@
-import json
 import re
 import time
 import asyncio
@@ -185,7 +184,7 @@ class VintedWrapper(BaseWrapper):
         )
 
         if response.status_code == 200:
-            return json.loads(response.content)
+            return response.json()
         elif response.status_code == 401:
             # Fetch (maybe is expired?) the session cookie again and retry the API call
             self.session_cookie = self._fetch_cookie()
