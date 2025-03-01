@@ -14,7 +14,7 @@ class BaseWrapper:
         baseurl: str,
         agent: Optional[str] = None,
         session_cookie: Optional[str] = None,
-        proxies: Optional[Dict] = None,
+        proxies: Optional[str] = None,
         ssl_verify: bool = True,
         timeout: int = 10,
     ):
@@ -22,9 +22,8 @@ class BaseWrapper:
         :param baseurl: (required) Base Vinted site url to use in the requests
         :param agent: (optional) User agent to use on the requests
         :param session_cookie: (optional) Vinted session cookie
-        :param proxies: (optional) Dictionary mapping protocol or protocol and
-            hostname to the URL of the proxy. For more info see:
-        https://www.python-httpx.org/advanced/proxies/
+        :param proxies: (optional) String containing the protocol and hostname of the proxy. For more info see:
+            https://www.python-httpx.org/advanced/proxies/
         :param ssl_verify: (optional) If True, the SSL certificate will be verified;
             if False, SSL verification will be skipped. Default: True.
             see: https://www.python-httpx.org/advanced/ssl/#enabling-and-disabling-verification
@@ -115,7 +114,7 @@ class VintedWrapper(BaseWrapper):
         baseurl: str,
         agent: Optional[str] = None,
         session_cookie: Optional[str] = None,
-        proxies: Optional[Dict] = None,
+        proxies: Optional[str] = None,
         ssl_verify: bool = True,
         timeout: int = 10,
     ):
@@ -123,9 +122,8 @@ class VintedWrapper(BaseWrapper):
         :param baseurl: (required) Base Vinted site url to use in the requests
         :param agent: (optional) User agent to use on the requests
         :param session_cookie: (optional) Vinted session cookie
-        :param proxies: (optional) Dictionary mapping protocol or protocol and
-            hostname to the URL of the proxy. For more info see:
-        https://www.python-httpx.org/advanced/proxies/
+        :param proxies: (optional) String containing the protocol and hostname of the proxy. For more info see:
+            https://www.python-httpx.org/advanced/proxies/
         :param ssl_verify: (optional) If True, the SSL certificate will be verified;
             if False, SSL verification will be skipped. Default: True.
             see: https://www.python-httpx.org/advanced/ssl/#enabling-and-disabling-verification
@@ -209,7 +207,7 @@ class AsyncVintedWrapper(BaseWrapper):
         baseurl: str,
         agent: Optional[str] = None,
         session_cookie: Optional[str] = None,
-        proxies: Optional[Dict] = None,
+        proxies: Optional[str] = None,
         ssl_verify: bool = True,
         timeout: int = 10,
     ):
@@ -217,9 +215,8 @@ class AsyncVintedWrapper(BaseWrapper):
         :param baseurl: (required) Base Vinted site url to use in the requests
         :param agent: (optional) User agent to use on the requests
         :param session_cookie: (optional) Vinted session cookie
-        :param proxies: (optional) Dictionary mapping protocol or protocol and
-            hostname to the URL of the proxy. For more info see:
-        https://www.python-httpx.org/advanced/proxies/
+        :param proxies: (optional) String containing the protocol and hostname of the proxy. For more info see:
+            https://www.python-httpx.org/advanced/proxies/
         :param ssl_verify: (optional) If True, the SSL certificate will be verified;
             if False, SSL verification will be skipped. Default: True.
             see: https://www.python-httpx.org/advanced/ssl/#enabling-and-disabling-verification
@@ -231,6 +228,13 @@ class AsyncVintedWrapper(BaseWrapper):
             session_cookie=session_cookie,
             proxies=proxies,
             ssl_verify=ssl_verify,
+            timeout=timeout,
+        )
+
+        self.client = httpx.AsyncClient(
+            base_url=baseurl,
+            proxy=self.proxies,
+            verify=self.ssl_verify,
             timeout=timeout,
         )
 
@@ -310,24 +314,25 @@ class AsyncVintedWrapper(BaseWrapper):
             and returns it as a dictionary.
         5. If the response status code is not 200, it raises a RuntimeError with an error message.
         """
-        async with httpx.AsyncClient(
+        response = await self.client.get(
+            f"/api/v2{endpoint}",
             headers=self._extended_headers(include_cookie=True),
-            proxy=self.proxies,
-            verify=self.ssl_verify,
-            timeout=self.timeout,
-        ) as client:
-            response = await client.get(
-                f"{self.baseurl}/api/v2{endpoint}",
-                params=params,
+            params=params,
+        )
+
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 401:
+            # Fetch (maybe is expired?) the session cookie again and retry the API call
+            self.session_cookie = await self._async_fetch_cookie()
+            return await self._curl(endpoint, params)
+        else:
+            raise RuntimeError(
+                f"Cannot perform API call to endpoint {endpoint}, error code: {response.status_code}"
             )
 
-            if response.status_code == 200:
-                return response.json()
-            elif response.status_code == 401:
-                # Fetch (maybe is expired?) the session cookie again and retry the API call
-                self.session_cookie = await self._async_fetch_cookie()
-                return await self._curl(endpoint, params)
-            else:
-                raise RuntimeError(
-                    f"Cannot perform API call to endpoint {endpoint}, error code: {response.status_code}"
-                )
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.client.aclose()
