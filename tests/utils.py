@@ -3,7 +3,7 @@ import os
 from typing import Dict
 from unittest.mock import MagicMock, patch
 
-import requests
+import httpx
 
 # isort: split
 from src.vinted_scraper import VintedScraper, VintedWrapper
@@ -16,7 +16,7 @@ def get_200_response() -> MagicMock:
     """
     :return: a mocked 200 response using MagicMock already configured
     """
-    response_200 = MagicMock(spec=requests.Response)
+    response_200 = MagicMock(spec=httpx.Response)
     response_200.status_code = 200
     response_200.headers = {"Set-Cookie": "secure, access_token_web=test"}
     return response_200
@@ -26,7 +26,7 @@ def get_404_response() -> MagicMock:
     """
     :return: a mocked 404 response using MagicMock already configured
     """
-    response_404 = MagicMock(spec=requests.Response)
+    response_404 = MagicMock(spec=httpx.Response)
     response_404.status_code = 404
     response_404.headers = {}
     return response_404
@@ -37,7 +37,7 @@ def get_wrapper(url: str) -> VintedWrapper:
     :param url: a valid https url like: "https://fakeurl.com"
     :return: a VintedWrapper instance for testing
     """
-    with patch("requests.get", return_value=get_200_response()):
+    with patch("httpx.get", return_value=get_200_response()):
         return VintedWrapper(url)
 
 
@@ -46,7 +46,7 @@ def get_scraper(url: str) -> VintedWrapper:
     :param url: a valid https url like: "https://fakeurl.com"
     :return: a VintedScraper instance for testing
     """
-    with patch("requests.get", return_value=get_200_response()):
+    with patch("httpx.get", return_value=get_200_response()):
         return VintedScraper(url)
 
 

@@ -42,10 +42,10 @@ class TestItem(unittest.TestCase):
         data = _read_data_from_file("item_dummy")
         self.response_200.content = json.dumps(data)
 
-        with patch("requests.get", return_value=self.response_200):
+        with patch("httpx.get", return_value=self.response_200):
             self.assertEqual(data, self.wrapper.item("id"))
 
-        with patch("requests.get", return_value=self.response_200):
+        with patch("httpx.get", return_value=self.response_200):
             self.assertEqual(VintedItem(data["item"]), self.scraper.item("id"))
 
     def test_status_code_error(self):
@@ -53,5 +53,5 @@ class TestItem(unittest.TestCase):
         Test the case when a status code different from 200 is returned by the web service
         """
 
-        with patch("requests.get", return_value=get_404_response()):
+        with patch("httpx.get", return_value=get_404_response()):
             self.assertRaises(RuntimeError, lambda: self.wrapper.item("id"))

@@ -19,11 +19,11 @@ class TestVinted(unittest.TestCase):
         Ensure that the initializer accepts a valid URL
         """
 
-        with patch("requests.get", return_value=get_200_response()):
+        with patch("httpx.get", return_value=get_200_response()):
             wrapper = VintedWrapper(self.baseurl)
             self.assertEqual(wrapper.baseurl, self.baseurl)
 
-        with patch("requests.get", return_value=get_200_response()):
+        with patch("httpx.get", return_value=get_200_response()):
             wrapper = VintedScraper(self.baseurl)
             self.assertEqual(wrapper.baseurl, self.baseurl)
 
@@ -47,7 +47,7 @@ class TestVinted(unittest.TestCase):
         response.headers = {}  # Reset the headers to force an invalid cookies
 
         with self.assertRaises(RuntimeError):
-            with patch("requests.get", return_value=response):
+            with patch("httpx.get", return_value=response):
                 VintedWrapper(self.baseurl)
 
     def test_init_invalid_cookie_status_code(self):
@@ -56,21 +56,21 @@ class TestVinted(unittest.TestCase):
          from 200.
         """
         with self.assertRaises(RuntimeError):
-            with patch("requests.get", return_value=get_404_response()):
+            with patch("httpx.get", return_value=get_404_response()):
                 VintedWrapper(self.baseurl)
 
     def test_retry(self):
         with self.assertRaises(RuntimeError):
-            with patch("requests.get", return_value=get_404_response()) as mock_get:
+            with patch("httpx.get", return_value=get_404_response()) as mock_get:
                 VintedWrapper(self.baseurl)
 
-        # Asserting that requests.get was called 3 times (initial call + 2 retries)
+        # Asserting that httpx.get was called 3 times (initial call + 2 retries)
         self.assertEqual(mock_get.call_count, 3)
 
     def test_ssl_verify_false(self):
         # Run it only if Python 3.8+ due to missing supporto to mock_get.call_args.kwargs
         if self.pyversion.major == 3 and self.pyversion.minor >= 8:
-            with patch("requests.get", return_value=get_200_response()) as mock_get:
+            with patch("httpx.get", return_value=get_200_response()) as mock_get:
                 VintedWrapper(self.baseurl, ssl_verify=False)
 
             mock_get.assert_called_once()
@@ -80,7 +80,7 @@ class TestVinted(unittest.TestCase):
     def test_ssl_verify_true(self):
         # Run it only if Python 3.8+ due to missing supporto to mock_get.call_args.kwargs
         if self.pyversion.major == 3 and self.pyversion.minor >= 8:
-            with patch("requests.get", return_value=get_200_response()) as mock_get:
+            with patch("httpx.get", return_value=get_200_response()) as mock_get:
                 VintedWrapper(self.baseurl)
 
             mock_get.assert_called_once()

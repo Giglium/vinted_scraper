@@ -1,2 +1,2 @@
-from .vintedScraper import VintedScraper  # noqa: F401
-from .vintedWrapper import VintedWrapper  # noqa: F401
+from .vintedScraper import VintedScraper, AsyncVintedScraper  # noqa: F401
+from .vintedWrapper import VintedWrapper, AsyncVintedWrapper  # noqa: F401
