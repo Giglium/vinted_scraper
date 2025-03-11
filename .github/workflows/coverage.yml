@@ -6,8 +6,10 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - "*"
   pull_request:
+
+permissions: read-all
 
 jobs:
   coverage:
@@ -22,7 +24,7 @@ jobs:
       - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install dependencies
         run: make py.update

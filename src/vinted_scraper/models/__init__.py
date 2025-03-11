@@ -1,9 +1,21 @@
-from .vintedBrand import VintedBrand  # noqa: F401
-from .vintedBundleDiscount import VintedBundleDiscount  # noqa: F401
-from .vintedBundleDiscount import VintedDiscount  # noqa: F401
-from .vintedHighResolution import VintedHighResolution  # noqa: F401
-from .vintedImage import VintedImage  # noqa: F401
-from .vintedItem import VintedItem  # noqa: F401
-from .vintedMedia import VintedMedia  # noqa: F401
-from .vintedPaymentMethod import VintedPaymentMethod  # noqa: F401
-from .vintedUser import VintedUser  # noqa: F401
+# pylint: disable=missing-module-docstring
+from ._vinted_brand import VintedBrand
+from ._vinted_bundle_discount import VintedBundleDiscount, VintedDiscount
+from ._vinted_high_resolution import VintedHighResolution
+from ._vinted_image import VintedImage
+from ._vinted_item import VintedItem
+from ._vinted_media import VintedMedia
+from ._vinted_payment_method import VintedPaymentMethod
+from ._vinted_user import VintedUser
+
+__all__ = [
+    "VintedBrand",
+    "VintedBundleDiscount",
+    "VintedDiscount",
+    "VintedHighResolution",
+    "VintedImage",
+    "VintedItem",
+    "VintedMedia",
+    "VintedPaymentMethod",
+    "VintedUser",
+]

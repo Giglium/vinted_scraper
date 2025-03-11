@@ -1,10 +1,9 @@
 ---
 name: Bug report
-about: Create a report 
-title: ''
+about: Create a report
+title: ""
 labels: bug
-assignees: ''
-
+assignees: ""
 ---
 
 ## Describe the bug
@@ -16,7 +15,6 @@ Description of the bug. Provide any additional information you think might be re
 1. ...
 2. ...
 3. ...
-
 
 ## Expected behavior
 

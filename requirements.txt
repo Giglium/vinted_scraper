@@ -1,2 +1,2 @@
 httpx
-deprecated
+requests

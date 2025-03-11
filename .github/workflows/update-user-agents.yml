@@ -5,12 +5,13 @@ on:
   schedule:
     - cron: 0 6 1 */4 *
 
-permissions:
-  pull-requests: write
-  contents: write
+permissions: read-all
 
 jobs:
   open-pr:
+    permissions:
+      pull-requests: write
+      contents: write
     runs-on: ubuntu-latest
 
     steps:

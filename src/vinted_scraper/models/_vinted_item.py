@@ -1,12 +1,11 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,too-many-instance-attributes
 from dataclasses import dataclass
 from typing import List, Optional
 
-from deprecated import deprecated
-
-from .vintedBrand import VintedBrand
-from .vintedImage import VintedImage
-from .vintedPaymentMethod import VintedPaymentMethod
-from .vintedUser import VintedUser
+from ._vinted_brand import VintedBrand
+from ._vinted_image import VintedImage
+from ._vinted_payment_method import VintedPaymentMethod
+from ._vinted_user import VintedUser
 
 
 @dataclass
@@ -126,18 +125,6 @@ class VintedItem:
     offline_verification: Optional[bool] = None
     offline_verification_fee: Optional[float] = None
 
-    @property
-    @deprecated(
-        version="2.1.0",
-        reason="Please use the `photos` attribute. "
-        "This attribute will be removed on the next major version of the module.",
-    )
-    def photo(self):
-        if self.photos and len(self.photos) > 0:
-            return self.photos[0]
-        else:
-            return None
-
     def __init__(self, json_data=None):
         if json_data is not None:
             self.__dict__.update(json_data)
@@ -163,7 +150,7 @@ class VintedItem:
                 self.brand = VintedBrand()
                 self.brand.title = json_data.get("brand_title")
 
-        if type(json_data.get("price")) is dict:
+        if isinstance(json_data.get("price"), dict):
             self.price = float(json_data.get("price")["amount"])
             self.currency = json_data.get("price")["currency_code"]
         else:

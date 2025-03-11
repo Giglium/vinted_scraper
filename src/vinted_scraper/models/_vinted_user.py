@@ -1,9 +1,10 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,too-many-instance-attributes
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from .vintedBundleDiscount import VintedBundleDiscount
-from .vintedImage import VintedImage
-from .vintedPaymentMethod import VintedPaymentMethod
+from ._vinted_bundle_discount import VintedBundleDiscount
+from ._vinted_image import VintedImage
+from ._vinted_payment_method import VintedPaymentMethod
 
 
 @dataclass

@@ -225,14 +225,8 @@
       },
       "closet_promoted_until": null,
       "avg_response_time": null,
-      "carrier_ids": [
-        2,
-        9,
-        10
-      ],
-      "carriers_without_custom_ids": [
-        2
-      ],
+      "carrier_ids": [2, 9, 10],
+      "carriers_without_custom_ids": [2],
       "locale": "en-us-fr",
       "updated_on": 1696718008,
       "is_hated": false,
