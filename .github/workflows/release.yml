@@ -4,7 +4,9 @@ name: Release
 on:
   push:
     tags:
-      - '*.*.*'
+      - "*.*.*"
+
+permissions: read-all
 
 jobs:
   release:

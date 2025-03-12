@@ -10,36 +10,56 @@ A very simple Python package that scrapes the Vinted site to retrieve informatio
 
 ## Installation
 
+### Stable
+
 You can install Vinted Scraper using pip:
 
 ```shell
-    pip install vinted_scraper
+    pip install vinted_scraper==2.4.0
 ```
 
 > If you are on Python 3.6 you also have to install `dataclasses`: `pip install dataclasses`
 
+### Alpha
+
+We move from `requests` to `httpx` to support Async API call. Now, you can await `AsyncVintedScraper` or `AsyncVintedWrapper`.
+I haven't finish to update all the docs but you can check [async quick starts](./tests/test_async_quick_starts.py) to understand how they work.
+
+To install the alpha version with pip:
+
+```shell
+    pip install vinted_scraper==3.0.0a1
+```
+
+> Compatible from python 3.8+
+
+For more info about Alpha check the [roadmap](https://github.com/Giglium/vinted_scraper/issues/73), and please if you find a bug open a issue!
+
 ## Functions
 
 The package offers the following functions:
+
 <details>
  <summary><code>search</code> - <code>(gets all the items present on the listing page)</code></summary>
 
-  **Parameters**
+**Parameters**
 
 > | name   | type     | data type | description                                    |
-> |--------|----------|-----------|------------------------------------------------|
+> | ------ | -------- | --------- | ---------------------------------------------- |
 > | params | optional | Dict      | Query parameters like the pagination and so on |
+
 </details>
 
 <details>
  <summary><code>item</code> - <code>(gets the information about an item, and its seller present on the item detail page)</code></summary>
 
-  **Parameters**
+**Parameters**
 
 > | name   | type     | data type | description                                   |
-> |--------|----------|-----------|-----------------------------------------------|
+> | ------ | -------- | --------- | --------------------------------------------- |
 > | id     | required | str       | The unique identifier of the item to retrieve |
 > | params | optional | Dict      | I don't know is they exist                    |
+
 </details>
 
 ## Usage

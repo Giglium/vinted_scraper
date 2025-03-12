@@ -6,8 +6,10 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - "*"
   pull_request:
+
+permissions: read-all
 
 jobs:
   test_python_version:
@@ -17,11 +19,11 @@ jobs:
       fail-fast: false
       matrix:
         python:
-          - '3.8'
-          - '3.9'
-          - '3.10'
-          - '3.11'
-          - '3.12'
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
 
     steps:
       - name: Checkout code
@@ -47,8 +49,8 @@ jobs:
       fail-fast: false
       matrix:
         python:
-          - '3.6'
-          - '3.7'
+          - "3.6"
+          - "3.7"
 
     steps:
       - name: Checkout code
@@ -70,5 +72,6 @@ jobs:
       - name: Install dataclasses
         run: python -m pip install dataclasses
 
-      - name: Run tests
-        run: make test
+      # TODO: Re-add if we add a legacy version
+      # - name: Run tests
+      #   run: make test

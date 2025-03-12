@@ -1,8 +1,9 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,too-many-instance-attributes
 from dataclasses import dataclass
 from typing import List, Optional
 
-from .vintedHighResolution import VintedHighResolution
-from .vintedMedia import VintedMedia
+from ._vinted_high_resolution import VintedHighResolution
+from ._vinted_media import VintedMedia
 
 
 @dataclass
