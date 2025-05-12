@@ -15,6 +15,7 @@ from .utils import (
     get_random_user_agent,
     log_constructor,
     log_interaction,
+    log_refresh_cookie,
     log_sleep,
     url_validator,
 )
@@ -59,6 +60,9 @@ class VintedWrapper:
         """
         The same of fetch_cookie but it will use the internal client to perform the API call
         """
+        # Logging
+        log_refresh_cookie(_log)
+
         return VintedWrapper.fetch_cookie(
             self._client, get_cookie_headers(self._base_url, self._user_agent), retries
         )
@@ -77,6 +81,7 @@ class VintedWrapper:
         """
 
         for i in range(retries):
+            # Logging
             log_interaction(_log, i)
 
             # Call base url to fetch session cookie
@@ -92,7 +97,9 @@ class VintedWrapper:
             else:
                 # Exponential backoff before retrying
                 sleep_time = 2**i
+                # Logging
                 log_sleep(_log, sleep_time)
+                # Sleep
                 time.sleep(sleep_time)
 
         _log.error("Cannot fetch session cookie from %s", client.base_url)

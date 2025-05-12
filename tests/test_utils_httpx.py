@@ -5,6 +5,7 @@ Test the httpx utils class
 import unittest
 
 import httpx
+
 from src.vinted_scraper.utils import (
     SESSION_COOKIE_NAME,
     extract_cookie_from_response,

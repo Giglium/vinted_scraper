@@ -4,12 +4,12 @@ All the functions and the utility that required httpx will be placed here
 
 import logging
 from logging import Logger
-from typing import Dict
+from typing import Dict, Optional
 
 import httpx
 
 
-def get_httpx_config(baseurl: str, config: Dict = None):
+def get_httpx_config(baseurl: str, config: Optional[Dict] = None):
     """
     Returns a config dictionary to be used with httpx.Client.
     The dictionary contains the baseurl, a timeout of 10 seconds and

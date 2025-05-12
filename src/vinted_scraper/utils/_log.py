@@ -59,3 +59,7 @@ def log_sleep(log: Logger, time: int) -> None:
 
     if log.isEnabledFor(logging.DEBUG):
         log.debug(f"Sleeping for {time} seconds")
+
+
+def log_refresh_cookie(log: Logger) -> None:
+    log.debug("refrshing the cookie")

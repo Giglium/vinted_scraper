@@ -15,6 +15,7 @@ from .utils import (
     get_random_user_agent,
     log_constructor,
     log_interaction,
+    log_refresh_cookie,
     log_sleep,
     url_validator,
 )
@@ -46,6 +47,10 @@ class AsyncVintedWrapper:
         :param config: The configuration of the HTTPX client, it will be merged with
         :return: An instance of the class
         """
+        # Logging
+        _log.debug("Creating the async wrapper using the factory method")
+
+        # init
         self = cls(baseurl, user_agent=user_agent, config=config)
         self._session_cookie = await self.refresh_cookie()
         return self
@@ -82,6 +87,9 @@ class AsyncVintedWrapper:
         """
         The same of fetch_cookie but it will use the internal client to perform the API call
         """
+        # Logging
+        log_refresh_cookie(_log)
+
         return await AsyncVintedWrapper.fetch_cookie(
             self._client, get_cookie_headers(self._base_url, self._user_agent), retries
         )
@@ -102,6 +110,7 @@ class AsyncVintedWrapper:
         """
 
         for i in range(retries):
+            # Logging
             log_interaction(_log, i)
 
             # Call base url to fetch session cookie
@@ -117,7 +126,9 @@ class AsyncVintedWrapper:
             else:
                 # Exponential backoff before retrying
                 sleep_time = 2**i
+                # Logging
                 log_sleep(_log, sleep_time)
+                # Sleep
                 await asyncio.sleep(sleep_time)
 
         _log.error("Cannot fetch session cookie from %s", client.base_url)

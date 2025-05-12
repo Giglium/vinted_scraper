@@ -6,6 +6,7 @@ Mock utils
 from unittest.mock import AsyncMock
 
 import httpx
+
 from src.vinted_scraper.utils import SESSION_COOKIE_NAME, get_random_user_agent
 
 # Change str to final when 3.6+ support is dropped, because final was introduced from 3.8.
