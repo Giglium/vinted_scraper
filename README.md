@@ -53,6 +53,8 @@ The package offers the following functions:
 <details>
  <summary><code>item</code> - <code>(gets the information about an item, and its seller present on the item detail page)</code></summary>
 
+> It is currently not working and will throw a 404 status code (see [#78](https://github.com/Giglium/vinted_scraper/issues/78)). Vinted has changed this endpoint, and we didn't find a replacement.
+
 **Parameters**
 
 > | name   | type     | data type | description                                   |
@@ -77,8 +79,6 @@ def main():
         # Add other query parameters like the pagination and so on
     }
     items = scraper.search(params)  # get all the items
-    item = items[0]  # get the first Item of the list
-    scraper.item(item.id)  # get more info about a particular item
 
 
 if __name__ == "__main__":
@@ -105,8 +105,6 @@ def main():
         # Add other query parameters like the pagination and so on
     }
     items = wrapper.search(params)  # get all the items
-    item = items["items"][0]  # get the first Item of the list
-    wrapper.item(item["id"])  # get more info about a particular item
 
 
 if __name__ == "__main__":
