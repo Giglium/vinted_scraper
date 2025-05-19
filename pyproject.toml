@@ -4,14 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vinted_scraper"
-version = "3.0.0a1"
+version = "3.0.0a2"
 description = "A very simple Python package that scrapes the Vinted website to retrieve information about its items."
 readme = "README.md"
 requires-python = ">= 3.6"
 license = { file = "LICENSE" }
-authors = [
-    { name = "Giglium" }
-]
+authors = [{ name = "Giglium" }]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
@@ -28,13 +26,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-latest=[
-    "httpx",
-]
+latest = ["httpx"]
 
-legacy =[
-    "requests",
-    ]
+legacy = ["requests"]
 
 [tool.isort]
 profile = "black"
