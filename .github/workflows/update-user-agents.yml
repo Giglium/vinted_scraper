@@ -26,7 +26,7 @@ jobs:
       - name: Open Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          title: "Update user agents"
+          title: "chore: update user agents"
           body: "Update `agents.json`."
           commit-message: Update agents.json
           assignees: "giglium"
