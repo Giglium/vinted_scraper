@@ -1,0 +1,20 @@
+name: CI setup
+description: "Sets up the environment for jobs during CI workflow"
+
+runs:
+  using: composite
+  steps:
+    - name: "Set up Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: ".python-version"
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        version: "0.8.9"
+        enable-cache: true
+
+    - name: Install the project
+      run: uv sync --locked
+      shell: bash

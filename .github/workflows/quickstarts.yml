@@ -1,0 +1,75 @@
+---
+name: Quickstarts
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "0 9 * * 1" # Runs every Monday at 9:00 AM UTC
+
+permissions: read-all
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions: read-all
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        uses: "./.github/actions/setup-python"
+
+      - name: Run the async wrapper quickstart
+        run: |
+          uv run - <<EOF
+          import asyncio
+          from src.vinted_scraper import AsyncVintedWrapper
+
+          async def main():
+              wrapper = await AsyncVintedWrapper.create("https://www.vinted.com")
+              params = {"search_text": "board games"}
+              await wrapper.search(params)
+
+          asyncio.run(main())
+          EOF
+
+      - name: Run the async scraper quickstart
+        run: |
+          uv run - <<EOF
+          import asyncio
+          from src.vinted_scraper import AsyncVintedScraper
+
+          async def main():
+              scraper = await AsyncVintedScraper.create("https://www.vinted.com")
+              params = {"search_text": "board games"}
+              await scraper.search(params)
+
+          asyncio.run(main())
+          EOF
+
+      - name: Run the wrapper quickstart
+        run: |
+          uv run - <<EOF
+          from src.vinted_scraper import VintedWrapper
+
+          wrapper = VintedWrapper("https://www.vinted.com")
+          params = {"search_text": "board games"}
+          wrapper.search(params)
+
+          EOF
+
+      - name: Run the scraper quickstart
+        run: |
+          uv run - <<EOF
+          from src.vinted_scraper import VintedScraper
+
+          scraper = VintedScraper("https://www.vinted.com")
+          params = {"search_text": "board games"}
+          scraper.search(params)
+
+          EOF
