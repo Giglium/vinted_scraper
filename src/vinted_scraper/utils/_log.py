@@ -7,7 +7,7 @@ Es. httpx logger will be put in the httpx utils.
 
 import logging
 from logging import Logger
-from typing import Dict
+from typing import Dict, Optional
 
 
 def log_constructor(
@@ -15,9 +15,9 @@ def log_constructor(
     log: Logger,
     self: object,
     baseurl: str,
-    user_agent: str,
-    session_cookie: str,
-    config: Dict,
+    user_agent: Optional[str],
+    session_cookie: Optional[str],
+    config: Optional[Dict],
 ) -> None:
     """
     Construct a log message for the constructor of an object.

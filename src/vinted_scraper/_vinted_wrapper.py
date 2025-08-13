@@ -75,6 +75,7 @@ class VintedWrapper:
         :raises RuntimeError: If the session cookie cannot be fetched within the retry limit
                             or if the response status code is not 200.
         """
+        response = None
 
         for i in range(retries):
             log_interaction(_log, i)

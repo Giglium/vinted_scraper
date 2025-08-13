@@ -6,7 +6,7 @@ import json
 import os
 import random
 import re
-from typing import Dict
+from typing import Dict, Optional
 
 from ._constants import SESSION_COOKIE_NAME
 
@@ -64,7 +64,9 @@ def get_cookie_headers(base_url: str, user_agent: str) -> Dict:
     }
 
 
-def get_curl_headers(base_url: str, user_agent: str, session_cookie: str) -> Dict:
+def get_curl_headers(
+    base_url: str, user_agent: str, session_cookie: Optional[str]
+) -> Dict:
     """
     Generate browser-like HTTP headers.
 

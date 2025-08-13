@@ -150,13 +150,13 @@ class VintedItem:
                 self.brand = VintedBrand()
                 self.brand.title = json_data.get("brand_title")
 
-        if isinstance(json_data.get("price"), dict):
-            self.price = float(json_data.get("price")["amount"])
-            self.currency = json_data.get("price")["currency_code"]
-        else:
-            self.price = (
-                float(self.price) if isinstance(self.price, str) else self.price
-            )
+            if isinstance(json_data.get("price"), dict):
+                self.price = float(json_data.get("price")["amount"])
+                self.currency = json_data.get("price")["currency_code"]
+            else:
+                self.price = (
+                    float(self.price) if isinstance(self.price, str) else self.price
+                )
 
         self.service_fee = (
             float(self.service_fee)
