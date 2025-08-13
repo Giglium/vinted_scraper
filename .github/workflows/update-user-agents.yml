@@ -15,15 +15,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          submodules: recursive
+          fetch-depth: 0
 
       - name: update the user agents list
         run: make update.user.agent
 
       - name: Open Pull Request
+        if: ${{ !env.ACT }}
         uses: peter-evans/create-pull-request@v7
         with:
           title: "chore: update user agents"

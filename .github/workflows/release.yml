@@ -16,21 +16,12 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          submodules: recursive
+          fetch-depth: 0
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.9
-
-      - name: Install dependencies
-        run: make py.update
-
-      - name: Run tests
-        run: make test
+      - name: Setup
+        uses: "./.github/actions/setup-python"
 
       - name: Build the package
         run: make build
@@ -45,6 +36,7 @@ jobs:
           echo "FILE_NAME=$FILE_PREFIX" >> "$GITHUB_ENV"
 
       - name: Upload whl file to release
+        if: ${{ !env.ACT }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -54,4 +46,5 @@ jobs:
           overwrite: true
 
       - name: Publish the package to PyPI
+        if: ${{ !env.ACT }}
         uses: pypa/gh-action-pypi-publish@release/v1

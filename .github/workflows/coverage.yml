@@ -5,8 +5,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - "*"
   pull_request:
 
 permissions: read-all
@@ -16,23 +14,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          submodules: recursive
+          fetch-depth: 0
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      - name: Install dependencies
-        run: make py.update
+      - name: Setup
+        uses: "./.github/actions/setup-python"
 
       - name: Run Coverage
         run: make coverage
 
       - name: Upload coverage reports to Codecov
+        if: ${{ !env.ACT }}
         uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
