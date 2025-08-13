@@ -35,6 +35,15 @@ jobs:
           FILE_PREFIX=$(echo "$FILE" | grep -oP '^.*/\K[^/]+-\d+\.\d+\.\d+')
           echo "FILE_NAME=$FILE_PREFIX" >> "$GITHUB_ENV"
 
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff
+        with:
+          config: github-keepachangelog
+          args: -v --latest --strip header
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+
       - name: Upload whl file to release
         if: ${{ !env.ACT }}
         uses: svenstaro/upload-release-action@v2
@@ -43,6 +52,7 @@ jobs:
           file: ${{ env.FILE_PATH }}
           asset_name: ${{ env.FILE_NAME }}.whl
           tag: ${{ github.ref }}
+          body: ${{ steps.git-cliff.outputs.content }}
           overwrite: true
 
       - name: Publish the package to PyPI
