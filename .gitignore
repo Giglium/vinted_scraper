@@ -39,3 +39,5 @@ profile.json*
 *.so
 *.pyd
 *.dll
+
+.DS_Store
