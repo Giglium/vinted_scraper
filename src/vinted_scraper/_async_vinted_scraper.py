@@ -1,6 +1,7 @@
 # jscpd:ignore-start
 # pylint: disable=missing-module-docstring,duplicate-code
-from typing import Dict, Optional
+# pyright: reportIncompatibleMethodOverride=false
+from typing import Dict, List, Optional
 
 from ._async_vinted_wrapper import AsyncVintedWrapper
 from .models import VintedItem
@@ -11,7 +12,7 @@ class AsyncVintedScraper(AsyncVintedWrapper):
     Async Vinted client with data model support
     """
 
-    async def search(self, params: Optional[Dict] = None) -> VintedItem:
+    async def search(self, params: Optional[Dict] = None) -> List[VintedItem]:
         """
         Search for items on Vinted.
 

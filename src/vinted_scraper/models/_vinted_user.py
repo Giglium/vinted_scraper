@@ -102,7 +102,7 @@ class VintedUser:
                 )
 
             if "accepted_pay_in_methods" in json_data:
-                self.bundle_discount = [
+                self.accepted_pay_in_methods = [
                     VintedPaymentMethod(method)
                     for method in json_data.get("accepted_pay_in_methods")
                 ]
