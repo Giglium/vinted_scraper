@@ -1,0 +1,42 @@
+name: Docs
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup
+        uses: "./.github/actions/setup-python"
+
+      - name: Generate Docs
+        run: make docs
+
+      - uses: actions/upload-pages-artifact@v3
+        if: ${{ !env.ACT }}
+        with:
+          path: docs/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        if: ${{ !env.ACT }}
+        uses: actions/deploy-pages@v4
