@@ -1,3 +1,4 @@
+---
 name: CI setup
 description: "Sets up the environment for jobs during CI workflow"
 

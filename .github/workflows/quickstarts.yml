@@ -12,7 +12,7 @@ on:
 permissions: read-all
 
 jobs:
-  release:
+  test_quickstarts:
     runs-on: ubuntu-latest
     permissions: read-all
 
