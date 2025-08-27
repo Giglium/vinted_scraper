@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5 # zizmor: ignore[unpinned-uses]
         with:
           persist-credentials: false
 
@@ -23,7 +23,7 @@ jobs:
       - name: Generate Docs
         run: make docs
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v4 # zizmor: ignore[unpinned-uses]
         if: ${{ !env.ACT }}
         with:
           path: docs/

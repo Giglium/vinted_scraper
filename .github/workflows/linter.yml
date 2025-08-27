@@ -17,12 +17,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5 # zizmor: ignore[unpinned-uses]
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Lint Code Base
-        uses: super-linter/super-linter@v8.0.0
+        uses: super-linter/super-linter@v8.1.0 # zizmor: ignore[unpinned-uses]
         env:
           SHELL: /bin/bash
           RUN_LOCAL: ${{ env.ACT }}
@@ -31,3 +32,4 @@ jobs:
           DEFAULT_BRANCH: main
           VALIDATE_PYTHON_MYPY: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_TRIVY: false

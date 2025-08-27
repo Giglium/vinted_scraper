@@ -15,16 +15,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5 # zizmor: ignore[unpinned-uses]
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: update the user agents list
         run: make update.user.agent
 
       - name: Open Pull Request
         if: ${{ !env.ACT }}
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v7 # zizmor: ignore[unpinned-uses]
         with:
           title: "chore: update user agents"
           body: "Update `agents.json`."

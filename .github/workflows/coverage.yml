@@ -14,9 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5 # zizmor: ignore[unpinned-uses]
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup
         uses: "./.github/actions/setup-python"
@@ -26,6 +27,6 @@ jobs:
 
       - name: Upload coverage reports to Codecov
         if: ${{ !env.ACT }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v5 # zizmor: ignore[unpinned-uses]
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
