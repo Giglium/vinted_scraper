@@ -16,9 +16,10 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5 # zizmor: ignore[unpinned-uses]
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup
         uses: "./.github/actions/setup-python"
@@ -36,7 +37,7 @@ jobs:
           echo "FILE_NAME=$FILE_PREFIX" >> "$GITHUB_ENV"
 
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@v4
+        uses: orhun/git-cliff-action@v4 # zizmor: ignore[unpinned-uses]
         id: git-cliff
         with:
           config: github-keepachangelog
@@ -46,7 +47,7 @@ jobs:
 
       - name: Upload whl file to release
         if: ${{ !env.ACT }}
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@v2 # zizmor: ignore[unpinned-uses]
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ env.FILE_PATH }}
@@ -57,4 +58,4 @@ jobs:
 
       - name: Publish the package to PyPI
         if: ${{ !env.ACT }}
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@release/v1 # zizmor: ignore[unpinned-uses]
