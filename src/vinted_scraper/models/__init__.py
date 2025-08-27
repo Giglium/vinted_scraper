@@ -5,7 +5,6 @@ from ._vinted_high_resolution import VintedHighResolution
 from ._vinted_image import VintedImage
 from ._vinted_item import VintedItem
 from ._vinted_media import VintedMedia
-from ._vinted_payment_method import VintedPaymentMethod
 from ._vinted_user import VintedUser
 
 __all__ = [
@@ -16,6 +15,5 @@ __all__ = [
     "VintedImage",
     "VintedItem",
     "VintedMedia",
-    "VintedPaymentMethod",
     "VintedUser",
 ]

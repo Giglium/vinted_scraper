@@ -8,7 +8,8 @@ from ._vinted_media import VintedMedia
 
 @dataclass
 class VintedImage:
-    id: Optional[str] = None
+    id: Optional[int] = None
+    image_no: Optional[int] = None
     width: Optional[int] = None
     height: Optional[int] = None
     temp_uuid: Optional[str] = None
@@ -16,23 +17,22 @@ class VintedImage:
     dominant_color: Optional[str] = None
     dominant_color_opaque: Optional[str] = None
     thumbnails: Optional[List[VintedMedia]] = None
+    is_main: Optional[bool] = None
     is_suspicious: Optional[bool] = None
     orientation: Optional[str] = None
     high_resolution: Optional[VintedHighResolution] = None
     full_size_url: Optional[str] = None
     is_hidden: Optional[bool] = None
-    image_no: Optional[int] = None
-    is_main: Optional[bool] = None
+    extra: Optional[dict] = None
 
     def __init__(self, json_data=None):
         if json_data is not None:
             self.__dict__.update(json_data)
-
-            high_resolution_data = json_data.get("high_resolution")
-            if high_resolution_data:
-                self.high_resolution = VintedHighResolution(high_resolution_data)
-
-            if "thumbnails" in json_data:
+            if "high_resolution" in json_data and json_data["high_resolution"]:
+                self.high_resolution = VintedHighResolution(
+                    json_data["high_resolution"]
+                )
+            if "thumbnails" in json_data and json_data["thumbnails"]:
                 self.thumbnails = [
-                    VintedMedia(media) for media in json_data.get("thumbnails")
+                    VintedMedia(media) for media in json_data["thumbnails"]
                 ]

@@ -10,7 +10,8 @@ class VintedDiscount:
 
     def __init__(self, json_data=None):
         if json_data is not None:
-            self.__dict__.update(json_data)
+            self.minimal_item_count = int(json_data.get("minimal_item_count", 0))
+            self.fraction = float(json_data.get("fraction", 0.0))
 
 
 @dataclass
@@ -25,7 +26,6 @@ class VintedBundleDiscount:
     def __init__(self, json_data=None):
         if json_data is not None:
             self.__dict__.update(json_data)
-
             if "discounts" in json_data:
                 self.discounts = [
                     VintedDiscount(discount) for discount in json_data.get("discounts")
