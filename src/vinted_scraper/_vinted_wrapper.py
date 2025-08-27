@@ -124,7 +124,7 @@ class VintedWrapper:
             to the request. Default value: None.
         :return: A Dict that contains the JSON response with the item's details.
         """
-        return self._curl(f"/items/{item_id}", params=params)
+        return self._curl(f"/items/{item_id}/details", params=params)
 
     def _curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """

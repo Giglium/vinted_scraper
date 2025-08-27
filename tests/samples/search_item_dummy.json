@@ -3,12 +3,10 @@
     {
       "id": "item id",
       "title": "a game ",
-      "price": "4.5",
-      "is_visible": 1,
-      "discount": null,
-      "currency": "USD",
+      "price": { "amount": "3.0", "currency_code": "EUR" },
+      "is_visible": true,
       "brand_title": "NO LABEL",
-      "is_for_swap": false,
+      "path": "/items/<id>-<title>",
       "user": {
         "id": "user id",
         "login": "username",
@@ -75,13 +73,20 @@
       },
       "favourite_count": 4,
       "is_favourite": false,
-      "badge": null,
       "conversion": null,
-      "service_fee": "0.93",
-      "total_item_price": "5.43",
+      "service_fee": { "amount": "0.85", "currency_code": "EUR" },
+      "total_item_price": { "amount": "3.85", "currency_code": "EUR" },
       "view_count": 0,
       "size_title": "",
       "content_source": "search",
+      "status": "Very Good",
+      "item_box": {
+        "first_line": "Gabby's Dollhouse",
+        "second_line": "Very good",
+        "exposures": [],
+        "accessibility_label": "Jumbling tower game, brand: Gabby's Dollhouse, condition: Very good, $3.00, $3.85 includes Buyer Protection",
+        "item_id": 6854891835
+      },
       "search_tracking_params": {
         "score": 39.74531,
         "matched_queries": [
