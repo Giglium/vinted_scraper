@@ -1424,7 +1424,7 @@ wheels = [
 
 [[package]]
 name = "vinted-scraper"
-version = "3.0.0a3"
+version = "3.0.0a4"
 source = { editable = "." }
 dependencies = [
     { name = "dataclasses", marker = "python_full_version < '3.7'" },
