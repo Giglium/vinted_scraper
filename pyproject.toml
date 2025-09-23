@@ -44,7 +44,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "black==25.1.0 ; python_full_version == '3.13.*'",
+    "black==25.9.0 ; python_full_version == '3.13.*'",
     "coverage>=6.2",
     "isort==6.0.1 ; python_full_version == '3.13.*'",
     "no-implicit-optional>=1.4 ; python_full_version >= '3.7'",
