@@ -33,13 +33,13 @@ jobs:
           enable-cache: true
 
       - name: Run the async wrapper quickstart
-        run: uv run ./examples/async_wrapper.py
+        run: uv run -m examples.async_wrapper
 
       - name: Run the async scraper quickstart
-        run: uv run ./examples/async_scraper.py
+        run: uv run -m examples.async_scraper
 
       - name: Run the wrapper quickstart
-        run: uv run ./examples/wrapper.py
+        run: uv run -m examples.wrapper
 
       - name: Run the scraper quickstart
-        run: uv run ./examples/scraper.py
+        run: uv run m examples.scraper

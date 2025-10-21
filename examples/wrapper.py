@@ -1,29 +1,19 @@
-# jscpd:ignore-start
-# pylint: disable=missing-module-docstring,missing-function-docstring,duplicate-code,broad-exception-caught
+"""
+This is an example script for running the VintedWrapper.
+Since GitHub Actions perform too many parallel API calls, we added retry logic to handle errors.
+"""
 
-from time import sleep
-
+from examples._utils import run_with_retries
 from vinted_scraper import VintedWrapper
 
 
-def main():
-    wrapper = VintedWrapper("https://www.vinted.com")
+def main() -> None:
+    """Run a sample async search using VintedWrapper."""
+    scraper = VintedWrapper("https://www.vinted.com")
     params = {"search_text": "board games"}
-    _ = wrapper.search(params)
+    _ = scraper.search(params)
 
 
 if __name__ == "__main__":
-    MAX_RETRIES = 5
-    retries: int = 0
-
-    # retry multiple times since in the CI it sometimes fails due to much requests
-    while retries < MAX_RETRIES:
-        try:
-            main()
-        except Exception as e:
-            retries += 1
-            if retries == MAX_RETRIES:
-                raise e
-            sleep(2**retries)  # Waiting before retrying
-
-# jscpd:ignore-end
+    run_with_retries(main)
+    print("VintedWrapper completed successfully.")
