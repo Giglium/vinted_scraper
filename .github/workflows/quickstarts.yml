@@ -21,55 +21,25 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Setup
-        uses: "./.github/actions/setup-python"
+      - name: "Set up Python"
+        uses: actions/setup-python@v5 # zizmor: ignore[unpinned-uses]
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6 # zizmor: ignore[unpinned-uses]
+        with:
+          version: "0.8.9"
+          enable-cache: true
 
       - name: Run the async wrapper quickstart
-        run: |
-          uv run - <<EOF
-          import asyncio
-          from src.vinted_scraper import AsyncVintedWrapper
-
-          async def main():
-              wrapper = await AsyncVintedWrapper.create("https://www.vinted.com")
-              params = {"search_text": "board games"}
-              await wrapper.search(params)
-
-          asyncio.run(main())
-          EOF
+        run: uv run -m examples.async_wrapper
 
       - name: Run the async scraper quickstart
-        run: |
-          uv run - <<EOF
-          import asyncio
-          from src.vinted_scraper import AsyncVintedScraper
-
-          async def main():
-              scraper = await AsyncVintedScraper.create("https://www.vinted.com")
-              params = {"search_text": "board games"}
-              await scraper.search(params)
-
-          asyncio.run(main())
-          EOF
+        run: uv run -m examples.async_scraper
 
       - name: Run the wrapper quickstart
-        run: |
-          uv run - <<EOF
-          from src.vinted_scraper import VintedWrapper
-
-          wrapper = VintedWrapper("https://www.vinted.com")
-          params = {"search_text": "board games"}
-          wrapper.search(params)
-
-          EOF
+        run: uv run -m examples.wrapper
 
       - name: Run the scraper quickstart
-        run: |
-          uv run - <<EOF
-          from src.vinted_scraper import VintedScraper
-
-          scraper = VintedScraper("https://www.vinted.com")
-          params = {"search_text": "board games"}
-          scraper.search(params)
-
-          EOF
+        run: uv run -m examples.scraper
