@@ -3,8 +3,9 @@ This is an example script for running the AsyncVintedScraper.
 Since GitHub Actions perform too many parallel API calls, we added retry logic to handle errors.
 """
 
-from ._utils import run_with_retries
 from vinted_scraper import AsyncVintedScraper
+
+from ._utils import run_with_retries
 
 
 async def main() -> None:

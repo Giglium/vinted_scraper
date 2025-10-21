@@ -16,7 +16,8 @@ def run_with_retries(
     backoff_cap: int = 32,
 ) -> None:
     """
-    Run a function with retry logic and exponential backoff. The result of the function is not returned!
+    Run a function with retry logic and exponential backoff.
+    The result of the function is not returned!
 
     Args:
         main_func (Callable[[], Any]): The main function to execute. Can be sync or async.
