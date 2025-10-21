@@ -42,4 +42,4 @@ jobs:
         run: uv run -m examples.wrapper
 
       - name: Run the scraper quickstart
-        run: uv run m examples.scraper
+        run: uv run -m examples.scraper
