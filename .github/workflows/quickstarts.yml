@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
 
       - name: "Set up Python"
-        uses: actions/setup-python@v5 # zizmor: ignore[unpinned-uses]
+        uses: actions/setup-python@v6 # zizmor: ignore[unpinned-uses]
         with:
           python-version-file: ".python-version"
 
