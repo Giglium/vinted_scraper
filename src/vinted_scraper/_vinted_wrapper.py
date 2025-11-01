@@ -113,7 +113,7 @@ class VintedWrapper:
             Default value: None.
         :return: A Dict that contains the JSON response with the search results.
         """
-        return self._curl("/catalog/items", params=params)
+        return self._curl("/api/v2/catalog/items", params=params)
 
     def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -124,7 +124,7 @@ class VintedWrapper:
             to the request. Default value: None.
         :return: A Dict that contains the JSON response with the item's details.
         """
-        return self._curl(f"/items/{item_id}/details", params=params)
+        return self._curl(f"/api/v2/items/{item_id}/details", params=params)
 
     def _curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -145,7 +145,7 @@ class VintedWrapper:
         5. If the response status code is not 200, it raises a RuntimeError with an error message.
         """
         response = self._client.get(
-            f"/api/v2{endpoint}",
+            endpoint,
             headers=get_curl_headers(
                 self._base_url, self._user_agent, self._session_cookie
             ),
