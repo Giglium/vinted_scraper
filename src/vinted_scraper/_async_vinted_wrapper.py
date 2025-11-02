@@ -137,7 +137,7 @@ class AsyncVintedWrapper:
             you should add the `search_text` parameter. Default value: None.
         :return: A Dict that contains the JSON response with the search results.
         """
-        return await self._curl("/catalog/items", params=params)
+        return await self._curl("/api/v2/catalog/items", params=params)
 
     async def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -148,7 +148,7 @@ class AsyncVintedWrapper:
             request. Default value: None.
         :return: A Dict that contains the JSON response with the item's details.
         """
-        return await self._curl(f"/items/{item_id}", params=params)
+        return await self._curl(f"/api/v2/items/{item_id}", params=params)
 
     async def _curl(
         self, endpoint: str, params: Optional[Dict] = None
@@ -171,7 +171,7 @@ class AsyncVintedWrapper:
         5. If the response status code is not 200, it raises a RuntimeError.
         """
         response = await self._client.get(
-            f"/api/v2{endpoint}",
+            endpoint,
             headers=get_curl_headers(
                 self._base_url, self._user_agent, self._session_cookie
             ),
