@@ -21,20 +21,20 @@ You can install Vinted Scraper using pip:
 
 > If you are on Python 3.6 you also have to install `dataclasses`: `pip install dataclasses`
 
-### Alpha
+### Beta
 
 We move from `requests` to `httpx` to support Async API call. Now, you can await `AsyncVintedScraper` or `AsyncVintedWrapper`.
-I haven't finish to update all the docs but you can check [async quick starts](./tests/test_async_quick_starts.py) to understand how they work.
+I haven't finish to update all the docs but you can check [exampes](./examples/) to understand how they work.
 
-To install the alpha version with pip:
+To install the beta version with pip:
 
 ```shell
-    pip install vinted_scraper==3.0.0a1
+    pip install vinted_scraper==3.0.0b1
 ```
 
-> Compatible from python 3.8+
+> Compatible from python 3.7+
 
-For more info about Alpha check the [roadmap](https://github.com/Giglium/vinted_scraper/issues/73), and please if you find a bug open a issue!
+For more info about the Beta check the [roadmap](https://github.com/Giglium/vinted_scraper/issues/73), and please if you find a bug open a issue!
 
 ## Functions
 
@@ -54,19 +54,21 @@ The package offers the following functions:
 <details>
  <summary><code>item</code> - <code>(gets the information about an item, and its seller present on the item detail page)</code></summary>
 
-> It is currently not working and will throw a 404 status code (see [#78](https://github.com/Giglium/vinted_scraper/issues/78)). Vinted has changed this endpoint, and we didn't find a replacement.
+> It is currently only working only on the Beta version (see [#78](https://github.com/Giglium/vinted_scraper/issues/78)), but it frequently throws a 403 error (see [#58](https://github.com/Giglium/vinted_scraper/issues/59)).
 
 **Parameters**
 
 > | name   | type     | data type | description                                   |
 > | ------ | -------- | --------- | --------------------------------------------- |
 > | id     | required | str       | The unique identifier of the item to retrieve |
-> | params | optional | Dict      | I don't know is they exist                    |
+> | params | optional | Dict      | I don't know if they exist                    |
 
 </details>
 
 <details>
  <summary><code>curl</code> - <code>(Perform an HTTP GET request to the given endpoint)</code></summary>
+
+> It is currently only working only on the Beta version
 
 **Parameters**
 
