@@ -65,6 +65,18 @@ The package offers the following functions:
 
 </details>
 
+<details>
+ <summary><code>curl</code> - <code>(Perform an HTTP GET request to the given endpoint)</code></summary>
+
+**Parameters**
+
+> | name     | type     | data type | description                                    |
+> | -------- | -------- | --------- | ---------------------------------------------- |
+> | endpoint | required | str       | The endpoint to make the request to            |
+> | params   | optional | Dict      | Query parameters like the pagination and so on |
+
+</details>
+
 ## Usage
 
 To obtain the scraped data as a `vinted_scraper.models.VintedItem`, so you can:

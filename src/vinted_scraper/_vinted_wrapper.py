@@ -113,7 +113,7 @@ class VintedWrapper:
             Default value: None.
         :return: A Dict that contains the JSON response with the search results.
         """
-        return self._curl("/api/v2/catalog/items", params=params)
+        return self.curl("/api/v2/catalog/items", params=params)
 
     def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -124,9 +124,9 @@ class VintedWrapper:
             to the request. Default value: None.
         :return: A Dict that contains the JSON response with the item's details.
         """
-        return self._curl(f"/api/v2/items/{item_id}/details", params=params)
+        return self.curl(f"/api/v2/items/{item_id}/details", params=params)
 
-    def _curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
+    def curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Send an async HTTP GET request to the specified endpoint.
 
@@ -159,7 +159,7 @@ class VintedWrapper:
         # Fetch (maybe is expired?) the session cookie again and retry the API call
         if response.status_code == 401:
             self._session_cookie = self.refresh_cookie()
-            return self._curl(endpoint, params)
+            return self.curl(endpoint, params)
         raise RuntimeError(
             f"Cannot perform API call to endpoint {endpoint}, error code: {response.status_code}"
         )

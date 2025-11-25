@@ -137,7 +137,7 @@ class AsyncVintedWrapper:
             you should add the `search_text` parameter. Default value: None.
         :return: A Dict that contains the JSON response with the search results.
         """
-        return await self._curl("/api/v2/catalog/items", params=params)
+        return await self.curl("/api/v2/catalog/items", params=params)
 
     async def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -148,9 +148,9 @@ class AsyncVintedWrapper:
             request. Default value: None.
         :return: A Dict that contains the JSON response with the item's details.
         """
-        return await self._curl(f"/api/v2/items/{item_id}", params=params)
+        return await self.curl(f"/api/v2/items/{item_id}", params=params)
 
-    async def _curl(
+    async def curl(
         self, endpoint: str, params: Optional[Dict] = None
     ) -> Dict[str, Any]:
         """
@@ -185,7 +185,7 @@ class AsyncVintedWrapper:
         # Fetch (maybe is expired?) the session cookie again and retry the API call
         if response.status_code == 401:
             self._session_cookie = await self.refresh_cookie()
-            return await self._curl(endpoint, params)
+            return await self.curl(endpoint, params)
         raise RuntimeError(
             f"Cannot perform API call to endpoint {endpoint}, error code: {response.status_code}"
         )
