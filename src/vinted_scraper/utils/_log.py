@@ -7,7 +7,7 @@ Es. httpx logger will be put in the httpx utils.
 
 import logging
 from logging import Logger
-from typing import Dict
+from typing import Dict, Optional
 
 
 def log_constructor(
@@ -72,38 +72,38 @@ def log_refresh_cookie(log: Logger) -> None:
         log.debug("refreshing the cookie")
 
 
-def log_search(log: Logger, params: Dict) -> None:
+def log_search(log: Logger, params: Optional[Dict]) -> None:
     """
     Log a message indicating a search API call.
 
     :param log: the logger object to use for the log message
-    :param params: the search parameters
+    :param params: the search parameters (can be None)
     :return: None
     """
     if log.isEnabledFor(logging.DEBUG):
         log.debug(f"Searching with params {params}")
 
 
-def log_item(log: Logger, item_id: str, params: Dict) -> None:
+def log_item(log: Logger, item_id: str, params: Optional[Dict]) -> None:
     """
     Log a message indicating an item retrieval API call.
 
     :param log: the logger object to use for the log message
     :param item_id: the item ID to retrieve
-    :param params: the query parameters
+    :param params: the query parameters (can be None)
     :return: None
     """
     if log.isEnabledFor(logging.DEBUG):
         log.debug(f"Fetching item {item_id} with params {params}")
 
 
-def log_curl(log: Logger, endpoint: str, params: Dict) -> None:
+def log_curl(log: Logger, endpoint: str, params: Optional[Dict]) -> None:
     """
     Log a message indicating an internal HTTP request.
 
     :param log: the logger object to use for the log message
     :param endpoint: the endpoint being called
-    :param params: the query parameters
+    :param params: the query parameters (can be None)
     :return: None
     """
     if log.isEnabledFor(logging.DEBUG):

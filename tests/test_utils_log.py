@@ -157,6 +157,14 @@ class TestUtils(unittest.TestCase):
         # Case Debug disable
         assert_no_logs(log_search, self, log=log, level=logging.INFO, params=params)
 
+        # Case with None params
+        with self.assertLogs(level=logging.DEBUG) as cm:
+            log_search(log=log, params=None)
+            self.assertEqual(
+                cm.output,
+                [f"DEBUG:{__name__}:Searching with params None"],
+            )
+
     def test_log_item(self):
         """
         Test the log_item function.
@@ -180,6 +188,14 @@ class TestUtils(unittest.TestCase):
         assert_no_logs(
             log_item, self, log=log, level=logging.INFO, item_id=item_id, params=params
         )
+
+        # Case with None params
+        with self.assertLogs(level=logging.DEBUG) as cm:
+            log_item(log=log, item_id=item_id, params=None)
+            self.assertEqual(
+                cm.output,
+                [f"DEBUG:{__name__}:Fetching item {item_id} with params None"],
+            )
 
     def test_log_curl(self):
         """
@@ -209,6 +225,14 @@ class TestUtils(unittest.TestCase):
             endpoint=endpoint,
             params=params,
         )
+
+        # Case with None params
+        with self.assertLogs(level=logging.DEBUG) as cm:
+            log_curl(log=log, endpoint=endpoint, params=None)
+            self.assertEqual(
+                cm.output,
+                [f"DEBUG:{__name__}:Calling endpoint {endpoint} with params None"],
+            )
 
 
 if __name__ == "__main__":
