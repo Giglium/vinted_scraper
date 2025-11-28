@@ -1,9 +1,13 @@
 # jscpd:ignore-start
 # pylint: disable=missing-module-docstring,duplicate-code
+import logging
 from typing import Dict, List, Optional
 
 from ._vinted_wrapper import VintedWrapper
 from .models import VintedItem
+from .utils import log_item, log_search
+
+_log = logging.getLogger(__name__)
 
 
 class VintedScraper(VintedWrapper):
@@ -21,6 +25,9 @@ class VintedScraper(VintedWrapper):
             Default value: None.
         :return: A list of VintedItem instances representing search results.
         """
+        # Logging
+        log_search(_log, params)
+
         return [VintedItem(item) for item in super().search(params)["items"]]
 
     def item(self, item_id: str, params: Optional[Dict] = None) -> VintedItem:  # type: ignore
@@ -32,6 +39,9 @@ class VintedScraper(VintedWrapper):
             to the request. Default value: None.
         :return: A VintedItem instance representing the item's details.
         """
+        # Logging
+        log_item(_log, item_id, params)
+
         return VintedItem(super().item(item_id, params)["item"])
 
 

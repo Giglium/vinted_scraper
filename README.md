@@ -113,6 +113,44 @@ if __name__ == "__main__":
     main()
 ```
 
+## Debugging
+
+To enable debug logging for troubleshooting, you can configure the logger for the `vinted_scraper` package:
+
+```python
+import logging
+
+# Enable debug logging for vinted_scraper only
+logging.getLogger("vinted_scraper").setLevel(logging.DEBUG)
+logging.basicConfig(format="%(levelname)s:%(name)s:%(message)s")
+
+from vinted_scraper import VintedScraper
+
+scraper = VintedScraper("https://www.vinted.com")
+scraper.search({"search_text": "nike"})
+```
+
+This will output detailed debug information including:
+- API request details with parameters
+- A reproducible `curl` command that can be copied and executed in bash
+- Response status code, headers, and body (truncated for large responses)
+
+Example output:
+```
+DEBUG:vinted_scraper._vinted_wrapper:Searching with params {'search_text': 'nike'}
+DEBUG:vinted_scraper._vinted_wrapper:API Request: GET /catalog/items with params {'search_text': 'nike'}
+DEBUG:vinted_scraper._vinted_wrapper:Curl command:
+curl \
+  -H 'User-Agent: Mozilla/5.0...' \
+  -H 'Cookie: _vinted_fr_session=...' \
+  'https://www.vinted.com/api/v2/catalog/items?search_text=nike'
+DEBUG:vinted_scraper._vinted_wrapper:API Response: /catalog/items - Status: 200
+DEBUG:vinted_scraper._vinted_wrapper:Response Headers: {'content-type': 'application/json', ...}
+DEBUG:vinted_scraper._vinted_wrapper:Response Body: {"items": [...]}
+```
+
+This is helpful when reporting issues as the curl command can be used to reproduce API calls.
+
 ## License
 
 This project is licensed under the MIT License - see
