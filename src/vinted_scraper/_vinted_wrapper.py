@@ -14,8 +14,11 @@ from .utils import (
     get_httpx_config,
     get_random_user_agent,
     log_constructor,
+    log_curl,
     log_interaction,
+    log_item,
     log_refresh_cookie,
+    log_search,
     log_sleep,
     url_validator,
 )
@@ -119,6 +122,9 @@ class VintedWrapper:
             Default value: None.
         :return: A Dict that contains the JSON response with the search results.
         """
+        # Logging
+        log_search(_log, params)
+
         return self._curl("/catalog/items", params=params)
 
     def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
@@ -130,6 +136,9 @@ class VintedWrapper:
             to the request. Default value: None.
         :return: A Dict that contains the JSON response with the item's details.
         """
+        # Logging
+        log_item(_log, item_id, params)
+
         return self._curl(f"/items/{item_id}", params=params)
 
     def _curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
@@ -150,6 +159,9 @@ class VintedWrapper:
             and returns it as a dictionary.
         5. If the response status code is not 200, it raises a RuntimeError with an error message.
         """
+        # Logging
+        log_curl(_log, endpoint, params)
+
         response = self._client.get(
             f"/api/v2{endpoint}",
             headers=get_curl_headers(

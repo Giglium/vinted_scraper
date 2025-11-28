@@ -62,4 +62,49 @@ def log_sleep(log: Logger, time: int) -> None:
 
 
 def log_refresh_cookie(log: Logger) -> None:
-    log.debug("refrshing the cookie")
+    """
+    Log a message indicating the cookie refresh.
+
+    :param log: the logger object to use for the log message
+    :return: None
+    """
+    if log.isEnabledFor(logging.DEBUG):
+        log.debug("refreshing the cookie")
+
+
+def log_search(log: Logger, params: Dict) -> None:
+    """
+    Log a message indicating a search API call.
+
+    :param log: the logger object to use for the log message
+    :param params: the search parameters
+    :return: None
+    """
+    if log.isEnabledFor(logging.DEBUG):
+        log.debug(f"Searching with params {params}")
+
+
+def log_item(log: Logger, item_id: str, params: Dict) -> None:
+    """
+    Log a message indicating an item retrieval API call.
+
+    :param log: the logger object to use for the log message
+    :param item_id: the item ID to retrieve
+    :param params: the query parameters
+    :return: None
+    """
+    if log.isEnabledFor(logging.DEBUG):
+        log.debug(f"Fetching item {item_id} with params {params}")
+
+
+def log_curl(log: Logger, endpoint: str, params: Dict) -> None:
+    """
+    Log a message indicating an internal HTTP request.
+
+    :param log: the logger object to use for the log message
+    :param endpoint: the endpoint being called
+    :param params: the query parameters
+    :return: None
+    """
+    if log.isEnabledFor(logging.DEBUG):
+        log.debug(f"Calling endpoint {endpoint} with params {params}")

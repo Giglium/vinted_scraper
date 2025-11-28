@@ -4,7 +4,15 @@ Utils module that is a collection of all the common function present in this pac
 
 from ._constants import SESSION_COOKIE_NAME
 from ._httpx import extract_cookie_from_response, get_httpx_config
-from ._log import log_constructor, log_interaction, log_refresh_cookie, log_sleep
+from ._log import (
+    log_constructor,
+    log_curl,
+    log_interaction,
+    log_item,
+    log_refresh_cookie,
+    log_search,
+    log_sleep,
+)
 from ._misc import (
     get_cookie_headers,
     get_curl_headers,
@@ -17,11 +25,14 @@ __all__ = [
     "extract_cookie_from_response",
     "get_httpx_config",
     "log_constructor",
+    "log_curl",
     "log_interaction",
+    "log_item",
+    "log_refresh_cookie",
+    "log_search",
     "log_sleep",
     "get_cookie_headers",
     "get_curl_headers",
     "get_random_user_agent",
     "url_validator",
-    "log_refresh_cookie",
 ]
