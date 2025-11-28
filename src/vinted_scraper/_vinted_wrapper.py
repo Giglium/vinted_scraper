@@ -14,7 +14,8 @@ from .utils import (
     get_httpx_config,
     get_random_user_agent,
     log_constructor,
-    log_curl,
+    log_curl_request,
+    log_curl_response,
     log_interaction,
     log_item,
     log_refresh_cookie,
@@ -159,16 +160,19 @@ class VintedWrapper:
             and returns it as a dictionary.
         5. If the response status code is not 200, it raises a RuntimeError with an error message.
         """
-        # Logging
-        log_curl(_log, endpoint, params)
+        headers = get_curl_headers(self._base_url, self._user_agent, self._session_cookie)
+
+        # Logging request
+        log_curl_request(_log, self._base_url, endpoint, headers, params)
 
         response = self._client.get(
             f"/api/v2{endpoint}",
-            headers=get_curl_headers(
-                self._base_url, self._user_agent, self._session_cookie
-            ),
+            headers=headers,
             params=params,
         )
+
+        # Logging response
+        log_curl_response(_log, endpoint, response.status_code, response.headers, response.text)
 
         # Success
         if response.status_code == 200:

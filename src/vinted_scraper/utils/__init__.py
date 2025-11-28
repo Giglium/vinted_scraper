@@ -7,6 +7,8 @@ from ._httpx import extract_cookie_from_response, get_httpx_config
 from ._log import (
     log_constructor,
     log_curl,
+    log_curl_request,
+    log_curl_response,
     log_interaction,
     log_item,
     log_refresh_cookie,
@@ -26,6 +28,8 @@ __all__ = [
     "get_httpx_config",
     "log_constructor",
     "log_curl",
+    "log_curl_request",
+    "log_curl_response",
     "log_interaction",
     "log_item",
     "log_refresh_cookie",
