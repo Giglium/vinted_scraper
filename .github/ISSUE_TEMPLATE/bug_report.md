@@ -28,6 +28,27 @@ Provide a minimal, copy-pastable example.
 
 ```
 
+## Debug logs
+
+Please enable debug logging and include the output:
+
+```python
+import logging
+logging.getLogger("vinted_scraper").setLevel(logging.DEBUG)
+logging.basicConfig(format="%(levelname)s:%(name)s:%(message)s")
+
+# Your code here
+```
+
+<details>
+<summary>Debug output</summary>
+
+```
+# Paste debug output here
+```
+
+</details>
+
 ## Tell us about your environment
 
 - OS: [e.g. Windows, Ubuntu]

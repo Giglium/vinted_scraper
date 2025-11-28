@@ -113,6 +113,27 @@ if __name__ == "__main__":
     main()
 ```
 
+## Debugging
+
+To enable debug logging for troubleshooting, you can configure the logger for the `vinted_scraper` package:
+
+```python
+import logging
+
+# Enable debug logging for vinted_scraper only
+logging.getLogger("vinted_scraper").setLevel(logging.DEBUG)
+logging.basicConfig(format="%(levelname)s:%(name)s:%(message)s")
+
+from vinted_scraper import VintedScraper
+
+scraper = VintedScraper("https://www.vinted.com")
+scraper.search({"search_text": "nike"})
+# DEBUG:vinted_scraper._vinted_wrapper:Searching with params {'search_text': 'nike'}
+# DEBUG:vinted_scraper._vinted_wrapper:Calling endpoint /catalog/items with params {'search_text': 'nike'}
+```
+
+This will output debug information about API calls, which is helpful when reporting issues.
+
 ## License
 
 This project is licensed under the MIT License - see
