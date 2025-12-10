@@ -22,6 +22,13 @@ test: ## Run all the unit test.
 act.test: #! Run the tests github actions
 	@act -W '.github/workflows/tests.yml'
 
+.PHONY: quickstarts
+quickstarts: #! Run the quickstarts
+	@uv run -m examples.async_wrapper
+	@uv run -m examples.async_scraper
+	@uv run -m examples.wrapper
+	@uv run -m examples.scraper
+
 .PHONY: act.quickstarts
 act.quickstarts: #! Run the quickstarts github actions
 	@act -W '.github/workflows/quickstarts.yml'
