@@ -21,6 +21,7 @@ test: ## Run all the unit test.
 .PHONY: act.test
 act.test: #! Run the tests github actions
 	@act -W '.github/workflows/tests.yml'
+	@act -W '.github/workflows/test_legacy.yml'
 
 .PHONY: quickstarts
 quickstarts: #! Run the quickstarts
