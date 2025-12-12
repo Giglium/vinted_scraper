@@ -40,3 +40,27 @@ jobs:
 
       - name: Run tests
         run: make test
+
+  test_old_python_version:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - "3.7"
+
+    steps:
+      - uses: actions/checkout@v6 # zizmor: ignore[unpinned-uses]
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v7 # zizmor: ignore[unpinned-uses]
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: false
+
+      - name: Run tests
+        run: make test
