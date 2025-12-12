@@ -23,7 +23,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "httpx>=0.20.0 ; python_full_version >= '3.7'",
+    "httpx[brotli]>=0.20.0 ; python_full_version >= '3.7'",
 ]
 
 [tool.isort]
