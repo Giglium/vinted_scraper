@@ -3,7 +3,11 @@
 Mock utils
 """
 
-from unittest.mock import AsyncMock
+try:
+    from unittest.mock import AsyncMock
+except ImportError:
+    # Python < 3.8 fallback
+    from asyncmock import AsyncMock
 
 import httpx
 from src.vinted_scraper.utils import SESSION_COOKIE_NAME, get_random_user_agent
