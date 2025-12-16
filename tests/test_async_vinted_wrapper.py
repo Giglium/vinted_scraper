@@ -4,14 +4,58 @@
 Test the Async Vinted Wrapper class
 """
 import logging
+import sys
 import unittest
 from unittest.mock import patch
 
 from src.vinted_scraper import AsyncVintedWrapper
 from tests.utils._mock import BASE_URL, COOKIE_VALUE, USER_AGENT, get_200_response
 
+# Python 3.7 compatibility: IsolatedAsyncioTestCase was introduced in Python 3.8
+if sys.version_info >= (3, 8):
+    from unittest import IsolatedAsyncioTestCase as BaseTestCase
+else:
+    # For Python 3.7, we need to create a simple compatibility shim
+    import asyncio
+    
+    class BaseTestCase(unittest.TestCase):
+        """Compatibility shim for IsolatedAsyncioTestCase in Python < 3.8"""
+        
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._asyncio_loop = None
+        
+        def asyncSetUp(self):
+            """Override in subclass for async setup"""
+            pass
+        
+        def asyncTearDown(self):
+            """Override in subclass for async teardown"""
+            pass
+        
+        def setUp(self):
+            """Set up async event loop"""
+            self._asyncio_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._asyncio_loop)
+            self._asyncio_loop.run_until_complete(self.asyncSetUp())
+        
+        def tearDown(self):
+            """Tear down async event loop"""
+            self._asyncio_loop.run_until_complete(self.asyncTearDown())
+            self._asyncio_loop.close()
+            asyncio.set_event_loop(None)
+        
+        def __getattribute__(self, name):
+            """Wrap async test methods to run in event loop"""
+            attr = object.__getattribute__(self, name)
+            if name.startswith('test_') and asyncio.iscoroutinefunction(attr):
+                def wrapper(*args, **kwargs):
+                    return self._asyncio_loop.run_until_complete(attr(*args, **kwargs))
+                return wrapper
+            return attr
 
-class TestAsyncVintedWrapper(unittest.IsolatedAsyncioTestCase):
+
+class TestAsyncVintedWrapper(BaseTestCase):
     """
     Test the Async Vinted Wrapper class with a Mock for the API call
     """
