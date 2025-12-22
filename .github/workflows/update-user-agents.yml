@@ -25,7 +25,7 @@ jobs:
 
       - name: Open Pull Request
         if: ${{ !env.ACT }}
-        uses: peter-evans/create-pull-request@v7 # zizmor: ignore[unpinned-uses]
+        uses: peter-evans/create-pull-request@v8 # zizmor: ignore[unpinned-uses]
         with:
           title: "chore: update user agents"
           body: "Update `agents.json`."
