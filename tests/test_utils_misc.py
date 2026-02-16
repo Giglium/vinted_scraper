@@ -2,6 +2,7 @@
 """
 Test the misc utils class
 """
+
 import unittest
 
 from src.vinted_scraper.utils import (

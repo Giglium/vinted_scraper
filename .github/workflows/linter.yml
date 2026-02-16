@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
 
       - name: Lint Code Base
-        uses: super-linter/super-linter@v8.3.2 # zizmor: ignore[unpinned-uses]
+        uses: super-linter/super-linter@v8.5.0 # zizmor: ignore[unpinned-uses]
         env:
           SHELL: /bin/bash
           RUN_LOCAL: ${{ env.ACT }}

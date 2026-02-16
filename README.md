@@ -24,7 +24,7 @@ You can install Vinted Scraper using pip:
 ### Beta
 
 We move from `requests` to `httpx` to support Async API call. Now, you can await `AsyncVintedScraper` or `AsyncVintedWrapper`.
-I haven't finish to update all the docs but you can check [exampes](./examples/) to understand how they work.
+I haven't finish to update all the docs but you can check [examples](./examples/) to understand how they work.
 
 To install the beta version with pip:
 

@@ -36,7 +36,7 @@ def run_with_retries(
                 asyncio.run(main_func())
             else:
                 main_func()
-            break  # Exit the loop with sucess
+            break  # Exit the loop with success
         except Exception as e:
             retries += 1
             if retries == max_retries:

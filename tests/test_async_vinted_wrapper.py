@@ -3,6 +3,7 @@
 """
 Test the Async Vinted Wrapper class
 """
+
 import logging
 import unittest
 from unittest.mock import patch

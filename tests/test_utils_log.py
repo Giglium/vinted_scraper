@@ -2,6 +2,7 @@
 """
 Test the log utils class
 """
+
 import logging
 import sys
 import unittest
