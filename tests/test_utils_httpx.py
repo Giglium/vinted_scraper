@@ -2,6 +2,7 @@
 """
 Test the httpx utils class
 """
+
 import unittest
 
 import httpx

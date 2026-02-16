@@ -138,7 +138,7 @@
     "promoted": false,
     "brand_dto": {
       "id": 34232432,
-      "title": "Brand tittle",
+      "title": "Brand title",
       "slug": "brand-slug",
       "path": "/brand/id-brand-slug",
       "is_favourite": false
