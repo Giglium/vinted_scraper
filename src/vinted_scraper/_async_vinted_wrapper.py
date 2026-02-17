@@ -2,7 +2,7 @@
 # pylint: disable=missing-module-docstring,duplicate-code,too-many-arguments,too-many-positional-arguments
 import asyncio
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 
@@ -41,7 +41,7 @@ class AsyncVintedWrapper:
         baseurl: str,
         user_agent: Optional[str] = None,
         config: Optional[Dict] = None,
-        cookie_names: Optional[list[str]] = None,
+        cookie_names: Optional[List[str]] = None,
     ):
         """
         Factory method that creates an instance of the AsyncVintedWrapper class.
@@ -72,7 +72,7 @@ class AsyncVintedWrapper:
         session_cookie: Optional[Dict[str, str]] = None,
         user_agent: Optional[str] = None,
         config: Optional[Dict] = None,
-        cookie_names: Optional[list[str]] = None,
+        cookie_names: Optional[List[str]] = None,
     ):
         """
         Initialize AsyncVintedWrapper.
@@ -121,7 +121,7 @@ class AsyncVintedWrapper:
     async def fetch_cookie(
         client: httpx.AsyncClient,
         headers: Dict,
-        cookie_names: list[str],
+        cookie_names: List[str],
         retries: int = 3,
     ) -> Dict[str, str]:
         """

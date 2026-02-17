@@ -2,7 +2,7 @@
 # pylint: disable=missing-module-docstring,duplicate-code,too-many-arguments,too-many-positional-arguments
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 
@@ -41,7 +41,7 @@ class VintedWrapper:
         session_cookie: Optional[Dict[str, str]] = None,
         user_agent: Optional[str] = None,
         config: Optional[Dict] = None,
-        cookie_names: Optional[list[str]] = None,
+        cookie_names: Optional[List[str]] = None,
     ):
         """
         Initialize VintedWrapper.
@@ -90,7 +90,7 @@ class VintedWrapper:
     def fetch_cookie(
         client: httpx.Client,
         headers: Dict,
-        cookie_names: list[str],
+        cookie_names: List[str],
         retries: int = 3,
     ) -> Dict[str, str]:
         """
