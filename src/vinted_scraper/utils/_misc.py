@@ -8,8 +8,6 @@ import random
 import re
 from typing import Dict, Optional
 
-from ._constants import SESSION_COOKIE_NAME
-
 # Load in a Variables the list of user agent to avoid reading it from a file every time
 with open(
     os.path.join(os.path.dirname(__file__), "agents.json"), "r", encoding="utf-8"
@@ -65,16 +63,17 @@ def get_cookie_headers(base_url: str, user_agent: str) -> Dict:
 
 
 def get_curl_headers(
-    base_url: str, user_agent: str, session_cookie: Optional[str]
+    base_url: str, user_agent: str, session_cookies: Optional[Dict[str, str]]
 ) -> Dict:
     """
     Generate browser-like HTTP headers.
 
     :param base_url: The base url of the website
     :param user_agent: The user agent to use
-    :param session_cookie: The session cookie
+    :param session_cookies: Dictionary of session cookies
     :return: A dictionary of headers
     """
+    cookie_str = "; ".join(f"{k}={v}" for k, v in (session_cookies or {}).items())
     return {
         "User-Agent": user_agent,
         "Accept": "application/json, text/plain, */*",
@@ -89,5 +88,5 @@ def get_curl_headers(
         "Sec-Fetch-User": "?1",
         "Origin": base_url,
         "Referer": base_url,
-        "Cookie": f"{SESSION_COOKIE_NAME}={session_cookie}",
+        "Cookie": cookie_str,
     }

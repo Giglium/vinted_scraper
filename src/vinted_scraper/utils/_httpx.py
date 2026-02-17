@@ -4,7 +4,7 @@ All the functions and the utility that required httpx will be placed here
 
 import logging
 from logging import Logger
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import httpx
 
@@ -30,19 +30,21 @@ def get_httpx_config(baseurl: str, config: Optional[Dict] = None):
     return {**default_config, **(config or {})}
 
 
-def extract_cookie_from_response(response: httpx.Response, cookie_name: str) -> str:
+def extract_cookie_from_response(
+    response: httpx.Response, cookie_names: List[str]
+) -> Dict[str, str]:
     """
-    Extracts the required cookie from the response object.
+    Extracts the required cookies from the response object.
 
-    :param response: The httpx response object where to extract the cookie from.
-    :param cookie_name: The name of the cookie to extract.
-    :return: The cookie value as string
+    :param response: The httpx response object.
+    :param cookie_names: The list of cookie names to extract.
+    :return: A dictionary with cookie names as keys and values.
     """
-    # cookies = response.headers.get("Set-Cookie")
-    # if cookies and f"{cookie_name}=" in cookies:
-    #     return cookies.split(f"{cookie_name}=")[1].split(";")[0]
-
-    return response.cookies.get(cookie_name)
+    return {
+        name: response.cookies.get(name)
+        for name in cookie_names
+        if response.cookies.get(name)
+    }
 
 
 def log_response(log: Logger, response: httpx.Response) -> None:

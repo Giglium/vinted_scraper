@@ -94,7 +94,9 @@ class TestUtils(unittest.TestCase):
         - Verify that the function sets the User-Agent header to the provided user agent.
         - Verify that the function sets the Origin and Referer headers to the provided base URL.
         """
-        headers = get_curl_headers(BASE_URL, USER_AGENT, COOKIE_VALUE)
+        headers = get_curl_headers(
+            BASE_URL, USER_AGENT, {SESSION_COOKIE_NAME: COOKIE_VALUE}
+        )
         self.assertIsInstance(headers, dict)
         self.assertEqual(headers["User-Agent"], USER_AGENT)
         self.assertEqual(headers["Origin"], BASE_URL)

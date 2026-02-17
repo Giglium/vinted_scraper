@@ -1,8 +1,8 @@
 # jscpd:ignore-start
-# pylint: disable=missing-module-docstring,duplicate-code
+# pylint: disable=missing-module-docstring,duplicate-code,too-many-arguments,too-many-positional-arguments
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 
@@ -38,10 +38,20 @@ class VintedWrapper:
     def __init__(
         self,
         baseurl: str,
-        session_cookie: Optional[str] = None,
+        session_cookie: Optional[Dict[str, str]] = None,
         user_agent: Optional[str] = None,
         config: Optional[Dict] = None,
+        cookie_names: Optional[List[str]] = None,
     ):
+        """
+        Initialize VintedWrapper.
+
+        :param baseurl: The base URL of the Vinted site
+        :param session_cookie: Dictionary of session cookies.
+        :param user_agent: The user agent to use.
+        :param config: The configuration of the HTTPX client.
+        :param cookie_names: List of cookie names to extract.
+        """
         if not url_validator(baseurl):
             _log.error("'%s' is not a valid url", baseurl)
             raise RuntimeError(f"'{baseurl}' is not a valid url, please check it!")
@@ -58,28 +68,40 @@ class VintedWrapper:
         self._client = httpx.Client(**get_httpx_config(baseurl, config))
         self._base_url = baseurl
         self._user_agent = user_agent or get_random_user_agent()
+        self._cookie_names = cookie_names or [SESSION_COOKIE_NAME]
         self._session_cookie = session_cookie or self.refresh_cookie()
 
-    def refresh_cookie(self, retries: int = 3) -> str:
+    def refresh_cookie(self, retries: int = 3) -> Dict[str, str]:
         """
-        The same of fetch_cookie but it will use the internal client to perform the API call
+        Refresh session cookies using the internal client.
+
+        :param retries: Number of retry attempts. Defaults to 3.
+        :return: Dictionary of session cookies.
         """
         log_refresh_cookie(_log)
         return VintedWrapper.fetch_cookie(
-            self._client, get_cookie_headers(self._base_url, self._user_agent), retries
+            self._client,
+            get_cookie_headers(self._base_url, self._user_agent),
+            self._cookie_names,
+            retries,
         )
 
     @staticmethod
-    def fetch_cookie(client: httpx.Client, headers: Dict, retries: int = 3) -> str:
+    def fetch_cookie(
+        client: httpx.Client,
+        headers: Dict,
+        cookie_names: List[str],
+        retries: int = 3,
+    ) -> Dict[str, str]:
         """
-        Fetch the session cookie from the base URL using an async HTTP GET request with retries.
+        Fetch session cookies from the base URL using an HTTP GET request.
 
-        :param client: An instance of httpx.AsyncClient to perform the HTTP request.
-        :param headers: A dictionary of HTTP headers to include in the request.
-        :param retries: The number of retry attempts if the request is not successful.
-        :return: The session cookie extracted from the HTTP response.
-        :raises RuntimeError: If the session cookie cannot be fetched within the retry limit
-                            or if the response status code is not 200.
+        :param client: An instance of httpx.Client.
+        :param headers: A dictionary of HTTP headers.
+        :param cookie_names: List of cookie names to extract.
+        :param retries: Number of retry attempts. Defaults to 3.
+        :return: Dictionary of session cookies.
+        :raises RuntimeError: If cookies cannot be fetched.
         """
         response = None
 
@@ -88,12 +110,10 @@ class VintedWrapper:
             response = client.get("/", headers=headers)
 
             if response.status_code == 200:
-                session_cookie = extract_cookie_from_response(
-                    response, SESSION_COOKIE_NAME
-                )
-                if session_cookie:
-                    log_cookie_fetched(_log, session_cookie)
-                    return session_cookie
+                cookies = extract_cookie_from_response(response, cookie_names)
+                if cookies:
+                    log_cookie_fetched(_log, str(cookies))
+                    return cookies
                 _log.warning("Cannot find session cookie in response")
             else:
                 log_cookie_fetch_failed(_log, response.status_code, i, retries)

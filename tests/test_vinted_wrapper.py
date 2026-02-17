@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from src.vinted_scraper import VintedWrapper
+from src.vinted_scraper.utils import SESSION_COOKIE_NAME
 from tests.utils._mock import BASE_URL, COOKIE_VALUE, USER_AGENT
 
 
@@ -25,9 +26,11 @@ class TestVintedWrapper(unittest.TestCase):
          - raises an error if the base URL is not valid
          - logs the correct error message
         """
-        wrapper = VintedWrapper(BASE_URL, COOKIE_VALUE, USER_AGENT)
+        wrapper = VintedWrapper(
+            BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE}, USER_AGENT
+        )
         self.assertEqual(wrapper._base_url, BASE_URL)
-        self.assertEqual(wrapper._session_cookie, COOKIE_VALUE)
+        self.assertEqual(wrapper._session_cookie, {SESSION_COOKIE_NAME: COOKIE_VALUE})
         self.assertEqual(wrapper._user_agent, USER_AGENT)
         self.assertEqual(mock_client.return_value.get.call_count, 0)
 
