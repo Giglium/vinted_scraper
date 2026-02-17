@@ -1,4 +1,5 @@
-# pylint: disable=line-too-long
+# jscpd:ignore-start
+# pylint: disable=line-too-long,duplicate-code
 """
 Test the log utils class
 """
@@ -24,13 +25,20 @@ from src.vinted_scraper.utils import (
 from tests.utils import BASE_URL, COOKIE_VALUE, USER_AGENT, assert_no_logs
 
 
-class TestUtils(unittest.TestCase):
+class TestLogUtils(unittest.TestCase):
     """
     Test the log utils class print a correct log in DEBUG mode and no log on INFO
     """
 
     def setUp(self):
+        """Set up test fixtures"""
         self.pyversion = sys.version_info
+        self.logger = logging.getLogger(__name__)
+        self.original_level = self.logger.level
+
+    def tearDown(self):
+        """Clean up after tests"""
+        self.logger.setLevel(self.original_level)
 
     def test_log_constructor(self):
         """
@@ -40,7 +48,7 @@ class TestUtils(unittest.TestCase):
         - Checking that the message is logged when the DEBUG level is enabled
         - Checking that the message is not logged when the DEBUG level is disabled
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         # Case DEBUG enabled
         config = {"headers": {"User-Agent": USER_AGENT}}
         with self.assertLogs(level=logging.DEBUG) as cm:
@@ -90,13 +98,13 @@ class TestUtils(unittest.TestCase):
         - Checking that the message is logged when the DEBUG level is enabled
         - Checking that the message is not logged when the DEBUG level is disabled
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
 
         for i in range(0, 3):
             # Case DEBUG enabled
             with self.assertLogs(level=logging.DEBUG) as cm:
                 log_interaction(log=log, i=i, retries=3)
-                self.assertIn(f"Cookie fetch attempt {i+1}/3", cm.output[0])
+                self.assertIn(f"Cookie fetch attempt {i + 1}/3", cm.output[0])
 
             # Case Debug disable
             assert_no_logs(
@@ -111,7 +119,7 @@ class TestUtils(unittest.TestCase):
         - Checking that the message is logged when the DEBUG level is enabled
         - Checking that the message is not logged when the DEBUG level is disabled
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         # Case DEBUG enabled
         time = 1000
         with self.assertLogs(level=logging.DEBUG) as cm:
@@ -132,7 +140,7 @@ class TestUtils(unittest.TestCase):
         - Checking that the message is logged when the DEBUG level is enabled
         - Checking that the message is not logged when the DEBUG level is disabled
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         # Case DEBUG enabled
         with self.assertLogs(level=logging.DEBUG) as cm:
             log_refresh_cookie(log=log)
@@ -154,7 +162,7 @@ class TestUtils(unittest.TestCase):
         - Checking that the message is logged when the DEBUG level is enabled
         - Checking that the message is not logged when the DEBUG level is disabled
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         params = {"search_text": "board games"}
         # Case DEBUG enabled
         with self.assertLogs(level=logging.DEBUG) as cm:
@@ -179,7 +187,7 @@ class TestUtils(unittest.TestCase):
         - Checking that the message is logged when the DEBUG level is enabled
         - Checking that the message is not logged when the DEBUG level is disabled
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         item_id = "123456"
         params = {"locale": "en"}
         # Case DEBUG enabled
@@ -208,7 +216,7 @@ class TestUtils(unittest.TestCase):
         - Checking that the message is logged when the DEBUG level is enabled
         - Checking that the message is not logged when the DEBUG level is disabled
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         endpoint = "/catalog/items"
         params = {"page": 1}
         # Case DEBUG enabled
@@ -241,7 +249,7 @@ class TestUtils(unittest.TestCase):
         - Checking that the message is logged with curl command when DEBUG is enabled
         - Checking that the message is not logged when DEBUG is disabled
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         base_url = BASE_URL
         endpoint = "/catalog/items"
         headers = {
@@ -299,7 +307,7 @@ class TestUtils(unittest.TestCase):
         - Checking that the response details are logged when DEBUG is enabled
         - Checking that long bodies are truncated
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         endpoint = "/catalog/items"
         status_code = 200
         headers = {"Content-Type": "application/json"}
@@ -360,7 +368,7 @@ class TestUtils(unittest.TestCase):
         """
         Test the log_cookie_fetched function.
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         cookie_value = "abc123def456ghi789"
 
         with self.assertLogs(level=logging.DEBUG) as cm:
@@ -380,7 +388,7 @@ class TestUtils(unittest.TestCase):
         """
         Test the log_cookie_retry function.
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         status_code = 401
 
         with self.assertLogs(level=logging.DEBUG) as cm:
@@ -400,7 +408,7 @@ class TestUtils(unittest.TestCase):
         """
         Test the log_cookie_fetch_failed function.
         """
-        log = logging.getLogger(__name__)
+        log = self.logger
         status_code = 403
         attempt = 0
         retries = 3
@@ -433,3 +441,4 @@ class TestUtils(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+# jscpd:ignore-end

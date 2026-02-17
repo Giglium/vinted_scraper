@@ -21,3 +21,6 @@ def assert_no_logs(func, test, level, *args, **kwargs):
     if py_version.major >= 3 and py_version.minor >= 10:
         with test.assertNoLogs(level=level):
             func(*args, **kwargs)
+    else:
+        # For Python < 3.10, just execute the function without log assertion
+        func(*args, **kwargs)

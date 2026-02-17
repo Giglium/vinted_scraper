@@ -1,7 +1,6 @@
-# pylint: disable=broad-exception-caught
-"""
-Test the misc utils class
-"""
+# jscpd:ignore-start
+# pylint: disable=duplicate-code
+"""Tests for misc utility functions."""
 
 import unittest
 
@@ -15,31 +14,17 @@ from src.vinted_scraper.utils import (
 from tests.utils._mock import BASE_URL, COOKIE_VALUE, USER_AGENT
 
 
-class TestUtils(unittest.TestCase):
-    """
-    Test the misc utils class
-    """
+class TestMiscUtils(unittest.TestCase):
+    """Test suite for miscellaneous utility functions."""
 
     def test_get_random_user_agent(self):
-        """
-        Test the get_random_user_agent function.
-
-        Test cases include:
-        - Ensure that the function doesn't raise any exceptions
-        """
-        try:
-            get_random_user_agent()
-        except Exception as e:
-            self.fail(f"get_random_user_agent() raised an exception: {e}")
+        """Test that get_random_user_agent returns a valid non-empty string."""
+        user_agent = get_random_user_agent()
+        self.assertIsInstance(user_agent, str)
+        self.assertGreater(len(user_agent), 0)
 
     def test_url_validators(self):
-        """
-        Test the test_url_validators function.
-
-        Test cases include:
-        -  Test that valid URLs are correctly identified by the url_validator function.
-        - Test that invalid URLs are correctly identified by the url_validator function.
-        """
+        """Test url_validator correctly identifies valid and invalid URLs."""
 
         # Test valid URLs
         valid_urls = [
@@ -71,14 +56,7 @@ class TestUtils(unittest.TestCase):
             self.assertFalse(url_validator(url))
 
     def test_get_cookie_headers(self):
-        """
-        Test the get_cookie_headers function.
-
-        The test case includes:
-        - Verify that the function returns a dictionary.
-        - Verify that the function sets the User-Agent header to the provided user agent.
-        - Verify that the function sets the Origin and Referer headers to the provided base URL.
-        """
+        """Test get_cookie_headers returns correct headers with User-Agent, Origin, and Referer."""
         headers = get_cookie_headers(BASE_URL, USER_AGENT)
         self.assertIsInstance(headers, dict)
         self.assertEqual(headers["User-Agent"], USER_AGENT)
@@ -86,14 +64,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(headers["Referer"], BASE_URL)
 
     def test_get_curl_headers(self):
-        """
-        Test the get_curl_headers function.
-
-        The test case includes:
-        - Verify that the function returns a dictionary.
-        - Verify that the function sets the User-Agent header to the provided user agent.
-        - Verify that the function sets the Origin and Referer headers to the provided base URL.
-        """
+        """Test get_curl_headers returns correct headers including Cookie."""
         headers = get_curl_headers(
             BASE_URL, USER_AGENT, {SESSION_COOKIE_NAME: COOKIE_VALUE}
         )
@@ -106,3 +77,4 @@ class TestUtils(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+# jscpd:ignore-end
