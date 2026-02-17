@@ -54,13 +54,13 @@ class TestUtils(unittest.TestCase):
     def test_extract_cookie_from_response(self):
         """
         Test the extract_cookie_from_response function to ensure it correctly extracts
-        the specified cookie from the HTTPX response headers.
+        the specified cookies from the HTTPX response headers.
 
         The test cases cover:
-        - Extracting a valid cookie from the Set-Cookie header.
-        - Handling a response without a Set-Cookie header.
+        - Extracting valid cookies from the response.
+        - Handling a response without cookies.
         - Handling a response where the specified cookie is missing.
-        - Extracting a cookie when multiple cookies are present in the Set-Cookie header.
+        - Extracting cookies when multiple cookies are present.
         """
         # set the request parameter, without that, res.raise_for_status() will fail
         request = httpx.Request("GET", BASE_URL)
@@ -72,19 +72,20 @@ class TestUtils(unittest.TestCase):
         cookies.set(SESSION_COOKIE_NAME, COOKIE_VALUE, domain=BASE_URL)
         response._cookies = cookies
 
-        self.assertEqual(
-            extract_cookie_from_response(response, SESSION_COOKIE_NAME), COOKIE_VALUE
-        )
+        result = extract_cookie_from_response(response, [SESSION_COOKIE_NAME])
+        self.assertEqual(result[SESSION_COOKIE_NAME], COOKIE_VALUE)
 
-        # Test no Set-Cookie header
+        # Test no cookies
         response = httpx.Response(200, request=request, headers={})
-        self.assertIsNone(extract_cookie_from_response(response, SESSION_COOKIE_NAME))
+        result = extract_cookie_from_response(response, [SESSION_COOKIE_NAME])
+        self.assertEqual(result, {})
 
         # Test missing cookie
         response = httpx.Response(
             200, request=request, headers={"Set-Cookie": "other_cookie=other_value"}
         )
-        self.assertIsNone(extract_cookie_from_response(response, SESSION_COOKIE_NAME))
+        result = extract_cookie_from_response(response, [SESSION_COOKIE_NAME])
+        self.assertEqual(result, {})
 
         # Test multiple cookies
         response = httpx.Response(200, request=request)
@@ -95,9 +96,11 @@ class TestUtils(unittest.TestCase):
         cookies.set("other_cookie", "other_value", domain=BASE_URL)
         response._cookies = cookies
 
-        self.assertEqual(
-            extract_cookie_from_response(response, SESSION_COOKIE_NAME), COOKIE_VALUE
+        result = extract_cookie_from_response(
+            response, [SESSION_COOKIE_NAME, "another_cookie"]
         )
+        self.assertEqual(result[SESSION_COOKIE_NAME], COOKIE_VALUE)
+        self.assertEqual(result["another_cookie"], "another_value")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 # jscpd:ignore-start
-# pylint: disable=missing-module-docstring,duplicate-code
+# pylint: disable=missing-module-docstring,duplicate-code,too-many-arguments,too-many-positional-arguments
 import asyncio
 import logging
 from typing import Any, Dict, Optional
@@ -41,6 +41,7 @@ class AsyncVintedWrapper:
         baseurl: str,
         user_agent: Optional[str] = None,
         config: Optional[Dict] = None,
+        cookie_names: Optional[list[str]] = None,
     ):
         """
         Factory method that creates an instance of the AsyncVintedWrapper class.
@@ -49,25 +50,39 @@ class AsyncVintedWrapper:
 
         :param baseurl: The base URL of the Vinted site
         :param user_agent: The user agent to use, if not provided it be chosen randomly.
-        :param session_cookie: The session cookie to use, if not provided it be fetched
-            automatically.
-        :param config: The configuration of the HTTPX client, it will be merged with
+        :param config: The configuration of the HTTPX client, it will be merged with defaults.
+        :param cookie_names: List of cookie names to extract. Defaults to [SESSION_COOKIE_NAME].
         :return: An instance of the class
         """
         _log.debug("Creating the async wrapper using the factory method")
 
         # init
-        self = cls(baseurl, user_agent=user_agent, config=config)
+        self = cls(
+            baseurl,
+            user_agent=user_agent,
+            config=config,
+            cookie_names=cookie_names,
+        )
         self._session_cookie = await self.refresh_cookie()
         return self
 
     def __init__(
         self,
         baseurl: str,
-        session_cookie: Optional[str] = None,
+        session_cookie: Optional[Dict[str, str]] = None,
         user_agent: Optional[str] = None,
         config: Optional[Dict] = None,
+        cookie_names: Optional[list[str]] = None,
     ):
+        """
+        Initialize AsyncVintedWrapper.
+
+        :param baseurl: The base URL of the Vinted site
+        :param session_cookie: Dictionary of session cookies.
+        :param user_agent: The user agent to use.
+        :param config: The configuration of the HTTPX client.
+        :param cookie_names: List of cookie names to extract.
+        """
         if not url_validator(baseurl):
             _log.error("'%s' is not a valid url", baseurl)
             raise RuntimeError(f"'{baseurl}' is not a valid url, please check it!")
@@ -85,29 +100,39 @@ class AsyncVintedWrapper:
         self._session_cookie = session_cookie
         self._base_url = baseurl
         self._user_agent = user_agent or get_random_user_agent()
+        self._cookie_names = cookie_names or [SESSION_COOKIE_NAME]
 
-    async def refresh_cookie(self, retries: int = 3) -> str:
+    async def refresh_cookie(self, retries: int = 3) -> Dict[str, str]:
         """
-        The same of fetch_cookie but it will use the internal client to perform the API call
+        Refresh session cookies using the internal client.
+
+        :param retries: Number of retry attempts. Defaults to 3.
+        :return: Dictionary of session cookies.
         """
         log_refresh_cookie(_log)
         return await AsyncVintedWrapper.fetch_cookie(
-            self._client, get_cookie_headers(self._base_url, self._user_agent), retries
+            self._client,
+            get_cookie_headers(self._base_url, self._user_agent),
+            self._cookie_names,
+            retries,
         )
 
     @staticmethod
     async def fetch_cookie(
-        client: httpx.AsyncClient, headers: Dict, retries: int = 3
-    ) -> str:
+        client: httpx.AsyncClient,
+        headers: Dict,
+        cookie_names: list[str],
+        retries: int = 3,
+    ) -> Dict[str, str]:
         """
-        Fetch the session cookie from the base URL using an async HTTP GET request.
+        Fetch session cookies from the base URL using an async HTTP GET request.
 
-        :param client: An instance of httpx.AsyncClient to perform the HTTP request.
-        :param headers: A dictionary of HTTP headers to include in the request.
-        :param retries: The number of retry attempts if the request is not successful.
-        :return: The session cookie extracted from the HTTP response.
-        :raises RuntimeError: If the session cookie cannot be fetched within the retry limit
-                            or if the response status code is not 200.
+        :param client: An instance of httpx.AsyncClient.
+        :param headers: A dictionary of HTTP headers.
+        :param cookie_names: List of cookie names to extract.
+        :param retries: Number of retry attempts. Defaults to 3.
+        :return: Dictionary of session cookies.
+        :raises RuntimeError: If cookies cannot be fetched.
         """
         response = None
 
@@ -116,12 +141,10 @@ class AsyncVintedWrapper:
             response = await client.get("/", headers=headers)
 
             if response.status_code == 200:
-                session_cookie = extract_cookie_from_response(
-                    response, SESSION_COOKIE_NAME
-                )
-                if session_cookie:
-                    log_cookie_fetched(_log, session_cookie)
-                    return session_cookie
+                cookies = extract_cookie_from_response(response, cookie_names)
+                if cookies:
+                    log_cookie_fetched(_log, str(cookies))
+                    return cookies
                 _log.warning("Cannot find session cookie in response")
             else:
                 log_cookie_fetch_failed(_log, response.status_code, i, retries)
