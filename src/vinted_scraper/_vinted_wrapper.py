@@ -14,7 +14,15 @@ from .utils import (
     get_httpx_config,
     get_random_user_agent,
     log_constructor,
+    log_cookie_fetch_failed,
+    log_cookie_fetched,
+    log_cookie_retry,
+    log_curl_request,
+    log_curl_response,
     log_interaction,
+    log_item,
+    log_refresh_cookie,
+    log_search,
     log_sleep,
     url_validator,
 )
@@ -34,12 +42,10 @@ class VintedWrapper:
         user_agent: Optional[str] = None,
         config: Optional[Dict] = None,
     ):
-        # Validate
         if not url_validator(baseurl):
             _log.error("'%s' is not a valid url", baseurl)
             raise RuntimeError(f"'{baseurl}' is not a valid url, please check it!")
 
-        # Logging
         log_constructor(
             log=_log,
             self=self,
@@ -49,7 +55,6 @@ class VintedWrapper:
             config=config,
         )
 
-        # init
         self._client = httpx.Client(**get_httpx_config(baseurl, config))
         self._base_url = baseurl
         self._user_agent = user_agent or get_random_user_agent()
@@ -59,6 +64,7 @@ class VintedWrapper:
         """
         The same of fetch_cookie but it will use the internal client to perform the API call
         """
+        log_refresh_cookie(_log)
         return VintedWrapper.fetch_cookie(
             self._client, get_cookie_headers(self._base_url, self._user_agent), retries
         )
@@ -78,9 +84,7 @@ class VintedWrapper:
         response = None
 
         for i in range(retries):
-            log_interaction(_log, i)
-
-            # Call base url to fetch session cookie
+            log_interaction(_log, i, retries)
             response = client.get("/", headers=headers)
 
             if response.status_code == 200:
@@ -88,10 +92,11 @@ class VintedWrapper:
                     response, SESSION_COOKIE_NAME
                 )
                 if session_cookie:
+                    log_cookie_fetched(_log, session_cookie)
                     return session_cookie
                 _log.warning("Cannot find session cookie in response")
             else:
-                # Exponential backoff before retrying
+                log_cookie_fetch_failed(_log, response.status_code, i, retries)
                 sleep_time = 2**i
                 log_sleep(_log, sleep_time)
                 time.sleep(sleep_time)
@@ -113,6 +118,7 @@ class VintedWrapper:
             Default value: None.
         :return: A Dict that contains the JSON response with the search results.
         """
+        log_search(_log, params)
         return self.curl("/api/v2/catalog/items", params=params)
 
     def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
@@ -124,6 +130,7 @@ class VintedWrapper:
             to the request. Default value: None.
         :return: A Dict that contains the JSON response with the item's details.
         """
+        log_item(_log, item_id, params)
         return self.curl(f"/api/v2/items/{item_id}/details", params=params)
 
     def curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
@@ -144,6 +151,13 @@ class VintedWrapper:
             and returns it as a dictionary.
         5. If the response status code is not 200, it raises a RuntimeError with an error message.
         """
+        headers = get_curl_headers(
+            self._base_url, self._user_agent, self._session_cookie
+        )
+
+        # Logging request
+        log_curl_request(_log, self._base_url, endpoint, headers, params)
+
         response = self._client.get(
             endpoint,
             headers=get_curl_headers(
@@ -152,12 +166,22 @@ class VintedWrapper:
             params=params,
         )
 
+        # Logging response
+        log_curl_response(
+            _log, endpoint, response.status_code, response.headers, response.text
+        )
+
         # Success
         if response.status_code == 200:
-            return response.json()
+            try:
+                return response.json()
+            except Exception as e:
+                _log.error("Failed to parse JSON response from %s: %s", endpoint, e)
+                raise RuntimeError(f"Invalid JSON response from {endpoint}: {e}") from e
 
         # Fetch (maybe is expired?) the session cookie again and retry the API call
         if response.status_code == 401:
+            log_cookie_retry(_log, response.status_code)
             self._session_cookie = self.refresh_cookie()
             return self.curl(endpoint, params)
         raise RuntimeError(

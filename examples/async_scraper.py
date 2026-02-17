@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 """
 This is an example script for running the AsyncVintedScraper.
 Since GitHub Actions perform too many parallel API calls, we added retry logic to handle errors.
@@ -5,7 +6,7 @@ Since GitHub Actions perform too many parallel API calls, we added retry logic t
 
 from vinted_scraper import AsyncVintedScraper
 
-from ._utils import run_with_retries
+from ._utils import configure_logging, run_with_retries
 
 
 async def main() -> None:
@@ -16,5 +17,6 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    configure_logging()
     run_with_retries(main, is_async=True)
     print("AsyncVintedScraper completed successfully.")

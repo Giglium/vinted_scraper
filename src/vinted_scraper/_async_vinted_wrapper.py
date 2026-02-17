@@ -14,7 +14,15 @@ from .utils import (
     get_httpx_config,
     get_random_user_agent,
     log_constructor,
+    log_cookie_fetch_failed,
+    log_cookie_fetched,
+    log_cookie_retry,
+    log_curl_request,
+    log_curl_response,
     log_interaction,
+    log_item,
+    log_refresh_cookie,
+    log_search,
     log_sleep,
     url_validator,
 )
@@ -46,6 +54,9 @@ class AsyncVintedWrapper:
         :param config: The configuration of the HTTPX client, it will be merged with
         :return: An instance of the class
         """
+        _log.debug("Creating the async wrapper using the factory method")
+
+        # init
         self = cls(baseurl, user_agent=user_agent, config=config)
         self._session_cookie = await self.refresh_cookie()
         return self
@@ -57,12 +68,10 @@ class AsyncVintedWrapper:
         user_agent: Optional[str] = None,
         config: Optional[Dict] = None,
     ):
-        # Validate
         if not url_validator(baseurl):
             _log.error("'%s' is not a valid url", baseurl)
             raise RuntimeError(f"'{baseurl}' is not a valid url, please check it!")
 
-        # Logging
         log_constructor(
             log=_log,
             self=self,
@@ -72,7 +81,6 @@ class AsyncVintedWrapper:
             config=config,
         )
 
-        # init
         self._client = httpx.AsyncClient(**get_httpx_config(baseurl, config))
         self._session_cookie = session_cookie
         self._base_url = baseurl
@@ -82,6 +90,7 @@ class AsyncVintedWrapper:
         """
         The same of fetch_cookie but it will use the internal client to perform the API call
         """
+        log_refresh_cookie(_log)
         return await AsyncVintedWrapper.fetch_cookie(
             self._client, get_cookie_headers(self._base_url, self._user_agent), retries
         )
@@ -103,9 +112,7 @@ class AsyncVintedWrapper:
         response = None
 
         for i in range(retries):
-            log_interaction(_log, i)
-
-            # Call base url to fetch session cookie
+            log_interaction(_log, i, retries)
             response = await client.get("/", headers=headers)
 
             if response.status_code == 200:
@@ -113,10 +120,11 @@ class AsyncVintedWrapper:
                     response, SESSION_COOKIE_NAME
                 )
                 if session_cookie:
+                    log_cookie_fetched(_log, session_cookie)
                     return session_cookie
                 _log.warning("Cannot find session cookie in response")
             else:
-                # Exponential backoff before retrying
+                log_cookie_fetch_failed(_log, response.status_code, i, retries)
                 sleep_time = 2**i
                 log_sleep(_log, sleep_time)
                 await asyncio.sleep(sleep_time)
@@ -137,6 +145,7 @@ class AsyncVintedWrapper:
             you should add the `search_text` parameter. Default value: None.
         :return: A Dict that contains the JSON response with the search results.
         """
+        log_search(_log, params)
         return await self.curl("/api/v2/catalog/items", params=params)
 
     async def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
@@ -148,6 +157,7 @@ class AsyncVintedWrapper:
             request. Default value: None.
         :return: A Dict that contains the JSON response with the item's details.
         """
+        log_item(_log, item_id, params)
         return await self.curl(f"/api/v2/items/{item_id}", params=params)
 
     async def curl(
@@ -170,6 +180,12 @@ class AsyncVintedWrapper:
             and returns it as a dictionary.
         5. If the response status code is not 200, it raises a RuntimeError.
         """
+        headers = get_curl_headers(
+            self._base_url, self._user_agent, self._session_cookie
+        )
+
+        log_curl_request(_log, self._base_url, endpoint, headers, params)
+
         response = await self._client.get(
             endpoint,
             headers=get_curl_headers(
@@ -178,12 +194,21 @@ class AsyncVintedWrapper:
             params=params,
         )
 
+        log_curl_response(
+            _log, endpoint, response.status_code, response.headers, response.text
+        )
+
         # Success
         if response.status_code == 200:
-            return response.json()
+            try:
+                return response.json()
+            except Exception as e:
+                _log.error("Failed to parse JSON response from %s: %s", endpoint, e)
+                raise RuntimeError(f"Invalid JSON response from {endpoint}: {e}") from e
 
         # Fetch (maybe is expired?) the session cookie again and retry the API call
         if response.status_code == 401:
+            log_cookie_retry(_log, response.status_code)
             self._session_cookie = await self.refresh_cookie()
             return await self.curl(endpoint, params)
         raise RuntimeError(

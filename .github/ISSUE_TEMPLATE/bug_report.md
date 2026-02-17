@@ -25,8 +25,34 @@ A clear and concise description of what you expected to happen.
 Provide a minimal, copy-pastable example.
 
 ```python
-
+    # Your code here
 ```
+
+## Debug logs
+
+Please enable debug logging and include the complete output. See the [Debugging section in readme](../../README.md) for detailed instructions.
+
+```python
+import logging
+
+# Configure logging BEFORE importing vinted_scraper
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(levelname)s:%(name)s:%(message)s"
+)
+
+from vinted_scraper import VintedScraper
+
+# Your code here
+```
+
+<details>
+<summary>Debug output (click to expand)</summary>
+```
+# Paste the COMPLETE debug output here
+# Include everything from initialization to the error
+```
+</details>
 
 ## Tell us about your environment
 
