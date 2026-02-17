@@ -126,6 +126,46 @@ if __name__ == "__main__":
     main()
 ```
 
+## Debugging
+
+To enable debug logging for troubleshooting, you can configure the logger:
+
+```python
+import logging
+
+# Configure logging BEFORE importing vinted_scraper
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(levelname)s:%(name)s:%(message)s"
+)
+
+from vinted_scraper import VintedScraper
+
+scraper = VintedScraper("https://www.vinted.com")
+scraper.search({"search_text": "board games"})
+```
+
+<details>
+<summary>Debug output (click to expand)</summary>
+```
+DEBUG:vinted_scraper._vinted_wrapper:Initializing VintedScraper(baseurl=https://www.vinted.com, user_agent=None, session_cookie=auto-fetch, config=None)
+DEBUG:vinted_scraper._vinted_wrapper:Refreshing session cookie
+DEBUG:vinted_scraper._vinted_wrapper:Cookie fetch attempt 1/3
+DEBUG:vinted_scraper._vinted_wrapper:Session cookie fetched successfully: eyJraWQiOiJFNTdZZHJ1...
+DEBUG:vinted_scraper._vinted_wrapper:Calling search() with params: {'search_text': 'board games'}
+DEBUG:vinted_scraper._vinted_wrapper:API Request: GET /api/v2/catalog/items with params {'search_text': 'board games'}
+DEBUG:vinted_scraper._vinted_wrapper:Curl command:
+curl \
+  -H 'User-Agent: Mozilla/5.0...' \
+  -H 'Cookie: _vinted_fr_session=...' \
+  ...
+  'https://www.vinted.com/api/v2/catalog/items?search_text=board+games'
+DEBUG:vinted_scraper._vinted_wrapper:API Response: /api/v2/catalog/items - Status: 200
+DEBUG:vinted_scraper._vinted_wrapper:Response Headers: {'content-type': 'application/json', ...}
+DEBUG:vinted_scraper._vinted_wrapper:Response Body (truncated): {"items": [...]}
+```
+</details>
+
 ## License
 
 This project is licensed under the MIT License - see

@@ -4,8 +4,19 @@ This is a helper function. It helps avoid code duplication.
 """
 
 import asyncio
+import logging
 from time import sleep
 from typing import Any, Callable
+
+
+def configure_logging():
+    """Configure logging for vinted_scraper examples."""
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)s:%(name)s:%(message)s"))
+    logger = logging.getLogger("vinted_scraper")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+    logger.propagate = False
 
 
 def run_with_retries(
@@ -42,5 +53,11 @@ def run_with_retries(
             if retries == max_retries:
                 raise  # Exit the loop with error
             sleep_time = min(backoff_base**retries, backoff_cap)
-            print(f"Attempt {retries} failed: {e}. Retrying in {sleep_time} seconds...")
+            logger = logging.getLogger("vinted_scraper")
+            logger.warning(
+                "Attempt %d failed: %s. Retrying in %d seconds...",
+                retries,
+                e,
+                sleep_time,
+            )
             sleep(sleep_time)

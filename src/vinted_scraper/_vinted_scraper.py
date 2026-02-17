@@ -1,9 +1,12 @@
 # jscpd:ignore-start
 # pylint: disable=missing-module-docstring,duplicate-code
+import logging
 from typing import Dict, List, Optional
 
 from ._vinted_wrapper import VintedWrapper
 from .models import VintedItem
+
+_log = logging.getLogger(__name__)
 
 
 class VintedScraper(VintedWrapper):
