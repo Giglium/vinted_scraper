@@ -1,8 +1,8 @@
-# pylint: disable=protected-access
-"""
-Test the httpx utils class
-"""
+# jscpd:ignore-start
+# pylint: disable=protected-access,duplicate-code
+"""Tests for httpx utility functions."""
 
+import logging
 import unittest
 
 import httpx
@@ -11,27 +11,15 @@ from src.vinted_scraper.utils import (
     extract_cookie_from_response,
     get_httpx_config,
 )
+from src.vinted_scraper.utils._httpx import log_response
 from tests.utils._mock import BASE_URL, COOKIE_VALUE, USER_AGENT
 
 
-class TestUtils(unittest.TestCase):
-    """
-    Test the httpx utils class, all the API call are mocked
-    """
+class TestHttpxUtils(unittest.TestCase):
+    """Test suite for httpx utility functions."""
 
     def test_get_httpx_config(self):
-        """
-        Test the get_httpx_config function to ensure it returns the correct configuration
-        for an HTTPX client.
-
-        Test cases include:
-        - Default configuration: Verifies the default values are present
-            if custom config is missing.
-        - Merging with additional config: Checks if additional configuration parameters
-            are merged correctly.
-        - Overriding default values: Ensures the function allows overriding
-            default values.
-        """
+        """Test get_httpx_config returns correct default and merged configurations."""
         # Test default
         config = get_httpx_config(BASE_URL)
         self.assertEqual(config["base_url"], BASE_URL)
@@ -52,16 +40,7 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(overridden_config["follow_redirects"])
 
     def test_extract_cookie_from_response(self):
-        """
-        Test the extract_cookie_from_response function to ensure it correctly extracts
-        the specified cookies from the HTTPX response headers.
-
-        The test cases cover:
-        - Extracting valid cookies from the response.
-        - Handling a response without cookies.
-        - Handling a response where the specified cookie is missing.
-        - Extracting cookies when multiple cookies are present.
-        """
+        """Test extract_cookie_from_response correctly extracts cookies from httpx response."""
         # set the request parameter, without that, res.raise_for_status() will fail
         request = httpx.Request("GET", BASE_URL)
 
@@ -102,6 +81,28 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(result[SESSION_COOKIE_NAME], COOKIE_VALUE)
         self.assertEqual(result["another_cookie"], "another_value")
 
+    def test_log_response(self):
+        """Test log_response logs response details at DEBUG level."""
+        logger = logging.getLogger("test_logger")
+        original_level = logger.level
+        logger.setLevel(logging.DEBUG)
+
+        try:
+            request = httpx.Request("GET", BASE_URL)
+            response = httpx.Response(
+                200,
+                request=request,
+                headers={"Content-Type": "application/json"},
+            )
+            response._content = b'{"test": "data"}'
+
+            with self.assertLogs(logger, level=logging.DEBUG) as cm:
+                log_response(logger, response)
+                self.assertTrue(any("Status code: 200" in log for log in cm.output))
+        finally:
+            logger.setLevel(original_level)
+
 
 if __name__ == "__main__":
     unittest.main()
+# jscpd:ignore-end
