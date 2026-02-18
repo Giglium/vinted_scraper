@@ -84,6 +84,7 @@ act.docs: #! Run the linter github action
 .PHONY: clean
 clean: ## Clean up project files
 	-@rm .coverage
+	-@rm coverage.xml
 	-@rm -r htmlcov/
 	-@rm -r .mypy_cache
 	-@rm -rf dist
@@ -101,3 +102,4 @@ help: ## Show the basic command help.
 .PHONY: help.all
 act.help: ## Show the act command help.
 	@sed -ne '/@sed/!s/#! //p' $(MAKEFILE_LIST)
+
