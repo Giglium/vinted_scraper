@@ -15,7 +15,8 @@ Classes:
 """
 
 from ._brand import VintedBrand
-from ._bundle_discount import VintedBundleDiscount, VintedDiscount
+from ._bundle_discount import VintedBundleDiscount
+from ._discount import VintedDiscount
 from ._high_resolution import VintedHighResolution
 from ._image import VintedImage
 from ._item import VintedItem
