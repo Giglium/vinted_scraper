@@ -2,7 +2,16 @@
 Utils module that is a collection of all the common function present in this package
 """
 
-from ._constants import SESSION_COOKIE_NAME
+from ._constants import (
+    API_CATALOG_ITEMS,
+    API_ITEMS,
+    DEFAULT_RETRIES,
+    DEFAULT_TIMEOUT,
+    HTTP_OK,
+    HTTP_UNAUTHORIZED,
+    RETRY_BASE_SLEEP,
+    SESSION_COOKIE_NAME,
+)
 from ._httpx import extract_cookie_from_response, get_httpx_config
 from ._log import (
     log_constructor,
@@ -27,6 +36,13 @@ from ._misc import (
 
 __all__ = [
     "SESSION_COOKIE_NAME",
+    "DEFAULT_TIMEOUT",
+    "DEFAULT_RETRIES",
+    "RETRY_BASE_SLEEP",
+    "HTTP_OK",
+    "HTTP_UNAUTHORIZED",
+    "API_CATALOG_ITEMS",
+    "API_ITEMS",
     "extract_cookie_from_response",
     "get_httpx_config",
     "log_constructor",

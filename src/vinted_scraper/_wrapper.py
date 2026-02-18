@@ -1,12 +1,19 @@
 # jscpd:ignore-start
-# pylint: disable=missing-module-docstring,duplicate-code,too-many-arguments,too-many-positional-arguments
+# pylint: disable=missing-module-docstring,duplicate-code,too-many-instance-attributes
 import logging
 import time
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 import httpx
 
 from .utils import (
+    API_CATALOG_ITEMS,
+    API_ITEMS,
+    DEFAULT_RETRIES,
+    HTTP_OK,
+    HTTP_UNAUTHORIZED,
+    RETRY_BASE_SLEEP,
     SESSION_COOKIE_NAME,
     extract_cookie_from_response,
     get_cookie_headers,
@@ -30,48 +37,45 @@ from .utils import (
 _log = logging.getLogger(__name__)
 
 
+@dataclass
 class VintedWrapper:
     """
     VintedWrapper
     """
 
-    def __init__(
-        self,
-        baseurl: str,
-        session_cookie: Optional[Dict[str, str]] = None,
-        user_agent: Optional[str] = None,
-        config: Optional[Dict] = None,
-        cookie_names: Optional[List[str]] = None,
-    ):
-        """
-        Initialize VintedWrapper.
+    baseurl: str
+    session_cookie: Optional[Dict[str, str]] = None
+    user_agent: Optional[str] = None
+    config: Optional[Dict] = None
+    cookie_names: Optional[List[str]] = None
+    _client: httpx.Client = field(init=False, repr=False)
 
-        :param baseurl: The base URL of the Vinted site
-        :param session_cookie: Dictionary of session cookies.
-        :param user_agent: The user agent to use.
-        :param config: The configuration of the HTTPX client.
-        :param cookie_names: List of cookie names to extract.
+    def __post_init__(self) -> None:
         """
-        if not url_validator(baseurl):
-            _log.error("'%s' is not a valid url", baseurl)
-            raise RuntimeError(f"'{baseurl}' is not a valid url, please check it!")
+        Initialize VintedWrapper after dataclass initialization.
+        """
+        if not url_validator(self.baseurl):
+            _log.error("'%s' is not a valid url", self.baseurl)
+            raise RuntimeError(f"'{self.baseurl}' is not a valid url, please check it!")
 
         log_constructor(
             log=_log,
             self=self,
-            baseurl=baseurl,
-            user_agent=user_agent,
-            session_cookie=session_cookie,
-            config=config,
+            baseurl=self.baseurl,
+            user_agent=self.user_agent,
+            session_cookie=self.session_cookie,
+            config=self.config,
         )
 
-        self._client = httpx.Client(**get_httpx_config(baseurl, config))
-        self._base_url = baseurl
-        self._user_agent = user_agent or get_random_user_agent()
-        self._cookie_names = cookie_names or [SESSION_COOKIE_NAME]
-        self._session_cookie = session_cookie or self.refresh_cookie()
+        if self.user_agent is None:
+            self.user_agent = get_random_user_agent()
+        if self.cookie_names is None:
+            self.cookie_names = [SESSION_COOKIE_NAME]
+        self._client = httpx.Client(**get_httpx_config(self.baseurl, self.config))
+        if self.session_cookie is None:
+            self.session_cookie = self.refresh_cookie()
 
-    def refresh_cookie(self, retries: int = 3) -> Dict[str, str]:
+    def refresh_cookie(self, retries: int = DEFAULT_RETRIES) -> Dict[str, str]:
         """
         Refresh session cookies using the internal client.
 
@@ -81,8 +85,8 @@ class VintedWrapper:
         log_refresh_cookie(_log)
         return VintedWrapper.fetch_cookie(
             self._client,
-            get_cookie_headers(self._base_url, self._user_agent),
-            self._cookie_names,
+            get_cookie_headers(self.baseurl, self.user_agent),
+            self.cookie_names,
             retries,
         )
 
@@ -91,7 +95,7 @@ class VintedWrapper:
         client: httpx.Client,
         headers: Dict,
         cookie_names: List[str],
-        retries: int = 3,
+        retries: int = DEFAULT_RETRIES,
     ) -> Dict[str, str]:
         """
         Fetch session cookies from the base URL using an HTTP GET request.
@@ -109,7 +113,7 @@ class VintedWrapper:
             log_interaction(_log, i, retries)
             response = client.get("/", headers=headers)
 
-            if response.status_code == 200:
+            if response.status_code == HTTP_OK:
                 cookies = extract_cookie_from_response(response, cookie_names)
                 if cookies:
                     log_cookie_fetched(_log, str(cookies))
@@ -117,7 +121,7 @@ class VintedWrapper:
                 _log.warning("Cannot find session cookie in response")
             else:
                 log_cookie_fetch_failed(_log, response.status_code, i, retries)
-                sleep_time = 2**i
+                sleep_time = RETRY_BASE_SLEEP**i
                 log_sleep(_log, sleep_time)
                 time.sleep(sleep_time)
 
@@ -139,7 +143,7 @@ class VintedWrapper:
         :return: A Dict that contains the JSON response with the search results.
         """
         log_search(_log, params)
-        return self.curl("/api/v2/catalog/items", params=params)
+        return self.curl(API_CATALOG_ITEMS, params=params)
 
     def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -151,7 +155,7 @@ class VintedWrapper:
         :return: A Dict that contains the JSON response with the item's details.
         """
         log_item(_log, item_id, params)
-        return self.curl(f"/api/v2/items/{item_id}/details", params=params)
+        return self.curl(f"{API_ITEMS}/{item_id}/details", params=params)
 
     def curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """
@@ -171,17 +175,15 @@ class VintedWrapper:
             and returns it as a dictionary.
         5. If the response status code is not 200, it raises a RuntimeError with an error message.
         """
-        headers = get_curl_headers(
-            self._base_url, self._user_agent, self._session_cookie
-        )
+        headers = get_curl_headers(self.baseurl, self.user_agent, self.session_cookie)
 
         # Logging request
-        log_curl_request(_log, self._base_url, endpoint, headers, params)
+        log_curl_request(_log, self.baseurl, endpoint, headers, params)
 
         response = self._client.get(
             endpoint,
             headers=get_curl_headers(
-                self._base_url, self._user_agent, self._session_cookie
+                self.baseurl, self.user_agent, self.session_cookie
             ),
             params=params,
         )
@@ -192,29 +194,29 @@ class VintedWrapper:
         )
 
         # Success
-        if response.status_code == 200:
+        if response.status_code == HTTP_OK:
             try:
                 return response.json()
-            except Exception as e:
+            except ValueError as e:
                 _log.error("Failed to parse JSON response from %s: %s", endpoint, e)
                 raise RuntimeError(f"Invalid JSON response from {endpoint}: {e}") from e
 
         # Fetch (maybe is expired?) the session cookie again and retry the API call
-        if response.status_code == 401:
+        if response.status_code == HTTP_UNAUTHORIZED:
             log_cookie_retry(_log, response.status_code)
-            self._session_cookie = self.refresh_cookie()
+            self.session_cookie = self.refresh_cookie()
             return self.curl(endpoint, params)
         raise RuntimeError(
             f"Cannot perform API call to endpoint {endpoint}, error code: {response.status_code}"
         )
 
-    def __enter__(self):
+    def __enter__(self) -> "VintedWrapper":
         """
         :return: Returns the instance of the class itself.
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):  # pragma: no cover
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # pragma: no cover
         """
         Close the http client.
 

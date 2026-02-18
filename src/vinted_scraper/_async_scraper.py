@@ -2,14 +2,16 @@
 # pylint: disable=missing-module-docstring,duplicate-code
 
 import logging
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from ._async_vinted_wrapper import AsyncVintedWrapper
-from .models import VintedItem
+from ._async_wrapper import AsyncVintedWrapper
+from .models import VintedItem, VintedJsonModel
 
 _log = logging.getLogger(__name__)
 
 
+@dataclass
 class AsyncVintedScraper(AsyncVintedWrapper):
     """
     Async Vinted client with data model support
@@ -26,7 +28,7 @@ class AsyncVintedScraper(AsyncVintedWrapper):
         :return: A list of VintedItem instances representing search results.
         """
         response = await super().search(params)
-        return [VintedItem(item) for item in response["items"]]
+        return [VintedItem(json_data=item) for item in response["items"]]
 
     async def item(self, item_id: str, params: Optional[Dict] = None) -> VintedItem:
         """
@@ -38,7 +40,20 @@ class AsyncVintedScraper(AsyncVintedWrapper):
         :return: A VintedItem instance representing the item's details.
         """
         response = await super().item(item_id, params)
-        return VintedItem(response["item"])
+        return VintedItem(json_data=response["item"])
+
+    async def curl(
+        self, endpoint: str, params: Optional[Dict] = None
+    ) -> VintedJsonModel:
+        """
+        Send an async HTTP GET request to the specified endpoint.
+
+        :param endpoint: The endpoint to make the request to.
+        :param params: An optional dictionary with query parameters to include in the request.
+        :return: A VintedJsonModel instance with the JSON response.
+        """
+        response = await super().curl(endpoint, params)
+        return VintedJsonModel(json_data=response)
 
 
 # jscpd:ignore-end
