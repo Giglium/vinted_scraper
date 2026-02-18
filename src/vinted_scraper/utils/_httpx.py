@@ -1,6 +1,4 @@
-"""
-All the functions and the utility that required httpx will be placed here
-"""
+"""HTTP utilities for httpx client configuration and cookie handling."""
 
 import logging
 from logging import Logger
@@ -12,16 +10,17 @@ from ._constants import DEFAULT_TIMEOUT
 
 
 def get_httpx_config(baseurl: str, config: Optional[Dict] = None) -> Dict:
-    """
-    Returns a config dictionary to be used with httpx.Client.
-    The dictionary contains the baseurl, a timeout of 10 seconds and
-    follow_redirects set to True.
-    If a config dictionary is passed, it will be merged with the defaults. You can also
-    override the default configuration!
+    """Returns configuration dictionary for httpx.Client.
 
-    :param baseurl: The baseurl to be used by httpx.Client call
-    :param config: An optional dictionary to be merged with the defaults configuration.
-    :return: A dictionary containing the config for a httpx.Client
+    Provides default configuration (base_url, timeout, follow_redirects)
+    and merges with custom config if provided.
+
+    Args:
+        baseurl: The base URL for the httpx client.
+        config: Optional custom configuration to merge with defaults.
+
+    Returns:
+        Dictionary containing httpx client configuration.
     """
     default_config = {
         "base_url": baseurl,
@@ -35,12 +34,14 @@ def get_httpx_config(baseurl: str, config: Optional[Dict] = None) -> Dict:
 def extract_cookie_from_response(
     response: httpx.Response, cookie_names: List[str]
 ) -> Dict[str, str]:
-    """
-    Extracts the required cookies from the response object.
+    """Extracts specified cookies from httpx response.
 
-    :param response: The httpx response object.
-    :param cookie_names: The list of cookie names to extract.
-    :return: A dictionary with cookie names as keys and values.
+    Args:
+        response: The httpx response object.
+        cookie_names: List of cookie names to extract.
+
+    Returns:
+        Dictionary with cookie names as keys and values.
     """
     return {
         name: response.cookies.get(name)
@@ -50,12 +51,11 @@ def extract_cookie_from_response(
 
 
 def log_response(log: Logger, response: httpx.Response) -> None:
-    """
-    Log a message indicating the status code of the response.
+    """Logs HTTP response details including status, headers, and content.
 
-    :param log: the logger object to use for the log message
-    :param response: the response object
-    :return: None
+    Args:
+        log: Logger instance.
+        response: The httpx response object.
     """
     if log.isEnabledFor(logging.DEBUG):
         log.debug(

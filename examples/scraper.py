@@ -1,18 +1,25 @@
-# pylint: disable=duplicate-code
-"""
-This is an example script for running the VintedScraper.
-Since GitHub Actions perform too many parallel API calls, we added retry logic to handle errors.
-"""
+# pylint: disable=duplicate-code,unused-variable
+"""VintedScraper synchronous example."""
 
 from examples._utils import configure_logging, run_with_retries
 from vinted_scraper import VintedScraper
 
 
 def main() -> None:
-    """Run a sample async search using VintedScraper."""
+    """Run a sample search using VintedScraper."""
+    # Initialize scraper with base URL
     scraper = VintedScraper("https://www.vinted.com")
+
+    # Define search parameters
     params = {"search_text": "board games"}
-    _ = scraper.search(params)
+
+    # Perform search - returns List[VintedItem]
+    items = scraper.search(params)  # noqa: F841
+
+    # Items are typed objects with attributes
+    # Uncomment to see results:
+    # for item in items:
+    #     print(f"{item.title} - €{item.price}")
 
 
 if __name__ == "__main__":

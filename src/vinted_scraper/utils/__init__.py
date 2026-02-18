@@ -1,5 +1,6 @@
-"""
-Utils module that is a collection of all the common function present in this package
+"""Utility functions and constants for vinted_scraper.
+
+This module provides common utilities used throughout the package.
 """
 
 from ._constants import (

@@ -1,5 +1,7 @@
 # jscpd:ignore-start
-# pylint: disable=missing-module-docstring,duplicate-code
+# pylint: disable=duplicate-code
+"""Async Vinted wrapper for raw JSON responses."""
+
 import asyncio
 import logging
 from dataclasses import dataclass, field
@@ -39,8 +41,20 @@ _log = logging.getLogger(__name__)
 
 @dataclass
 class AsyncVintedWrapper:
-    """
-    AsyncVintedWrapper
+    """Asynchronous Vinted API wrapper returning raw JSON responses.
+
+    Handles cookie management, retries, and async HTTP requests automatically.
+    Returns raw JSON dictionaries instead of typed objects.
+
+    Attributes:
+        baseurl: Vinted domain URL (e.g., "https://www.vinted.com").
+        session_cookie: Session cookie dict. Auto-fetched if None.
+        user_agent: Custom user agent string. Auto-generated if None.
+        config: httpx client configuration dict.
+        cookie_names: List of cookie names to extract. Defaults to ["access_token_web"].
+
+    Example:
+        See https://github.com/Giglium/vinted_scraper/blob/main/examples/async_wrapper.py
     """
 
     baseurl: str
@@ -58,14 +72,18 @@ class AsyncVintedWrapper:
         config: Optional[Dict] = None,
         cookie_names: Optional[List[str]] = None,
     ):
-        """
-        Factory method that creates an instance of the AsyncVintedWrapper class.
+        """Factory method to create an AsyncVintedWrapper instance.
 
-        :param baseurl: The base URL of the Vinted site
-        :param user_agent: The user agent to use, if not provided it be chosen randomly.
-        :param config: The configuration of the HTTPX client, it will be merged with defaults.
-        :param cookie_names: List of cookie names to extract. Defaults to [SESSION_COOKIE_NAME].
-        :return: An instance of the class
+        Use this instead of direct instantiation to automatically fetch the session cookie.
+
+        Args:
+            baseurl: Vinted domain URL (e.g., "https://www.vinted.com").
+            user_agent: Custom user agent string. Auto-generated if None.
+            config: httpx client configuration dict.
+            cookie_names: List of cookie names to extract. Defaults to ["access_token_web"].
+
+        Returns:
+            Initialized AsyncVintedWrapper instance with fetched cookies.
         """
         _log.debug("Creating the async wrapper using the factory method")
         self = cls(
@@ -75,8 +93,16 @@ class AsyncVintedWrapper:
         return self
 
     def __post_init__(self) -> None:
-        """
-        Initialize AsyncVintedWrapper after dataclass initialization.
+        """Initialize AsyncVintedWrapper after dataclass initialization.
+
+        Validates the base URL, sets up user agent, and initializes httpx async client.
+
+        Raises:
+            RuntimeError: If the base URL is invalid.
+
+        Note:
+            Use the create() factory method instead of direct instantiation to
+            automatically fetch the session cookie.
         """
         if not url_validator(self.baseurl):
             _log.error("'%s' is not a valid url", self.baseurl)
@@ -98,11 +124,16 @@ class AsyncVintedWrapper:
         self._client = httpx.AsyncClient(**get_httpx_config(self.baseurl, self.config))
 
     async def refresh_cookie(self, retries: int = DEFAULT_RETRIES) -> Dict[str, str]:
-        """
-        Refresh session cookies using the internal client.
+        """Manually refresh the session cookie asynchronously.
 
-        :param retries: Number of retry attempts. Defaults to 3.
-        :return: Dictionary of session cookies.
+        Args:
+            retries: Number of retry attempts (default: 3).
+
+        Returns:
+            Dictionary containing session cookies.
+
+        Raises:
+            RuntimeError: If cookies cannot be fetched after all retries.
         """
         log_refresh_cookie(_log)
         return await AsyncVintedWrapper.fetch_cookie(
@@ -119,15 +150,19 @@ class AsyncVintedWrapper:
         cookie_names: List[str],
         retries: int = DEFAULT_RETRIES,
     ) -> Dict[str, str]:
-        """
-        Fetch session cookies from the base URL using an async HTTP GET request.
+        """Fetch session cookies from Vinted using async HTTP GET request.
 
-        :param client: An instance of httpx.AsyncClient.
-        :param headers: A dictionary of HTTP headers.
-        :param cookie_names: List of cookie names to extract.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :return: Dictionary of session cookies.
-        :raises RuntimeError: If cookies cannot be fetched.
+        Args:
+            client: httpx.AsyncClient instance.
+            headers: HTTP headers dictionary.
+            cookie_names: List of cookie names to extract.
+            retries: Number of retry attempts (default: 3).
+
+        Returns:
+            Dictionary of extracted session cookies.
+
+        Raises:
+            RuntimeError: If cookies cannot be fetched after all retries.
         """
         response = None
 
@@ -155,25 +190,42 @@ class AsyncVintedWrapper:
         )
 
     async def search(self, params: Optional[Dict] = None) -> Dict[str, Any]:
-        """
-        Search for items on Vinted.
+        """Search for items on Vinted asynchronously.
 
-        :param params: an optional Dictionary with all the query parameters to append to the
-            request. Vinted supports a search without any parameters, but to perform a search,
-            you should add the `search_text` parameter. Default value: None.
-        :return: A Dict that contains the JSON response with the search results.
+        Args:
+            params: Query parameters. Common parameters:
+                - search_text: Search query
+                - page: Page number
+                - per_page: Items per page
+                - price_from: Minimum price
+                - price_to: Maximum price
+                - order: Sort order
+                - catalog_ids: Category IDs
+                - brand_ids: Brand IDs
+                - size_ids: Size IDs
+
+        Returns:
+            Dictionary containing JSON response with search results.
         """
         log_search(_log, params)
         return await self.curl(API_CATALOG_ITEMS, params=params)
 
     async def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
-        """
-        Retrieve details of a specific item on Vinted.
+        """Retrieve detailed information about a specific item asynchronously.
 
-        :param item_id: The unique identifier of the item to retrieve.
-        :param params: an optional Dictionary with all the query parameters to append to the
-            request. Default value: None.
-        :return: A Dict that contains the JSON response with the item's details.
+        Args:
+            item_id: The unique identifier of the item.
+            params: Optional query parameters.
+
+        Returns:
+            Dictionary containing JSON response with item details.
+
+        Raises:
+            RuntimeError: If the item is not found or API returns an error.
+
+        Note:
+            It returns a 403 error after a few uses.
+            See: https://github.com/Giglium/vinted_scraper/issues/59
         """
         log_item(_log, item_id, params)
         return await self.curl(f"{API_ITEMS}/{item_id}", params=params)
@@ -181,22 +233,19 @@ class AsyncVintedWrapper:
     async def curl(
         self, endpoint: str, params: Optional[Dict] = None
     ) -> Dict[str, Any]:
-        """
-        Send an async HTTP GET request to the specified endpoint.
+        """Send an async HTTP GET request to any Vinted API endpoint.
 
-        :param endpoint: The endpoint to make the request to.
-        :param params: An optional dictionary with query parameters to include in the
-            request. Default value: None.
-        :return: A dictionary containing the parsed JSON response from the endpoint.
-        :raises RuntimeError: If the HTTP response status code is not 200, indicating an error.
+        Automatically handles headers, cookies, retries, and error responses.
 
-        The method performs the following steps:
-        1. Constructs the HTTP headers, including the User-Agent and session Cookie.
-        2. Sends an HTTP GET request to the specified endpoint with the given parameters.
-        3. Checks if the HTTP response status code is 200 (indicating success).
-        4. If the response status code is 200, it parses the JSON content of the response
-            and returns it as a dictionary.
-        5. If the response status code is not 200, it raises a RuntimeError.
+        Args:
+            endpoint: API endpoint path (e.g., "/api/v2/users/username").
+            params: Optional query parameters.
+
+        Returns:
+            Dictionary containing the parsed JSON response.
+
+        Raises:
+            RuntimeError: If response status is not 200 or JSON parsing fails.
         """
         headers = get_curl_headers(self.baseurl, self.user_agent, self.session_cookie)
 
@@ -232,18 +281,20 @@ class AsyncVintedWrapper:
         )
 
     async def __aenter__(self) -> "AsyncVintedWrapper":  # pragma: no cover
-        """
-        :return: Returns the instance of the class itself.
+        """Enter async context manager.
+
+        Returns:
+            Self for use in async with statement.
         """
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:  # pragma: no cover
-        """
-        Close the http client.
+        """Exit async context manager and close HTTP client.
 
-        :param exc_type: Not used.
-        :param exc_val: Not used.
-        :param exc_tb: Not used.
+        Args:
+            exc_type: Exception type (unused).
+            exc_val: Exception value (unused).
+            exc_tb: Exception traceback (unused).
         """
         await self._client.aclose()
 

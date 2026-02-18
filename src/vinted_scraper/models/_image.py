@@ -1,4 +1,6 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes
+"""Vinted image model."""
+
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -9,6 +11,12 @@ from ._media import VintedMedia
 
 @dataclass
 class VintedImage(VintedJsonModel):
+    """Represents an image associated with a Vinted item.
+
+    Note:
+        Some attributes may be `None` if not present in the API response.
+    """
+
     id: Optional[int] = None
     image_no: Optional[int] = None
     width: Optional[int] = None

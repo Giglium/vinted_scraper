@@ -1,4 +1,19 @@
-# pylint: disable=missing-module-docstring
+"""Vinted models package.
+
+This package contains all data model classes for Vinted API responses.
+
+Classes:
+    VintedJsonModel: Base class for all models.
+    VintedItem: Item/listing information.
+    VintedUser: User/seller information.
+    VintedBrand: Brand information.
+    VintedImage: Image data and URLs.
+    VintedMedia: Media thumbnails.
+    VintedHighResolution: High-res image metadata.
+    VintedBundleDiscount: Bundle discount settings.
+    VintedDiscount: Individual discount tier.
+"""
+
 from ._brand import VintedBrand
 from ._bundle_discount import VintedBundleDiscount, VintedDiscount
 from ._high_resolution import VintedHighResolution

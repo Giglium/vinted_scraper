@@ -1,4 +1,5 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring
+"""Vinted bundle discount models."""
+
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -7,6 +8,12 @@ from ._json_model import VintedJsonModel
 
 @dataclass
 class VintedDiscount(VintedJsonModel):
+    """Represents a single discount tier in a bundle discount.
+
+    Note:
+        Some attributes may be `None` if not present in the API response.
+    """
+
     minimal_item_count: Optional[int] = None
     fraction: Optional[float] = None
 
@@ -18,6 +25,11 @@ class VintedDiscount(VintedJsonModel):
 
 @dataclass
 class VintedBundleDiscount(VintedJsonModel):
+    """Represents bundle discount settings for a seller.
+
+    Note:
+        Some attributes may be `None` if not present in the API response."""
+
     id: Optional[str] = None
     user_id: Optional[str] = None
     enabled: Optional[bool] = None
