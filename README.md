@@ -19,8 +19,6 @@ Install using pip:
 pip install vinted_scraper
 ```
 
-**Requirements:** Python 3.7+
-
 ## Functions
 
 The package offers the following methods:
@@ -70,10 +68,6 @@ The package offers the following methods:
 
 ## Usage
 
-### Basic Usage (Sync)
-
-To obtain the scraped data as structured `VintedItem` objects:
-
 ```python
 from vinted_scraper import VintedScraper
 
@@ -84,23 +78,7 @@ for item in items:
     print(f"{item.title} - {item.price}")
 ```
 
-### Async Usage
-
-For high-performance async operations:
-
-```python
-import asyncio
-from vinted_scraper import AsyncVintedScraper
-
-async def main():
-    scraper = await AsyncVintedScraper.create("https://www.vinted.com")
-    items = await scraper.search({"search_text": "board games"})
-    print(f"Found {len(items)} items")
-
-asyncio.run(main())
-```
-
-> **Note:** Some attributes may be `None` if not present in the API response.
+> Check out the [examples](https://github.com/Giglium/vinted_scraper/tree/main/examples) for more!
 
 ## Debugging
 
@@ -138,16 +116,15 @@ DEBUG:vinted_scraper._vinted_wrapper:API Response: /api/v2/catalog/items - Statu
 
 ### Common Issues
 
-**403 Forbidden Error**: The `item()` method frequently return 403 errors ([#58](https://github.com/Giglium/vinted_scraper/issues/59)).
+- **403 Forbidden Error**: The `item()` method frequently return 403 errors ([#58](https://github.com/Giglium/vinted_scraper/issues/59)).
 
-**Cookie Fetch Failed**: If cookies cannot be fetched:
+- **Cookie Fetch Failed**: If cookies cannot be fetched:
+  - Verify the base URL is correct
+  - Check your internet connection, some VPN are banned. Try manually getting the cookie by running the following:
 
-- Verify the base URL is correct
-- Check your internet connection, some VPN are banned. Try manually getting the cookie by running the following:
-
-```bash
+  ```bash
     curl -v -c - -L "<base-url>" | grep access_token_web
-```
+  ```
 
 ## License
 
