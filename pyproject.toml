@@ -1,7 +1,7 @@
 [project]
 name = "vinted_scraper"
-version = "3.0.0b3"
-description = "A very simple Python package that scrapes the Vinted website to retrieve information about its items."
+version = "3.0.0"
+description = "A very simple Python package for scraping Vinted. Supports both synchronous and asynchronous operations with automatic cookie management and typed responses."
 readme = "README.md"
 requires-python = ">= 3.7"
 license = { file = "LICENSE" }
@@ -9,7 +9,6 @@ authors = [{ name = "Giglium" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -17,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Intended Audience :: Education",
