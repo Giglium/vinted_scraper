@@ -88,6 +88,7 @@ clean: ## Clean up project files
 	-@rm -r .mypy_cache
 	-@rm -rf dist
 	-@rm super-linter.log
+	-@rm -r docs/
 
 # ====================================================================================
 # Utils Actions
