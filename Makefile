@@ -52,7 +52,7 @@ act.update.user.agent: #! Run the Update user agent github action
 .PHONY: coverage
 coverage:  ## Run the unit test and generate the coverage report
 	@uv run coverage run --source=$(PROJECT_FOLDER) -m unittest discover
-	@uv run coverage html
+	@uv run coverage xml
 	@uv run coverage report -m
 
 .PHONY: act.coverage

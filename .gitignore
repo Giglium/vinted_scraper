@@ -42,3 +42,4 @@ profile.json*
 
 .DS_Store
 .coverage
+coverage.xml
