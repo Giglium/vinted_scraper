@@ -1,9 +1,5 @@
 # pylint: disable=line-too-long, too-many-arguments
-"""
-Most of the log function will placed here.
-If a log function required a specific package it will be putted in that package utils.
-Es. httpx logger will be put in the httpx utils.
-"""
+"""Logging utilities for vinted_scraper."""
 
 import logging
 from logging import Logger
@@ -20,16 +16,15 @@ def log_constructor(
     session_cookie: Optional[str],
     config: Optional[Dict],
 ) -> None:
-    """
-    Construct a log message for the constructor of an object.
+    """Logs initialization of VintedScraper/VintedWrapper.
 
-    :param log: the logger object to use for the log message
-    :param self: the object being created
-    :param baseurl: the baseurl to log
-    :param user_agent: the user_agent to log
-    :param session_cookie: the session cookie to log
-    :param config: the configuration to log
-    :return: None
+    Args:
+        log: Logger instance.
+        self: The object being initialized.
+        baseurl: Base URL being used.
+        user_agent: User agent string (truncated in log).
+        session_cookie: Session cookie (logged as 'provided' or 'auto-fetch').
+        config: Configuration dictionary.
     """
     log.debug(
         f"Initializing {self.__class__.__name__}(baseurl={baseurl}, "
@@ -40,80 +35,76 @@ def log_constructor(
 
 
 def log_interaction(log: Logger, i: int, retries: int) -> None:
-    """
-    Log retry attempt for cookie fetch.
+    """Logs cookie fetch retry attempt.
 
-    :param log: the logger object to use for the log message
-    :param i: the current attempt number
-    :param retries: the total number of retries allowed
-    :return: None
+    Args:
+        log: Logger instance.
+        i: Current attempt number (0-indexed).
+        retries: Total number of retries allowed.
     """
     log.debug(f"Cookie fetch attempt {i + 1}/{retries}")
 
 
 def log_sleep(log: Logger, time: int) -> None:
-    """
-    Log a message indicating the duration of sleep.
+    """Logs sleep duration between retries.
 
-    :param log: the logger object to use for the log message
-    :param time: the duration of sleep in seconds
-    :return: None
+    Args:
+        log: Logger instance.
+        time: Sleep duration in seconds.
     """
     log.debug(f"Sleeping for {time} seconds")
 
 
 def log_refresh_cookie(log: Logger) -> None:
-    """
-    Log a message indicating the cookie refresh.
+    """Logs session cookie refresh action.
 
-    :param log: the logger object to use for the log message
-    :return: None
+    Args:
+        log: Logger instance.
     """
     log.debug("Refreshing session cookie")
 
 
 def log_search(log: Logger, params: Optional[Dict]) -> None:
-    """
-    Log a message indicating a search API call.
+    """Logs search() method call with parameters.
 
-    :param log: the logger object to use for the log message
-    :param params: the search parameters (can be None)
-    :return: None
+    Args:
+        log: Logger instance.
+        params: Search parameters dictionary.
     """
     log.debug(f"Calling search() with params: {params}")
 
 
 def log_item(log: Logger, item_id: str, params: Optional[Dict]) -> None:
-    """
-    Log a message indicating an item retrieval API call.
+    """Logs item() method call with item ID and parameters.
 
-    :param log: the logger object to use for the log message
-    :param item_id: the item ID to retrieve
-    :param params: the query parameters (can be None)
-    :return: None
+    Args:
+        log: Logger instance.
+        item_id: Item identifier.
+        params: Query parameters dictionary.
     """
     log.debug(f"Calling item(item_id={item_id}, params={params})")
 
 
 def log_curl(log: Logger, endpoint: str, params: Optional[Dict]) -> None:
-    """
-    Log a message indicating an internal HTTP request (deprecated, use log_curl_request).
+    """Logs HTTP request (deprecated, use log_curl_request).
 
-    :param log: the logger object to use for the log message
-    :param endpoint: the endpoint being called
-    :param params: the query parameters (can be None)
-    :return: None
+    Args:
+        log: Logger instance.
+        endpoint: API endpoint path.
+        params: Query parameters dictionary.
     """
     log.debug(f"Calling endpoint {endpoint} with params {params}")
 
 
 def _build_curl_command(url: str, headers: Dict[str, str]) -> str:
-    """
-    Build a bash curl command string from the request details.
+    """Builds executable curl command from request details.
 
-    :param url: the full URL of the request
-    :param headers: the headers dictionary
-    :return: a curl command string that can be executed in bash
+    Args:
+        url: Full request URL.
+        headers: Request headers dictionary.
+
+    Returns:
+        Formatted curl command string.
     """
     curl_parts = ["curl"]
     for key, value in headers.items():
@@ -131,15 +122,14 @@ def log_curl_request(
     headers: Dict[str, str],
     params: Optional[Dict],
 ) -> None:
-    """
-    Log a detailed message for an HTTP request including a reproducible curl command.
+    """Logs detailed HTTP request with reproducible curl command.
 
-    :param log: the logger object to use for the log message
-    :param base_url: the base URL of the API
-    :param endpoint: the endpoint being called
-    :param headers: the request headers
-    :param params: the query parameters (can be None)
-    :return: None
+    Args:
+        log: Logger instance.
+        base_url: API base URL.
+        endpoint: API endpoint path.
+        headers: Request headers.
+        params: Query parameters dictionary.
     """
     if not log.isEnabledFor(logging.DEBUG):
         return
@@ -161,15 +151,14 @@ def log_curl_response(
     headers: Any,
     body: Optional[str] = None,
 ) -> None:
-    """
-    Log a detailed message for an HTTP response including status code, headers, and body.
+    """Logs detailed HTTP response with status, headers, and body.
 
-    :param log: the logger object to use for the log message
-    :param endpoint: the endpoint that was called
-    :param status_code: the HTTP status code of the response
-    :param headers: the response headers
-    :param body: the response body (can be None to skip body logging)
-    :return: None
+    Args:
+        log: Logger instance.
+        endpoint: API endpoint that was called.
+        status_code: HTTP status code.
+        headers: Response headers.
+        body: Response body (truncated if over 1000 chars).
     """
     if not log.isEnabledFor(logging.DEBUG):
         return
@@ -185,23 +174,21 @@ def log_curl_response(
 
 
 def log_cookie_fetched(log: Logger, cookie_value: str) -> None:
-    """
-    Log successful cookie fetch.
+    """Logs successful cookie fetch.
 
-    :param log: the logger object to use for the log message
-    :param cookie_value: the fetched cookie value
-    :return: None
+    Args:
+        log: Logger instance.
+        cookie_value: Fetched cookie value (truncated in log).
     """
     log.debug(f"Session cookie fetched successfully: {cookie_value[:20]}...")
 
 
 def log_cookie_retry(log: Logger, status_code: int) -> None:
-    """
-    Log cookie refresh due to 401 error.
+    """Logs cookie refresh due to 401 Unauthorized.
 
-    :param log: the logger object to use for the log message
-    :param status_code: the HTTP status code that triggered the retry
-    :return: None
+    Args:
+        log: Logger instance.
+        status_code: HTTP status code that triggered retry.
     """
     log.debug(f"Received {status_code} status, refreshing session cookie and retrying")
 
@@ -209,14 +196,13 @@ def log_cookie_retry(log: Logger, status_code: int) -> None:
 def log_cookie_fetch_failed(
     log: Logger, status_code: Optional[int], attempt: int, retries: int
 ) -> None:
-    """
-    Log failed cookie fetch attempt.
+    """Logs failed cookie fetch attempt.
 
-    :param log: the logger object to use for the log message
-    :param status_code: the HTTP status code received
-    :param attempt: the current attempt number
-    :param retries: the total number of retries allowed
-    :return: None
+    Args:
+        log: Logger instance.
+        status_code: HTTP status code received.
+        attempt: Current attempt number (0-indexed).
+        retries: Total number of retries allowed.
     """
     log.debug(
         f"Cookie fetch failed (attempt {attempt + 1}/{retries}) with status {status_code or 'unknown'}"

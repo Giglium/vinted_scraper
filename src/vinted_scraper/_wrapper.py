@@ -1,5 +1,7 @@
 # jscpd:ignore-start
-# pylint: disable=missing-module-docstring,duplicate-code,too-many-instance-attributes
+# pylint: disable=duplicate-code,too-many-instance-attributes
+"""Vinted wrapper for raw JSON responses."""
+
 import logging
 import time
 from dataclasses import dataclass, field
@@ -39,8 +41,20 @@ _log = logging.getLogger(__name__)
 
 @dataclass
 class VintedWrapper:
-    """
-    VintedWrapper
+    """Synchronous Vinted API wrapper returning raw JSON responses.
+
+    Handles cookie management, retries, and HTTP requests automatically.
+    Returns raw JSON dictionaries instead of typed objects.
+
+    Attributes:
+        baseurl: Vinted domain URL (e.g., "https://www.vinted.com").
+        session_cookie: Session cookie dict. Auto-fetched if None.
+        user_agent: Custom user agent string. Auto-generated if None.
+        config: httpx client configuration dict.
+        cookie_names: List of cookie names to extract. Defaults to ["access_token_web"].
+
+    Example:
+        See https://github.com/Giglium/vinted_scraper/blob/main/examples/wrapper.py
     """
 
     baseurl: str
@@ -51,8 +65,13 @@ class VintedWrapper:
     _client: httpx.Client = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        """
-        Initialize VintedWrapper after dataclass initialization.
+        """Initialize VintedWrapper after dataclass initialization.
+
+        Validates the base URL, sets up user agent, initializes httpx client,
+        and fetches session cookies if not provided.
+
+        Raises:
+            RuntimeError: If the base URL is invalid.
         """
         if not url_validator(self.baseurl):
             _log.error("'%s' is not a valid url", self.baseurl)
@@ -76,11 +95,16 @@ class VintedWrapper:
             self.session_cookie = self.refresh_cookie()
 
     def refresh_cookie(self, retries: int = DEFAULT_RETRIES) -> Dict[str, str]:
-        """
-        Refresh session cookies using the internal client.
+        """Manually refresh the session cookie.
 
-        :param retries: Number of retry attempts. Defaults to 3.
-        :return: Dictionary of session cookies.
+        Args:
+            retries: Number of retry attempts (default: 3).
+
+        Returns:
+            Dictionary containing session cookies.
+
+        Raises:
+            RuntimeError: If cookies cannot be fetched after all retries.
         """
         log_refresh_cookie(_log)
         return VintedWrapper.fetch_cookie(
@@ -97,15 +121,19 @@ class VintedWrapper:
         cookie_names: List[str],
         retries: int = DEFAULT_RETRIES,
     ) -> Dict[str, str]:
-        """
-        Fetch session cookies from the base URL using an HTTP GET request.
+        """Fetch session cookies from Vinted using HTTP GET request.
 
-        :param client: An instance of httpx.Client.
-        :param headers: A dictionary of HTTP headers.
-        :param cookie_names: List of cookie names to extract.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :return: Dictionary of session cookies.
-        :raises RuntimeError: If cookies cannot be fetched.
+        Args:
+            client: httpx.Client instance.
+            headers: HTTP headers dictionary.
+            cookie_names: List of cookie names to extract.
+            retries: Number of retry attempts (default: 3).
+
+        Returns:
+            Dictionary of extracted session cookies.
+
+        Raises:
+            RuntimeError: If cookies cannot be fetched after all retries.
         """
         response = None
 
@@ -133,47 +161,60 @@ class VintedWrapper:
         )
 
     def search(self, params: Optional[Dict] = None) -> Dict[str, Any]:
-        """
-        Search for items on Vinted.
+        """Search for items on Vinted.
 
-        :param params: an optional Dictionary with all the query parameters to append
-            to the request. Vinted supports a search without any parameters, but
-            to perform a search, you should add the `search_text` parameter.
-            Default value: None.
-        :return: A Dict that contains the JSON response with the search results.
+        Args:
+            params: Query parameters. Common parameters:
+                - search_text (str): Search query
+                - page (int): Page number
+                - per_page (int): Items per page
+                - price_from (float): Minimum price
+                - price_to (float): Maximum price
+                - order (str): Sort order
+                - catalog_ids (str): Category IDs
+                - brand_ids (str): Brand IDs
+                - size_ids (str): Size IDs
+
+        Returns:
+            Dictionary containing JSON response with search results.
         """
         log_search(_log, params)
         return self.curl(API_CATALOG_ITEMS, params=params)
 
     def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
-        """
-        Retrieve details of a specific item on Vinted.
+        """Retrieve detailed information about a specific item.
 
-        :param item_id: The unique identifier of the item to retrieve.
-        :param params: an optional Dictionary with all the query parameters to append
-            to the request. Default value: None.
-        :return: A Dict that contains the JSON response with the item's details.
+        Args:
+            item_id: The unique identifier of the item.
+            params: Optional query parameters.
+
+        Returns:
+            Dictionary containing JSON response with item details.
+
+        Raises:
+            RuntimeError: If the item is not found or API returns an error.
+
+        Note:
+            It returns a 403 error after a few uses.
+            See: https://github.com/Giglium/vinted_scraper/issues/59
         """
         log_item(_log, item_id, params)
         return self.curl(f"{API_ITEMS}/{item_id}/details", params=params)
 
     def curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
-        """
-        Send an async HTTP GET request to the specified endpoint.
+        """Send a custom HTTP GET request to any Vinted API endpoint.
 
-        :param endpoint: The endpoint to make the request to.
-        :param params: An optional dictionary with query parameters to include in the request.
-                       Default value: None.
-        :return: A dictionary containing the parsed JSON response from the endpoint.
-        :raises RuntimeError: If the HTTP response status code is not 200, indicating an error.
+        Automatically handles headers, cookies, retries, and error responses.
 
-        The method performs the following steps:
-        1. Constructs the HTTP headers, including the User-Agent and session Cookie.
-        2. Sends an HTTP GET request to the specified endpoint with the given parameters.
-        3. Checks if the HTTP response status code is 200 (indicating success).
-        4. If the response status code is 200, it parses the JSON content of the response
-            and returns it as a dictionary.
-        5. If the response status code is not 200, it raises a RuntimeError with an error message.
+        Args:
+            endpoint: API endpoint path (e.g., "/api/v2/users/username").
+            params: Optional query parameters.
+
+        Returns:
+            Dictionary containing the parsed JSON response.
+
+        Raises:
+            RuntimeError: If response status is not 200 or JSON parsing fails.
         """
         headers = get_curl_headers(self.baseurl, self.user_agent, self.session_cookie)
 
@@ -211,18 +252,20 @@ class VintedWrapper:
         )
 
     def __enter__(self) -> "VintedWrapper":
-        """
-        :return: Returns the instance of the class itself.
+        """Enter context manager.
+
+        Returns:
+            Self for use in with statement.
         """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # pragma: no cover
-        """
-        Close the http client.
+        """Exit context manager and close HTTP client.
 
-        :param exc_type: Not used.
-        :param exc_val: Not used.
-        :param exc_tb: Not used.
+        Args:
+            exc_type: Exception type (unused).
+            exc_val: Exception value (unused).
+            exc_tb: Exception traceback (unused).
         """
         self._client.close()
 

@@ -1,18 +1,25 @@
-# pylint: disable=duplicate-code
-"""
-This is an example script for running the AsyncVintedWrapper.
-Since GitHub Actions perform too many parallel API calls, we added retry logic to handle errors.
-"""
+# pylint: disable=duplicate-code,unused-variable
+"""AsyncVintedWrapper asynchronous example."""
 
 from examples._utils import configure_logging, run_with_retries
 from vinted_scraper import AsyncVintedWrapper
 
 
 async def main() -> None:
-    """Run a sample async search using AsyncVintedScraper."""
-    scraper = await AsyncVintedWrapper.create("https://www.vinted.com")
+    """Run a sample async search using AsyncVintedWrapper."""
+    # Initialize async wrapper using factory method
+    wrapper = await AsyncVintedWrapper.create("https://www.vinted.com")
+
+    # Define search parameters
     params = {"search_text": "board games"}
-    _ = await scraper.search(params)
+
+    # Perform async search - returns Dict[str, Any]
+    response = await wrapper.search(params)  # noqa: F841
+
+    # Response is a dictionary with "items" key
+    # Uncomment to see results:
+    # for item in response["items"]:
+    #     print(f"{item['title']} - €{item['price']}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,9 @@
 # pylint: disable=broad-exception-caught
-"""
-This is a helper function. It helps avoid code duplication.
+"""Utility functions for vinted_scraper examples.
+
+This module provides helper functions used across example scripts:
+- Logging configuration
+- Retry logic with exponential backoff for handling API rate limits
 """
 
 import asyncio
@@ -9,7 +12,7 @@ from time import sleep
 from typing import Any, Callable
 
 
-def configure_logging():
+def configure_logging() -> None:
     """Configure logging for vinted_scraper examples."""
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter("%(levelname)s:%(name)s:%(message)s"))
@@ -26,16 +29,18 @@ def run_with_retries(
     backoff_base: int = 2,
     backoff_cap: int = 32,
 ) -> None:
-    """
-    Run a function with retry logic and exponential backoff.
-    The result of the function is not returned!
+    """Run a function with retry logic and exponential backoff.
+
+    Executes the provided function and retries on failure with exponential
+    backoff. These utilities are specifically designed for GitHub Actions and CI/CD
+    environments where parallel API calls may cause rate limiting.
 
     Args:
-        main_func (Callable[[], Any]): The main function to execute. Can be sync or async.
-        max_retries (int): Maximum number of attempts before giving up.
-        is_async (bool): Set to True if main_func is an async function.
-        backoff_base (int): The base for exponential backoff (default: 2).
-        backoff_cap (int): Maximum number of seconds to wait between retries.
+        main_func: The function to execute (sync or async).
+        max_retries: Maximum number of retry attempts (default: 5).
+        is_async: Set to True if main_func is an async function (default: False).
+        backoff_base: Base for exponential backoff calculation (default: 2).
+        backoff_cap: Maximum seconds to wait between retries (default: 32).
 
     Raises:
         Exception: Re-raises the last exception if all retries fail.
@@ -47,11 +52,11 @@ def run_with_retries(
                 asyncio.run(main_func())
             else:
                 main_func()
-            break  # Exit the loop with success
+            break  # Exit on success
         except Exception as e:
             retries += 1
             if retries == max_retries:
-                raise  # Exit the loop with error
+                raise  # Re-raise after all retries exhausted
             sleep_time = min(backoff_base**retries, backoff_cap)
             logger = logging.getLogger("vinted_scraper")
             logger.warning(

@@ -1,4 +1,6 @@
-# pylint: disable=missing-module-docstring,missing-class-docstring,too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes
+"""Vinted user model."""
+
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -9,6 +11,12 @@ from ._json_model import VintedJsonModel
 
 @dataclass
 class VintedUser(VintedJsonModel):
+    """Represents a Vinted user/seller with profile and activity information.
+
+    Note:
+        Some attributes may be `None` if not present in the API response.
+    """
+
     id: Optional[int] = None
     login: Optional[str] = None
     business: Optional[bool] = None

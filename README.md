@@ -7,41 +7,26 @@
 [![License](https://img.shields.io/pypi/l/vinted_scraper.svg)](https://github.com/Giglium/vinted_scraper/blob/main/LICENSE)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FGiglium%2Fvinted_scraper.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FGiglium%2Fvinted_scraper?ref=badge_shield)
 
-A very simple Python package that scrapes the Vinted site to retrieve information about its items.
+A very simple Python package for scraping Vinted. Supports both synchronous and asynchronous operations with automatic cookie management and typed responses.
+
+📖 **[Full Documentation](https://giglium.github.io/vinted_scraper/vinted_scraper.html)** | 💡 **[Examples](EXAMPLES.md)** | 📝 **[Changelog](https://github.com/Giglium/vinted_scraper/releases)**
 
 ## Installation
 
-### Stable
-
-You can install Vinted Scraper using pip:
+Install using pip:
 
 ```shell
-    pip install vinted_scraper==2.4.0
+pip install vinted_scraper
 ```
 
-> If you are on Python 3.6 you also have to install `dataclasses`: `pip install dataclasses`
-
-### Beta
-
-We move from `requests` to `httpx` to support Async API call. Now, you can await `AsyncVintedScraper` or `AsyncVintedWrapper`.
-I haven't finish to update all the docs but you can check [examples](./examples/) to understand how they work.
-
-To install the beta version with pip:
-
-```shell
-    pip install vinted_scraper==3.0.0b1
-```
-
-> Compatible from python 3.7+
-
-For more info about the Beta check the [roadmap](https://github.com/Giglium/vinted_scraper/issues/73), and please if you find a bug open a issue!
+**Requirements:** Python 3.7+
 
 ## Functions
 
-The package offers the following functions:
+The package offers the following methods:
 
 <details>
- <summary><code>search</code> - <code>(gets all the items present on the listing page)</code></summary>
+ <summary><code>search</code> - <code>Gets all items from the listing page based on search parameters.</code></summary>
 
 **Parameters**
 
@@ -49,12 +34,14 @@ The package offers the following functions:
 > | ------ | -------- | --------- | ---------------------------------------------- |
 > | params | optional | Dict      | Query parameters like the pagination and so on |
 
+**Returns:** `List[VintedItem]` (VintedScraper) or `Dict[str, Any]` (VintedWrapper)
+
 </details>
 
 <details>
- <summary><code>item</code> - <code>(gets the information about an item, and its seller present on the item detail page)</code></summary>
+ <summary><code>item</code> - <code>Gets detailed information about a specific item and its seller.</code></summary>
 
-> It is currently only working only on the Beta version (see [#78](https://github.com/Giglium/vinted_scraper/issues/78)), but it frequently throws a 403 error (see [#58](https://github.com/Giglium/vinted_scraper/issues/59)).
+> It returns a 403 error after a few uses. See [#58](https://github.com/Giglium/vinted_scraper/issues/59)).
 
 **Parameters**
 
@@ -63,12 +50,12 @@ The package offers the following functions:
 > | id     | required | str       | The unique identifier of the item to retrieve |
 > | params | optional | Dict      | I don't know if they exist                    |
 
+**Returns:** `VintedItem` (VintedScraper) or `Dict[str, Any]` (VintedWrapper)
+
 </details>
 
 <details>
- <summary><code>curl</code> - <code>(Perform an HTTP GET request to the given endpoint)</code></summary>
-
-> It is currently only working only on the Beta version
+ <summary><code>curl</code> - <code>Perform an HTTP GET request to the given endpoint.</code></summary>
 
 **Parameters**
 
@@ -77,58 +64,47 @@ The package offers the following functions:
 > | endpoint | required | str       | The endpoint to make the request to            |
 > | params   | optional | Dict      | Query parameters like the pagination and so on |
 
+**Returns:** `VintedJsonModel` (VintedScraper) or `Dict[str, Any]` (VintedWrapper)
+
 </details>
 
 ## Usage
 
-To obtain the scraped data as a `vinted_scraper.models.VintedItem`, so you can:
+### Basic Usage (Sync)
+
+To obtain the scraped data as structured `VintedItem` objects:
 
 ```python
-import vinted_scraper.VintedScraper
+from vinted_scraper import VintedScraper
 
+scraper = VintedScraper("https://www.vinted.com")
+items = scraper.search({"search_text": "board games"})
 
-def main():
-    scraper = VintedScraper("https://www.vinted.com")  # init the scraper with the baseurl
-    params = {
-        "search_text": "board games"
-        # Add other query parameters like the pagination and so on
-    }
-    items = scraper.search(params)  # get all the items
-
-
-if __name__ == "__main__":
-    main()
+for item in items:
+    print(f"{item.title} - {item.price}")
 ```
 
-`VintedScraper` returns structured data that are parsed and converted into a `vinted_scraper.models.VintedItem` object.
-If some attributes are `None` means that it wasn't found in the response, maybe because they are returned from other
-API.
-Also, I discard some attribute that I thought was useless but feel free to open an issue or a PR to add them.
+### Async Usage
 
-If you want to manage the JSON response directly, you should use the `VintedWrapper` object instead of `VintedScraper`.
-
-Here's the way of how to use it:
+For high-performance async operations:
 
 ```python
-import vinted_scraper.VintedWrapper
+import asyncio
+from vinted_scraper import AsyncVintedScraper
 
+async def main():
+    scraper = await AsyncVintedScraper.create("https://www.vinted.com")
+    items = await scraper.search({"search_text": "board games"})
+    print(f"Found {len(items)} items")
 
-def main():
-    wrapper = VintedWrapper("https://www.vinted.com")  # init the scraper with the baseurl
-    params = {
-        "search_text": "board games"
-        # Add other query parameters like the pagination and so on
-    }
-    items = wrapper.search(params)  # get all the items
-
-
-if __name__ == "__main__":
-    main()
+asyncio.run(main())
 ```
+
+> **Note:** Some attributes may be `None` if not present in the API response.
 
 ## Debugging
 
-To enable debug logging for troubleshooting, you can configure the logger:
+To enable debug logging for troubleshooting:
 
 ```python
 import logging
@@ -147,24 +123,31 @@ scraper.search({"search_text": "board games"})
 
 <details>
 <summary>Debug output (click to expand)</summary>
-```
+
+```bash
 DEBUG:vinted_scraper._vinted_wrapper:Initializing VintedScraper(baseurl=https://www.vinted.com, user_agent=None, session_cookie=auto-fetch, config=None)
 DEBUG:vinted_scraper._vinted_wrapper:Refreshing session cookie
 DEBUG:vinted_scraper._vinted_wrapper:Cookie fetch attempt 1/3
 DEBUG:vinted_scraper._vinted_wrapper:Session cookie fetched successfully: eyJraWQiOiJFNTdZZHJ1...
 DEBUG:vinted_scraper._vinted_wrapper:Calling search() with params: {'search_text': 'board games'}
 DEBUG:vinted_scraper._vinted_wrapper:API Request: GET /api/v2/catalog/items with params {'search_text': 'board games'}
-DEBUG:vinted_scraper._vinted_wrapper:Curl command:
-curl \
-  -H 'User-Agent: Mozilla/5.0...' \
-  -H 'Cookie: _vinted_fr_session=...' \
-  ...
-  'https://www.vinted.com/api/v2/catalog/items?search_text=board+games'
 DEBUG:vinted_scraper._vinted_wrapper:API Response: /api/v2/catalog/items - Status: 200
-DEBUG:vinted_scraper._vinted_wrapper:Response Headers: {'content-type': 'application/json', ...}
-DEBUG:vinted_scraper._vinted_wrapper:Response Body (truncated): {"items": [...]}
 ```
+
 </details>
+
+### Common Issues
+
+**403 Forbidden Error**: The `item()` method frequently return 403 errors ([#58](https://github.com/Giglium/vinted_scraper/issues/59)).
+
+**Cookie Fetch Failed**: If cookies cannot be fetched:
+
+- Verify the base URL is correct
+- Check your internet connection, some VPN are banned. Try manually getting the cookie by running the following:
+
+```bash
+    curl -v -c - -L "<base-url>" | grep access_token_web
+```
 
 ## License
 
