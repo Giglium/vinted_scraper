@@ -52,7 +52,7 @@ act.update.user.agent: #! Run the Update user agent github action
 .PHONY: coverage
 coverage:  ## Run the unit test and generate the coverage report
 	@uv run coverage run --source=$(PROJECT_FOLDER) -m unittest discover
-	@uv run coverage html
+	@uv run coverage xml
 	@uv run coverage report -m
 
 .PHONY: act.coverage
@@ -84,6 +84,7 @@ act.docs: #! Run the linter github action
 .PHONY: clean
 clean: ## Clean up project files
 	-@rm .coverage
+	-@rm coverage.xml
 	-@rm -r htmlcov/
 	-@rm -r .mypy_cache
 	-@rm -rf dist
@@ -101,3 +102,4 @@ help: ## Show the basic command help.
 .PHONY: help.all
 act.help: ## Show the act command help.
 	@sed -ne '/@sed/!s/#! //p' $(MAKEFILE_LIST)
+
