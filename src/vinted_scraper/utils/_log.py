@@ -32,12 +32,10 @@ def log_constructor(
     :return: None
     """
     log.debug(
-        "Initializing %s(baseurl=%s, user_agent=%s, session_cookie=%s, config=%s)",
-        self.__class__.__name__,
-        baseurl,
-        user_agent[:50] + "..." if user_agent else None,
-        "provided" if session_cookie else "auto-fetch",
-        config,
+        f"Initializing {self.__class__.__name__}(baseurl={baseurl}, "
+        f"user_agent={user_agent[:50] + '...' if user_agent else None}, "
+        f"session_cookie={'provided' if session_cookie else 'auto-fetch'}, "
+        f"config={config})"
     )
 
 
@@ -50,7 +48,7 @@ def log_interaction(log: Logger, i: int, retries: int) -> None:
     :param retries: the total number of retries allowed
     :return: None
     """
-    log.debug("Cookie fetch attempt %d/%d", i + 1, retries)
+    log.debug(f"Cookie fetch attempt {i + 1}/{retries}")
 
 
 def log_sleep(log: Logger, time: int) -> None:
@@ -61,7 +59,7 @@ def log_sleep(log: Logger, time: int) -> None:
     :param time: the duration of sleep in seconds
     :return: None
     """
-    log.debug("Sleeping for %d seconds", time)
+    log.debug(f"Sleeping for {time} seconds")
 
 
 def log_refresh_cookie(log: Logger) -> None:
@@ -82,7 +80,7 @@ def log_search(log: Logger, params: Optional[Dict]) -> None:
     :param params: the search parameters (can be None)
     :return: None
     """
-    log.debug("Calling search() with params: %s", params)
+    log.debug(f"Calling search() with params: {params}")
 
 
 def log_item(log: Logger, item_id: str, params: Optional[Dict]) -> None:
@@ -94,7 +92,7 @@ def log_item(log: Logger, item_id: str, params: Optional[Dict]) -> None:
     :param params: the query parameters (can be None)
     :return: None
     """
-    log.debug("Calling item(item_id=%s, params=%s)", item_id, params)
+    log.debug(f"Calling item(item_id={item_id}, params={params})")
 
 
 def log_curl(log: Logger, endpoint: str, params: Optional[Dict]) -> None:
@@ -106,7 +104,7 @@ def log_curl(log: Logger, endpoint: str, params: Optional[Dict]) -> None:
     :param params: the query parameters (can be None)
     :return: None
     """
-    log.debug("Calling endpoint %s with params %s", endpoint, params)
+    log.debug(f"Calling endpoint {endpoint} with params {params}")
 
 
 def _build_curl_command(url: str, headers: Dict[str, str]) -> str:
@@ -152,8 +150,8 @@ def log_curl_request(
         full_url = f"{full_url}?{urlencode(params)}"
 
     curl_cmd = _build_curl_command(full_url, headers)
-    log.debug("API Request: GET %s with params %s", endpoint, params)
-    log.debug("Curl command:\n%s", curl_cmd)
+    log.debug(f"API Request: GET {endpoint} with params {params}")
+    log.debug(f"Curl command:\n{curl_cmd}")
 
 
 def log_curl_response(
@@ -176,14 +174,14 @@ def log_curl_response(
     if not log.isEnabledFor(logging.DEBUG):
         return
 
-    log.debug("API Response: %s - Status: %d", endpoint, status_code)
-    log.debug("Response Headers: %s", dict(headers))
+    log.debug(f"API Response: {endpoint} - Status: {status_code}")
+    log.debug(f"Response Headers: {dict(headers)}")
     if body is not None:
         # Truncate body if too long (over 1000 chars)
         if len(body) > 1000:
-            log.debug("Response Body (truncated): %s...", body[:1000])
+            log.debug(f"Response Body (truncated): {body[:1000]}...")
         else:
-            log.debug("Response Body: %s", body)
+            log.debug(f"Response Body: {body}")
 
 
 def log_cookie_fetched(log: Logger, cookie_value: str) -> None:
@@ -194,7 +192,7 @@ def log_cookie_fetched(log: Logger, cookie_value: str) -> None:
     :param cookie_value: the fetched cookie value
     :return: None
     """
-    log.debug("Session cookie fetched successfully: %s", cookie_value[:20] + "...")
+    log.debug(f"Session cookie fetched successfully: {cookie_value[:20]}...")
 
 
 def log_cookie_retry(log: Logger, status_code: int) -> None:
@@ -205,7 +203,7 @@ def log_cookie_retry(log: Logger, status_code: int) -> None:
     :param status_code: the HTTP status code that triggered the retry
     :return: None
     """
-    log.debug("Received %d status, refreshing session cookie and retrying", status_code)
+    log.debug(f"Received {status_code} status, refreshing session cookie and retrying")
 
 
 def log_cookie_fetch_failed(
@@ -221,8 +219,5 @@ def log_cookie_fetch_failed(
     :return: None
     """
     log.debug(
-        "Cookie fetch failed (attempt %d/%d) with status %s",
-        attempt + 1,
-        retries,
-        status_code or "unknown",
+        f"Cookie fetch failed (attempt {attempt + 1}/{retries}) with status {status_code or 'unknown'}"
     )

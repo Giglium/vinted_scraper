@@ -6,13 +6,17 @@ import json
 import os
 import random
 import re
-from typing import Dict, Optional
+from functools import lru_cache
+from typing import Dict, List, Optional
 
-# Load in a Variables the list of user agent to avoid reading it from a file every time
-with open(
-    os.path.join(os.path.dirname(__file__), "agents.json"), "r", encoding="utf-8"
-) as file:
-    AGENTS = json.load(file)
+
+@lru_cache(maxsize=1)
+def _load_agents() -> List[Dict]:
+    """Load user agents from JSON file (cached)."""
+    with open(
+        os.path.join(os.path.dirname(__file__), "agents.json"), "r", encoding="utf-8"
+    ) as file:
+        return json.load(file)
 
 
 def get_random_user_agent() -> str:
@@ -21,20 +25,20 @@ def get_random_user_agent() -> str:
 
     :return: A user agent
     """
+    return random.choice(_load_agents())["ua"]
 
-    return random.choice(AGENTS)["ua"]
+
+_URL_PATTERN = re.compile(r"^(https?://)?(www\.)?[\w.-]+\.\w{2,}$")
 
 
-def url_validator(url: str):
+def url_validator(url: str) -> bool:
     """
     Statically check if a given url is a valid base url, using a regex.
 
     :param url: The url to validate
     :return: True if the url is valid, False otherwise
     """
-    if re.match(re.compile(r"^(https?://)?(www\.)?[\w.-]+\.\w{2,}$"), url):
-        return True
-    return False
+    return bool(_URL_PATTERN.match(url))
 
 
 def get_cookie_headers(base_url: str, user_agent: str) -> Dict:

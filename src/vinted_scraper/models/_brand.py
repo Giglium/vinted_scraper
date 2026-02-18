@@ -2,15 +2,13 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from ._json_model import VintedJsonModel
+
 
 @dataclass
-class VintedBrand:
+class VintedBrand(VintedJsonModel):
     id: Optional[int] = None
     title: Optional[str] = None
     slug: Optional[str] = None
     path: Optional[str] = None
     is_favourite: Optional[bool] = None
-
-    def __init__(self, json_data=None):
-        if json_data is not None:
-            self.__dict__.update(json_data)

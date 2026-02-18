@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from src.vinted_scraper import VintedScraper, VintedWrapper
+from src.vinted_scraper.models import VintedJsonModel
 from src.vinted_scraper.utils import SESSION_COOKIE_NAME
 from tests.utils import (
     BASE_URL,
@@ -25,7 +26,7 @@ class TestVintedWrapper(unittest.TestCase):
     Test the Vinted Wrapper class with a Mock for the API call
     """
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_constructor(self, mock_client):
         """
         Ensure that the constructor:
@@ -36,9 +37,9 @@ class TestVintedWrapper(unittest.TestCase):
         wrapper = VintedWrapper(
             BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE}, USER_AGENT
         )
-        self.assertEqual(wrapper._base_url, BASE_URL)
-        self.assertEqual(wrapper._session_cookie, {SESSION_COOKIE_NAME: COOKIE_VALUE})
-        self.assertEqual(wrapper._user_agent, USER_AGENT)
+        self.assertEqual(wrapper.baseurl, BASE_URL)
+        self.assertEqual(wrapper.session_cookie, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        self.assertEqual(wrapper.user_agent, USER_AGENT)
         self.assertEqual(mock_client.return_value.get.call_count, 0)
 
         with self.assertLogs(level=logging.INFO) as cm:
@@ -51,7 +52,7 @@ class TestVintedWrapper(unittest.TestCase):
                 [f"ERROR:{VintedWrapper.__module__}:'{wrong_url}' is not a valid url"],
             )
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_search(self, mock_client):
         """Test search method"""
         setup_mock_get(mock_client, {"items": []})
@@ -63,7 +64,7 @@ class TestVintedWrapper(unittest.TestCase):
         mock_client.return_value.get.assert_called_once()
         self.assertIn("search_text", str(mock_client.return_value.get.call_args))
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_item(self, mock_client):
         """Test item method"""
         setup_mock_get(mock_client, {"item": {}})
@@ -74,7 +75,7 @@ class TestVintedWrapper(unittest.TestCase):
         self.assertEqual(result, {"item": {}})
         mock_client.return_value.get.assert_called_once()
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_curl_401_retry(self, mock_client):
         """Test curl method with 401 response triggers cookie refresh"""
         mock_client.return_value.get.side_effect = [
@@ -89,7 +90,7 @@ class TestVintedWrapper(unittest.TestCase):
         self.assertEqual(result, {"success": True})
         self.assertEqual(mock_client.return_value.get.call_count, 3)
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_curl_error(self, mock_client):
         """Test curl method with non-200/401 response"""
         setup_mock_get(mock_client, status_code=500, text="")
@@ -100,7 +101,7 @@ class TestVintedWrapper(unittest.TestCase):
         self.assertIn("500", str(ctx.exception))
         self.assertIsInstance(ctx.exception, RuntimeError)
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_curl_invalid_json(self, mock_client):
         """Test curl method with invalid JSON response"""
         setup_mock_get(mock_client, text="invalid")
@@ -115,7 +116,7 @@ class TestVintedWrapper(unittest.TestCase):
         self.assertIn("JSON", str(ctx.exception))
         self.assertIsInstance(ctx.exception, RuntimeError)
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_fetch_cookie_no_cookie_in_response(self, mock_client):
         """Test fetch_cookie when response doesn't contain cookie"""
         setup_mock_get(mock_client)
@@ -130,7 +131,7 @@ class TestVintedWrapper(unittest.TestCase):
         self.assertIn("cookie", str(ctx.exception).lower())
         self.assertIsInstance(ctx.exception, RuntimeError)
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_fetch_cookie_non_200_status(self, mock_client):
         """Test fetch_cookie with non-200 status code"""
         setup_mock_get(mock_client, status_code=500)
@@ -144,7 +145,7 @@ class TestVintedWrapper(unittest.TestCase):
         self.assertIn("500", str(ctx.exception))
         self.assertIsInstance(ctx.exception, RuntimeError)
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_context_manager(self, mock_client):
         """Test context manager __enter__ and __exit__"""
         with VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE}) as wrapper:
@@ -155,7 +156,7 @@ class TestVintedWrapper(unittest.TestCase):
 class TestVintedScraper(unittest.TestCase):
     """Test VintedScraper class"""
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_search_returns_vinted_items(self, mock_client):
         """Test search method returns VintedItem objects"""
         setup_mock_get(mock_client, {"items": [{"id": 1, "title": "Test"}]})
@@ -168,7 +169,7 @@ class TestVintedScraper(unittest.TestCase):
         self.assertEqual(result[0].id, 1)
         self.assertEqual(result[0].title, "Test")
 
-    @patch("src.vinted_scraper._vinted_wrapper.httpx.Client")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_item_returns_vinted_item(self, mock_client):
         """Test item method returns VintedItem object"""
         setup_mock_get(mock_client, {"item": {"id": 123, "title": "Test Item"}})
@@ -178,6 +179,19 @@ class TestVintedScraper(unittest.TestCase):
 
         self.assertEqual(result.id, 123)
         self.assertEqual(result.title, "Test Item")
+        mock_client.return_value.get.assert_called_once()
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_curl_returns_vinted_base(self, mock_client):
+        """Test curl method returns VintedJsonModel object"""
+        setup_mock_get(mock_client, {"data": "test", "value": 42})
+
+        scraper = VintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = scraper.curl("/test/endpoint")
+
+        self.assertIsInstance(result, VintedJsonModel)
+        self.assertEqual(result.json_data["data"], "test")
+        self.assertEqual(result.json_data["value"], 42)
         mock_client.return_value.get.assert_called_once()
 
 

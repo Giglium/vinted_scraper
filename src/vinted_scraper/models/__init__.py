@@ -1,13 +1,15 @@
 # pylint: disable=missing-module-docstring
-from ._vinted_brand import VintedBrand
-from ._vinted_bundle_discount import VintedBundleDiscount, VintedDiscount
-from ._vinted_high_resolution import VintedHighResolution
-from ._vinted_image import VintedImage
-from ._vinted_item import VintedItem
-from ._vinted_media import VintedMedia
-from ._vinted_user import VintedUser
+from ._brand import VintedBrand
+from ._bundle_discount import VintedBundleDiscount, VintedDiscount
+from ._high_resolution import VintedHighResolution
+from ._image import VintedImage
+from ._item import VintedItem
+from ._json_model import VintedJsonModel
+from ._media import VintedMedia
+from ._user import VintedUser
 
 __all__ = [
+    "VintedJsonModel",
     "VintedBrand",
     "VintedBundleDiscount",
     "VintedDiscount",

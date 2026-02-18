@@ -8,8 +8,10 @@ from typing import Dict, List, Optional
 
 import httpx
 
+from ._constants import DEFAULT_TIMEOUT
 
-def get_httpx_config(baseurl: str, config: Optional[Dict] = None):
+
+def get_httpx_config(baseurl: str, config: Optional[Dict] = None) -> Dict:
     """
     Returns a config dictionary to be used with httpx.Client.
     The dictionary contains the baseurl, a timeout of 10 seconds and
@@ -23,7 +25,7 @@ def get_httpx_config(baseurl: str, config: Optional[Dict] = None):
     """
     default_config = {
         "base_url": baseurl,
-        "timeout": httpx.Timeout(10.0),
+        "timeout": httpx.Timeout(DEFAULT_TIMEOUT),
         "follow_redirects": True,
     }
 
@@ -57,8 +59,8 @@ def log_response(log: Logger, response: httpx.Response) -> None:
     """
     if log.isEnabledFor(logging.DEBUG):
         log.debug(
-            f"Url is {response.url}"  # print url
-            f"Status code: {response.status_code}"  # print status code
-            f"Headers: {response.headers}"  # print headers
-            f"Content: {response.text}"  # Print content
+            f"Url is {response.url}\n"
+            f"Status code: {response.status_code}\n"
+            f"Headers: {response.headers}\n"
+            f"Content: {response.text}"
         )

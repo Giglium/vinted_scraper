@@ -21,7 +21,7 @@ class TestVintedModels(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures with sample item data."""
         self.data = read_data_from_file("item_dummy").get("item")
-        self.search_data = read_data_from_file("search_item_dummy").get("items")[0]
+        self.search_data = read_data_from_file("search_items_dummy").get("items")[0]
         self.item = VintedItem(json_data=self.data)
         self.search_item = VintedItem(json_data=self.search_data)
 
