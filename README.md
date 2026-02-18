@@ -9,7 +9,7 @@
 
 A very simple Python package for scraping Vinted. Supports both synchronous and asynchronous operations with automatic cookie management and typed responses.
 
-📖 **[Full Documentation](https://giglium.github.io/vinted_scraper/vinted_scraper.html)** | 💡 **[Examples](EXAMPLES.md)** | 📝 **[Changelog](https://github.com/Giglium/vinted_scraper/releases)**
+📖 **[Full Documentation](https://giglium.github.io/vinted_scraper/vinted_scraper.html)** | 💡 **[Examples](https://github.com/Giglium/vinted_scraper/tree/main/examples)** | 📝 **[Changelog](https://github.com/Giglium/vinted_scraper/releases)**
 
 ## Installation
 
