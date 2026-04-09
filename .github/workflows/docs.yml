@@ -40,4 +40,4 @@ jobs:
     steps:
       - id: deployment
         if: ${{ !env.ACT }}
-        uses: actions/deploy-pages@v4 # zizmor: ignore[unpinned-uses]
+        uses: actions/deploy-pages@v5 # zizmor: ignore[unpinned-uses]
