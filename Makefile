@@ -67,7 +67,7 @@ fmt: ## Properly format the python code, to format others (YAML, Markdown, etc..
 
 .PHONY: lint
 lint: ## Run the static analysis tool to scan the codebase
-	@docker run --rm --name=vinter-scraper-linter -e SHELL=/bin/bash -e IGNORE_GITIGNORED_FILES=true -e RUN_LOCAL=true -e DEFAULT_BRANCH=main $(SUPER_LINTER_FMT) --mount type=bind,src=$(ROOT),dst=/tmp/lint/ --mount type=volume,dst=/tmp/lint/.venv --platform linux/amd64 ghcr.io/super-linter/super-linter:v8.5.0
+	@docker run --rm --name=vinter-scraper-linter -e SHELL=/bin/bash -e IGNORE_GITIGNORED_FILES=true -e RUN_LOCAL=true -e DEFAULT_BRANCH=main $(SUPER_LINTER_FMT) --mount type=bind,src=$(ROOT),dst=/tmp/lint/ --mount type=volume,dst=/tmp/lint/.venv --platform linux/amd64 ghcr.io/super-linter/super-linter:v8.6.0
 
 .PHONY: act.lint
 act.lint: #! Run the linter github action
@@ -102,4 +102,3 @@ help: ## Show the basic command help.
 .PHONY: help.all
 act.help: ## Show the act command help.
 	@sed -ne '/@sed/!s/#! //p' $(MAKEFILE_LIST)
-
