@@ -223,9 +223,7 @@ class VintedWrapper:
 
         response = self._client.get(
             endpoint,
-            headers=get_curl_headers(
-                self.baseurl, self.user_agent, self.session_cookie
-            ),
+            headers=headers,
             params=params,
         )
 
