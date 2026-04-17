@@ -3,14 +3,14 @@
 Mock utils
 """
 
+from typing import Final
 from unittest.mock import AsyncMock, MagicMock
 
 from src.vinted_scraper.utils import SESSION_COOKIE_NAME, get_random_user_agent
 
-# Change str to final when 3.6+ support is dropped, because final was introduced from 3.8.
-BASE_URL: str = "https://fakeurl.com"
-USER_AGENT: str = get_random_user_agent()
-COOKIE_VALUE: str = "valid_token-123456"
+BASE_URL: Final = "https://fakeurl.com"
+USER_AGENT: Final = get_random_user_agent()
+COOKIE_VALUE: Final = "valid_token-123456"
 
 
 def create_mock(json_data=None, status_code=200, text="{}"):
