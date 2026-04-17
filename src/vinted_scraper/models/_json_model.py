@@ -21,7 +21,15 @@ class VintedJsonModel:
     json_data: Optional[Dict] = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        """Populate model attributes from json_data after initialization."""
+        """Populate model attributes from json_data after initialization.
+
+        Warning:
+            All keys from json_data are injected into the instance via
+            ``__dict__.update``. This means unknown API fields become
+            attributes and may shadow declared dataclass fields.
+            Consider restricting updates to declared fields only if
+            stricter type safety is needed.
+        """
         if self.json_data is not None:
             self.__dict__.update(self.json_data)
 
