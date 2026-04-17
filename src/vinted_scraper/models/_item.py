@@ -112,6 +112,4 @@ class VintedItem(VintedJsonModel):
                 self.price = float(self.json_data["price"])
 
             self.service_fee = _parse_price(self.json_data.get("service_fee"))
-            self.total_item_price = _parse_price(
-                self.json_data.get("total_item_price")
-            )
+            self.total_item_price = _parse_price(self.json_data.get("total_item_price"))

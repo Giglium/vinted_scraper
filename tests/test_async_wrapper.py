@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
+
 from src.vinted_scraper import AsyncVintedScraper, AsyncVintedWrapper
 from src.vinted_scraper.models import VintedJsonModel
 from src.vinted_scraper.utils import SESSION_COOKIE_NAME
