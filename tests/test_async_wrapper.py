@@ -47,7 +47,7 @@ class TestAsyncVintedWrapper(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(
                 cm.output,
                 [
-                    f"ERROR:{AsyncVintedWrapper.__module__}:'{wrong_url}' is not a valid url"
+                    f"ERROR:src.vinted_scraper._base_wrapper:'{wrong_url}' is not a valid url"
                 ],
             )
 

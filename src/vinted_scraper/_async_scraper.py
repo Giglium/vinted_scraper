@@ -1,5 +1,3 @@
-# jscpd:ignore-start
-# pylint: disable=duplicate-code
 """Async Vinted scraper with typed model support."""
 
 import logging
@@ -78,10 +76,6 @@ class AsyncVintedScraper(AsyncVintedWrapper):
 
         Raises:
             RuntimeError: If the request fails or returns a non-200 status code.
-
         """
         response = await super().curl(endpoint, params)
         return VintedJsonModel(json_data=response)
-
-
-# jscpd:ignore-end
