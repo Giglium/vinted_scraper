@@ -85,17 +85,6 @@ def log_item(log: Logger, item_id: str, params: Optional[Dict]) -> None:
     log.debug(f"Calling item(item_id={item_id}, params={params})")
 
 
-def log_curl(log: Logger, endpoint: str, params: Optional[Dict]) -> None:
-    """Logs HTTP request (deprecated, use log_curl_request).
-
-    Args:
-        log: Logger instance.
-        endpoint: API endpoint path.
-        params: Query parameters dictionary.
-    """
-    log.debug(f"Calling endpoint {endpoint} with params {params}")
-
-
 def _build_curl_command(url: str, headers: Dict[str, str]) -> str:
     """Builds executable curl command from request details.
 
