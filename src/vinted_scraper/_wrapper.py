@@ -149,7 +149,13 @@ class VintedWrapper(BaseVintedWrapper):
         self._log_item(item_id, params)
         return self.curl(self._item_endpoint(item_id), params=params)
 
-    def curl(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
+    def curl(
+        self,
+        endpoint: str,
+        params: Optional[Dict] = None,
+        *,
+        _retries: int = 0,
+    ) -> Dict[str, Any]:
         """Send a custom HTTP GET request to any Vinted API endpoint.
 
         Automatically handles headers, cookies, retries, and error responses.
@@ -176,10 +182,10 @@ class VintedWrapper(BaseVintedWrapper):
         if response.status_code == HTTP_OK:
             return self._handle_curl_response(response, endpoint)
 
-        if response.status_code == HTTP_UNAUTHORIZED:
+        if response.status_code == HTTP_UNAUTHORIZED and _retries < DEFAULT_RETRIES:
             self._log_cookie_retry(response.status_code)
             self.session_cookie = self.refresh_cookie()
-            return self.curl(endpoint, params)
+            return self.curl(endpoint, params, _retries=_retries + 1)
 
         self._raise_curl_error(endpoint, response.status_code)
 

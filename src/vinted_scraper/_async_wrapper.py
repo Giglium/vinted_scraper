@@ -179,7 +179,11 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         return await self.curl(self._item_endpoint(item_id), params=params)
 
     async def curl(
-        self, endpoint: str, params: Optional[Dict] = None
+        self,
+        endpoint: str,
+        params: Optional[Dict] = None,
+        *,
+        _retries: int = 0,
     ) -> Dict[str, Any]:
         """Send an async HTTP GET request to any Vinted API endpoint.
 
@@ -207,10 +211,10 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         if response.status_code == HTTP_OK:
             return self._handle_curl_response(response, endpoint)
 
-        if response.status_code == HTTP_UNAUTHORIZED:
+        if response.status_code == HTTP_UNAUTHORIZED and _retries < DEFAULT_RETRIES:
             self._log_cookie_retry(response.status_code)
             self.session_cookie = await self.refresh_cookie()
-            return await self.curl(endpoint, params)
+            return await self.curl(endpoint, params, _retries=_retries + 1)
 
         self._raise_curl_error(endpoint, response.status_code)
 
