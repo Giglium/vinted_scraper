@@ -10,6 +10,22 @@ from ._json_model import VintedJsonModel
 from ._user import VintedUser
 
 
+def _parse_price(value) -> Optional[float]:
+    """Parse a price value from the API response.
+
+    Args:
+        value: Price as a dict (with "amount" key), a string, or None.
+
+    Returns:
+        Parsed float price, or None if the value is not a recognised format.
+    """
+    if isinstance(value, dict):
+        return float(value["amount"])
+    if isinstance(value, str):
+        return float(value)
+    return None
+
+
 @dataclass
 class VintedItem(VintedJsonModel):
     """Represents a Vinted marketplace item with all its attributes.
@@ -95,14 +111,5 @@ class VintedItem(VintedJsonModel):
             elif isinstance(self.json_data.get("price"), str):
                 self.price = float(self.json_data["price"])
 
-            if isinstance(self.json_data.get("service_fee"), dict):
-                self.service_fee = float(self.json_data["service_fee"]["amount"])
-            elif isinstance(self.json_data.get("service_fee"), str):
-                self.service_fee = float(self.json_data["service_fee"])
-
-            if isinstance(self.json_data.get("total_item_price"), dict):
-                self.total_item_price = float(
-                    self.json_data["total_item_price"]["amount"]
-                )
-            elif isinstance(self.json_data.get("total_item_price"), str):
-                self.total_item_price = float(self.json_data["total_item_price"])
+            self.service_fee = _parse_price(self.json_data.get("service_fee"))
+            self.total_item_price = _parse_price(self.json_data.get("total_item_price"))
