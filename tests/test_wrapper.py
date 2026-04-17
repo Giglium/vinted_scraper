@@ -49,7 +49,9 @@ class TestVintedWrapper(unittest.TestCase):
 
             self.assertEqual(
                 cm.output,
-                [f"ERROR:{VintedWrapper.__module__}:'{wrong_url}' is not a valid url"],
+                [
+                    f"ERROR:src.vinted_scraper._base_wrapper:'{wrong_url}' is not a valid url"
+                ],
             )
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")

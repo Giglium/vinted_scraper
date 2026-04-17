@@ -1,5 +1,3 @@
-# jscpd:ignore-start
-# pylint: disable=duplicate-code
 """Vinted scraper with typed model support."""
 
 import logging
@@ -77,6 +75,3 @@ class VintedScraper(VintedWrapper):
         """
         response = super().curl(endpoint, params)
         return VintedJsonModel(json_data=response)
-
-
-# jscpd:ignore-end
