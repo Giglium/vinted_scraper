@@ -13,7 +13,6 @@ from src.vinted_scraper.utils import (
     log_cookie_fetch_failed,
     log_cookie_fetched,
     log_cookie_retry,
-    log_curl,
     log_curl_request,
     log_curl_response,
     log_interaction,
@@ -207,39 +206,6 @@ class TestLogUtils(unittest.TestCase):
             log_item(log=log, item_id=item_id, params=None)
             self.assertIn("Calling item", cm.output[0])
             self.assertIn(item_id, cm.output[0])
-
-    def test_log_curl(self):
-        """
-        Test the log_curl function.
-
-        Test cases include:
-        - Checking that the message is logged when the DEBUG level is enabled
-        - Checking that the message is not logged when the DEBUG level is disabled
-        """
-        log = self.logger
-        endpoint = "/catalog/items"
-        params = {"page": 1}
-        # Case DEBUG enabled
-        with self.assertLogs(level=logging.DEBUG) as cm:
-            log_curl(log=log, endpoint=endpoint, params=params)
-            self.assertIn("Calling endpoint", cm.output[0])
-            self.assertIn(endpoint, cm.output[0])
-
-        # Case Debug disable
-        assert_no_logs(
-            log_curl,
-            self,
-            log=log,
-            level=logging.INFO,
-            endpoint=endpoint,
-            params=params,
-        )
-
-        # Case with None params
-        with self.assertLogs(level=logging.DEBUG) as cm:
-            log_curl(log=log, endpoint=endpoint, params=None)
-            self.assertIn("Calling endpoint", cm.output[0])
-            self.assertIn(endpoint, cm.output[0])
 
     def test_log_curl_request(self):
         """
