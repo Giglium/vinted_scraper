@@ -2,7 +2,6 @@
 # pylint: disable=protected-access,duplicate-code
 """Tests for httpx utility functions."""
 
-import logging
 import unittest
 
 import httpx
@@ -12,7 +11,6 @@ from src.vinted_scraper.utils import (
     extract_cookie_from_response,
     get_httpx_config,
 )
-from src.vinted_scraper.utils._httpx import log_response
 from tests.utils._mock import BASE_URL, COOKIE_VALUE, USER_AGENT
 
 
@@ -81,27 +79,6 @@ class TestHttpxUtils(unittest.TestCase):
         )
         self.assertEqual(result[SESSION_COOKIE_NAME], COOKIE_VALUE)
         self.assertEqual(result["another_cookie"], "another_value")
-
-    def test_log_response(self):
-        """Test log_response logs response details at DEBUG level."""
-        logger = logging.getLogger("test_logger")
-        original_level = logger.level
-        logger.setLevel(logging.DEBUG)
-
-        try:
-            request = httpx.Request("GET", BASE_URL)
-            response = httpx.Response(
-                200,
-                request=request,
-                headers={"Content-Type": "application/json"},
-            )
-            response._content = b'{"test": "data"}'
-
-            with self.assertLogs(logger, level=logging.DEBUG) as cm:
-                log_response(logger, response)
-                self.assertTrue(any("Status code: 200" in log for log in cm.output))
-        finally:
-            logger.setLevel(original_level)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,5 @@
 """HTTP utilities for httpx client configuration and cookie handling."""
 
-import logging
-from logging import Logger
 from typing import Dict, List, Optional
 
 import httpx
@@ -48,19 +46,3 @@ def extract_cookie_from_response(
         for name in cookie_names
         if response.cookies.get(name)
     }
-
-
-def log_response(log: Logger, response: httpx.Response) -> None:
-    """Logs HTTP response details including status, headers, and content.
-
-    Args:
-        log: Logger instance.
-        response: The httpx response object.
-    """
-    if log.isEnabledFor(logging.DEBUG):
-        log.debug(
-            f"Url is {response.url}\n"
-            f"Status code: {response.status_code}\n"
-            f"Headers: {response.headers}\n"
-            f"Content: {response.text}"
-        )
