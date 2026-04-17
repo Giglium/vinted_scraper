@@ -27,8 +27,6 @@ class VintedJsonModel:
             All keys from json_data are injected into the instance via
             ``__dict__.update``. This means unknown API fields become
             attributes and may shadow declared dataclass fields.
-            Consider restricting updates to declared fields only if
-            stricter type safety is needed.
         """
         if self.json_data is not None:
             self.__dict__.update(self.json_data)
