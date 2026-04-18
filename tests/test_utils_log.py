@@ -5,7 +5,6 @@ Test the log utils class
 """
 
 import logging
-import sys
 import unittest
 
 from src.vinted_scraper.utils import (
@@ -31,7 +30,6 @@ class TestLogUtils(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.pyversion = sys.version_info
         self.logger = logging.getLogger(__name__)
         self.original_level = self.logger.level
 

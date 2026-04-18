@@ -80,6 +80,26 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
         self.assertEqual(mock_client.return_value.get.call_count, 5)
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_401_retry_exhaustion(self, mock_client):
+        """Test that curl raises after DEFAULT_RETRIES consecutive 401s"""
+        # Each 401 triggers a cookie refresh (1 GET) then a retry (1 GET) = 2 GETs per retry
+        # With DEFAULT_RETRIES=3, we need: 3 x (401 + cookie_refresh) + final 401
+        mock_client.return_value.get.side_effect = [
+            create_mock(status_code=401, text=""),
+            create_cookie_response(),
+            create_mock(status_code=401, text=""),
+            create_cookie_response(),
+            create_mock(status_code=401, text=""),
+            create_cookie_response(),
+            create_mock(status_code=401, text=""),
+        ]
+
+        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        with self.assertRaises(RuntimeError) as ctx:
+            wrapper.curl("/test")
+        self.assertIn("401", str(ctx.exception))
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_scraper_with_empty_items_list(self, mock_client):
         """Test VintedScraper with empty items list"""
         setup_mock_get(mock_client, {"items": []})

@@ -209,6 +209,95 @@ class TestAsyncVintedScraper(unittest.IsolatedAsyncioTestCase):
         mock_client.return_value.get.assert_called_once()
 
 
+class TestAsyncVintedWrapperEdgeCases(unittest.IsolatedAsyncioTestCase):
+    """Test async edge cases and error scenarios"""
+
+    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
+    async def test_search_with_empty_params(self, mock_client):
+        """Test search with empty parameters"""
+        setup_async_mock_get(mock_client, {"items": []})
+
+        wrapper = AsyncVintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = await wrapper.search({})
+        self.assertEqual(result, {"items": []})
+
+    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
+    async def test_search_with_none_params(self, mock_client):
+        """Test search with None parameters"""
+        setup_async_mock_get(mock_client, {"items": []})
+
+        wrapper = AsyncVintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = await wrapper.search(None)
+        self.assertEqual(result, {"items": []})
+
+    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
+    async def test_multiple_401_retries_then_success(self, mock_client):
+        """Test multiple 401 responses before success"""
+        mock_client.return_value.get = AsyncMock(
+            side_effect=[
+                create_mock(status_code=401, text=""),
+                create_cookie_response(),
+                create_mock(status_code=401, text=""),
+                create_cookie_response(),
+                create_mock({"success": True}),
+            ]
+        )
+
+        wrapper = AsyncVintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = await wrapper.curl("/test")
+        self.assertEqual(result, {"success": True})
+        self.assertEqual(mock_client.return_value.get.call_count, 5)
+
+    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
+    async def test_401_retry_exhaustion(self, mock_client):
+        """Test that curl raises after DEFAULT_RETRIES consecutive 401s"""
+        mock_client.return_value.get = AsyncMock(
+            side_effect=[
+                create_mock(status_code=401, text=""),
+                create_cookie_response(),
+                create_mock(status_code=401, text=""),
+                create_cookie_response(),
+                create_mock(status_code=401, text=""),
+                create_cookie_response(),
+                create_mock(status_code=401, text=""),
+            ]
+        )
+
+        wrapper = AsyncVintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        with self.assertRaises(RuntimeError) as ctx:
+            await wrapper.curl("/test")
+        self.assertIn("401", str(ctx.exception))
+
+    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
+    async def test_scraper_with_empty_items_list(self, mock_client):
+        """Test AsyncVintedScraper with empty items list"""
+        setup_async_mock_get(mock_client, {"items": []})
+
+        scraper = AsyncVintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = await scraper.search({"search_text": "nonexistent"})
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)
+
+    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
+    async def test_scraper_with_malformed_item_data(self, mock_client):
+        """Test AsyncVintedScraper handles malformed item data gracefully"""
+        setup_async_mock_get(
+            mock_client,
+            {
+                "items": [
+                    {"id": 1},
+                    {"title": "Test"},
+                    {},
+                ]
+            },
+        )
+
+        scraper = AsyncVintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = await scraper.search({"search_text": "test"})
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 3)
+
+
 if __name__ == "__main__":
     unittest.main()
 # jscpd:ignore-end
