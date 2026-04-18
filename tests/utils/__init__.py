@@ -4,6 +4,7 @@ from ._log import assert_no_logs
 from ._mock import (
     BASE_URL,
     COOKIE_VALUE,
+    HTTP_OK,
     USER_AGENT,
     create_cookie_response,
     create_mock,
@@ -15,6 +16,7 @@ __all__ = [
     "read_data_from_file",
     "BASE_URL",
     "COOKIE_VALUE",
+    "HTTP_OK",
     "USER_AGENT",
     "assert_no_logs",
     "create_mock",
