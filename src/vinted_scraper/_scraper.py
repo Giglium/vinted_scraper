@@ -60,7 +60,9 @@ class VintedScraper(VintedWrapper):
         """
         return VintedItem(json_data=super().item(item_id, params)["item"])
 
-    def curl(self, endpoint: str, params: Optional[Dict] = None) -> VintedJsonModel:  # type: ignore
+    def curl(
+        self, endpoint: str, params: Optional[Dict] = None, *, _retries: int = 0
+    ) -> VintedJsonModel:  # type: ignore
         """Send a custom HTTP GET request to any Vinted API endpoint.
 
         Args:
@@ -73,5 +75,5 @@ class VintedScraper(VintedWrapper):
         Raises:
             RuntimeError: If the request fails or returns a non-200 status code.
         """
-        response = super().curl(endpoint, params)
+        response = super().curl(endpoint, params, _retries=_retries)
         return VintedJsonModel(json_data=response)

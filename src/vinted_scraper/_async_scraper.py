@@ -63,7 +63,7 @@ class AsyncVintedScraper(AsyncVintedWrapper):
         return VintedItem(json_data=response["item"])
 
     async def curl(
-        self, endpoint: str, params: Optional[Dict] = None
+        self, endpoint: str, params: Optional[Dict] = None, *, _retries: int = 0
     ) -> VintedJsonModel:
         """Send an async HTTP GET request to any Vinted API endpoint.
 
@@ -77,5 +77,5 @@ class AsyncVintedScraper(AsyncVintedWrapper):
         Raises:
             RuntimeError: If the request fails or returns a non-200 status code.
         """
-        response = await super().curl(endpoint, params)
+        response = await super().curl(endpoint, params, _retries=_retries)
         return VintedJsonModel(json_data=response)
