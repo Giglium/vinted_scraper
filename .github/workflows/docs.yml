@@ -23,7 +23,7 @@ jobs:
       - name: Generate Docs
         run: make docs
 
-      - uses: actions/upload-pages-artifact@v4 # zizmor: ignore[unpinned-uses]
+      - uses: actions/upload-pages-artifact@v5 # zizmor: ignore[unpinned-uses]
         if: ${{ !env.ACT }}
         with:
           path: docs/
