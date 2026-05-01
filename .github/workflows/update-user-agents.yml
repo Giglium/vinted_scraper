@@ -23,15 +23,8 @@ jobs:
       - name: update the user agents list
         run: make update.user.agent
 
-      - name: Lint Code Base
-        uses: super-linter/super-linter@v8.6.0 # zizmor: ignore[unpinned-uses]
-        env:
-          SHELL: /bin/bash
-          RUN_LOCAL: true
-          DEFAULT_BRANCH: main
-          VALIDATE_ALL_CODEBASE: false
-          FIX_JSON_PRETTIER: true
-          FIX_JSON: true
+      - name: Lint Code Base to fmt the user agent json
+        run: make lint
 
       - name: Open Pull Request
         if: ${{ !env.ACT }}
