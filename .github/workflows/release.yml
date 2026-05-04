@@ -37,7 +37,7 @@ jobs:
           echo "FILE_NAME=$FILE_PREFIX" >> "$GITHUB_ENV"
 
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@v4.7.1 # zizmor: ignore[unpinned-uses]
+        uses: orhun/git-cliff-action@v4.8.0 # zizmor: ignore[unpinned-uses]
         id: git-cliff
         with:
           config: github-keepachangelog
