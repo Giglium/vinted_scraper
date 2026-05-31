@@ -11,11 +11,34 @@ from src.vinted_scraper.utils import (
     get_random_user_agent,
     url_validator,
 )
+from src.vinted_scraper.utils._misc import _load_agents
 from tests.utils._mock import BASE_URL, COOKIE_VALUE, USER_AGENT
 
 
 class TestMiscUtils(unittest.TestCase):
     """Test suite for miscellaneous utility functions."""
+
+    def test_load_agents_returns_list(self):
+        """Test that _load_agents loads agents.json via importlib.resources."""
+        _load_agents.cache_clear()
+        agents = _load_agents()
+        self.assertIsInstance(agents, list)
+        self.assertGreater(len(agents), 0)
+
+    def test_load_agents_entries_have_ua_key(self):
+        """Test that each agent entry has a 'ua' key with a non-empty string."""
+        agents = _load_agents()
+        for agent in agents:
+            self.assertIn("ua", agent)
+            self.assertIsInstance(agent["ua"], str)
+            self.assertGreater(len(agent["ua"]), 0)
+
+    def test_load_agents_is_cached(self):
+        """Test that _load_agents returns the same object on repeated calls (cached)."""
+        _load_agents.cache_clear()
+        first_call = _load_agents()
+        second_call = _load_agents()
+        self.assertIs(first_call, second_call)
 
     def test_get_random_user_agent(self):
         """Test that get_random_user_agent returns a valid non-empty string."""
