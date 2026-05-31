@@ -2,8 +2,6 @@
 # pylint: disable=duplicate-code
 """Tests for misc utility functions."""
 
-import importlib
-import sys
 import unittest
 from unittest.mock import patch
 
@@ -103,16 +101,10 @@ class TestMiscUtils(unittest.TestCase):
     def test_load_agents_fallback_path(self):
         """Test _load_agents uses os.path fallback when sys.version_info < (3, 9)."""
         _load_agents.cache_clear()
-        with patch(
-            "src.vinted_scraper.utils._misc.sys") as mock_sys:
+        with patch("src.vinted_scraper.utils._misc.sys") as mock_sys:
             mock_sys.version_info = (3, 8, 0)
-            # Reload the module so the patched version_info is used at function call time
-            # But since the check is inside the function body, we just need the mock active
-            import src.vinted_scraper.utils._misc as misc_module
-
-            # Clear cache on the actual function reference
-            misc_module._load_agents.cache_clear()
-            agents = misc_module._load_agents()
+            _load_agents.cache_clear()
+            agents = _load_agents()
             self.assertIsInstance(agents, list)
             self.assertGreater(len(agents), 0)
             for agent in agents:
