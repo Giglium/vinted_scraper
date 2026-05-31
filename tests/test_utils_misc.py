@@ -2,7 +2,10 @@
 # pylint: disable=duplicate-code
 """Tests for misc utility functions."""
 
+import importlib
+import sys
 import unittest
+from unittest.mock import patch
 
 from src.vinted_scraper.utils import (
     SESSION_COOKIE_NAME,
@@ -96,6 +99,27 @@ class TestMiscUtils(unittest.TestCase):
         self.assertEqual(headers["Origin"], BASE_URL)
         self.assertEqual(headers["Referer"], BASE_URL)
         self.assertEqual(headers["Cookie"], f"{SESSION_COOKIE_NAME}={COOKIE_VALUE}")
+
+    def test_load_agents_fallback_path(self):
+        """Test _load_agents uses os.path fallback when sys.version_info < (3, 9)."""
+        _load_agents.cache_clear()
+        with patch(
+            "src.vinted_scraper.utils._misc.sys") as mock_sys:
+            mock_sys.version_info = (3, 8, 0)
+            # Reload the module so the patched version_info is used at function call time
+            # But since the check is inside the function body, we just need the mock active
+            import src.vinted_scraper.utils._misc as misc_module
+
+            # Clear cache on the actual function reference
+            misc_module._load_agents.cache_clear()
+            agents = misc_module._load_agents()
+            self.assertIsInstance(agents, list)
+            self.assertGreater(len(agents), 0)
+            for agent in agents:
+                self.assertIn("ua", agent)
+
+        # Restore cache state
+        _load_agents.cache_clear()
 
 
 if __name__ == "__main__":

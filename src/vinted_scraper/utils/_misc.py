@@ -7,6 +7,7 @@ This module provides common utilities including:
 """
 
 import json
+import os
 import random
 import re
 import sys
@@ -15,8 +16,6 @@ from typing import Dict, List, Optional
 
 if sys.version_info >= (3, 9):
     from importlib.resources import files
-else:
-    import os
 
 
 @lru_cache(maxsize=1)
