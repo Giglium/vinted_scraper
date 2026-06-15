@@ -15,7 +15,7 @@ jobs:
     environment: coverage-reporting
 
     steps:
-      - uses: actions/checkout@v6.0.2 # zizmor: ignore[unpinned-uses]
+      - uses: actions/checkout@v6.0.3 # zizmor: ignore[unpinned-uses]
         with:
           fetch-depth: 0
           persist-credentials: false
