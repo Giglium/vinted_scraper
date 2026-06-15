@@ -28,7 +28,7 @@ jobs:
 
       - name: Upload coverage reports to Codecov
         if: ${{ !env.ACT }}
-        uses: codecov/codecov-action@v6.0.1 # zizmor: ignore[unpinned-uses]
+        uses: codecov/codecov-action@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           fail_ci_if_error: true
           files: coverage.xml
