@@ -2,20 +2,54 @@
 name: CI setup
 description: "Sets up the environment for jobs during CI workflow"
 
+inputs:
+  python-version:
+    description: "Python version to install. If not specified, uses .python-version file."
+    required: false
+    default: ""
+  enable-cache:
+    description: "Whether to enable uv cache."
+    required: false
+    default: "true"
+  install-project:
+    description: "Whether to run uv sync --locked after setup."
+    required: false
+    default: "true"
+
 runs:
   using: composite
   steps:
     - name: "Set up Python"
-      uses: actions/setup-python@v5 # zizmor: ignore[unpinned-uses]
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
       with:
-        python-version-file: ".python-version"
+        python-version: ${{ inputs.python-version || '' }}
+        python-version-file: ${{ inputs.python-version == '' && '.python-version' || '' }}
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v6 # zizmor: ignore[unpinned-uses]
+      uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
       with:
-        version: "0.8.9"
-        enable-cache: true
+        version: "0.11.21"
+        enable-cache: ${{ inputs.enable-cache }}
+
+    - name: Verify lockfile exists
+      if: inputs.install-project == 'true'
+      run: |
+        if [ ! -f uv.lock ]; then
+          echo "::error::uv.lock not found. Run 'uv lock' locally and commit the lockfile."
+          exit 1
+        fi
+      shell: bash
+
+    - name: Cache virtual environment
+      if: inputs.install-project == 'true'
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ inputs.python-version || 'default' }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          venv-${{ runner.os }}-${{ inputs.python-version || 'default' }}-
 
     - name: Install the project
+      if: inputs.install-project == 'true'
       run: uv sync --locked
       shell: bash

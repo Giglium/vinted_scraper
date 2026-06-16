@@ -43,21 +43,17 @@ act.build: #! Run the release github action
 
 .PHONY: update.user.agent
 update.user.agent: ## Update the user agent file
-	curl -s "https://www.useragents.me/#most-common-mobile-useragents-json-csv" | grep -A 20 'id="most-common-mobile-useragents-json-csv"' | grep -A 15 'class="col-lg-6"' | grep -o '<textarea class="form-control" rows="8">.*</textarea>' | sed -E 's/<textarea class="form-control" rows="8">//;s/<\/textarea>//' > $(PROJECT_FOLDER)/$(MODULE_NAME)/utils/agents.json
+	curl -s "https://www.useragents.me/" | grep --color=never -A 20 'id="most-common-mobile-useragents-json-csv"' | grep --color=never -A 15 'class="col-lg-6"' | grep --color=never -o '<textarea class="form-control" rows="8">.*</textarea>' | sed -E 's/<textarea class="form-control" rows="8">//;s/<\/textarea>//' | python3 -c "import json,sys;data=json.load(sys.stdin);print(json.dumps(data,indent=2))" > $(PROJECT_FOLDER)/$(MODULE_NAME)/utils/agents.json
 
 .PHONY: act.update.user.agent
 act.update.user.agent: #! Run the Update user agent github action
-	@act -W '.github/workflows/update-user-agents.yml'
+	@act workflow_dispatch -W '.github/workflows/update-user-agents.yml'
 
 .PHONY: coverage
 coverage:  ## Run the unit test and generate the coverage report
 	@uv run coverage run --source=$(PROJECT_FOLDER) -m unittest discover
 	@uv run coverage xml
 	@uv run coverage report -m
-
-.PHONY: act.coverage
-act.coverage: #! Run the coverage github action
-	@act -W '.github/workflows/coverage.yml'
 
 .PHONY: fmt
 fmt: ## Properly format the python code, to format others (YAML, Markdown, etc..) use the `make lint` command
@@ -77,7 +73,7 @@ act.lint: #! Run the linter github action
 docs: ## Run pdoc to auto-generates API documentation
 	@uv run pdoc --footer-text $(MODULE_NAME)-$(VERSION) --output-dir $(DOC_FOLDER) $(MODULE_NAME)
 
-.PHONY: act.lint
+.PHONY: act.docs
 act.docs: #! Run the linter github action
 	@act -W '.github/workflows/docs.yml'
 

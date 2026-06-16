@@ -6,31 +6,30 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
   schedule:
     - cron: "0 9 * * 1" # Runs every Monday at 9:00 AM UTC
 
-permissions: read-all
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'schedule' && 'schedule' || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   test_quickstarts:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
 
     steps:
-      - uses: actions/checkout@v6.0.2 # zizmor: ignore[unpinned-uses]
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          fetch-depth: 0
           persist-credentials: false
 
-      - name: "Set up Python"
-        uses: actions/setup-python@v6 # zizmor: ignore[unpinned-uses]
-        with:
-          python-version-file: ".python-version"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v8.1.0 # zizmor: ignore[unpinned-uses]
-        with:
-          version: "0.8.9"
-          enable-cache: true
+      - name: Setup
+        uses: "./.github/actions/setup-python"
 
       - name: Run the async wrapper quickstart
         run: uv run -m examples.async_wrapper

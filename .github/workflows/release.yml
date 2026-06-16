@@ -6,17 +6,17 @@ on:
     tags:
       - "*.*.*"
 
-permissions: read-all
+permissions: {}
 
 jobs:
-  release:
+  build-and-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
-      id-token: write
 
     steps:
-      - uses: actions/checkout@v6.0.2 # zizmor: ignore[unpinned-uses]
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -27,18 +27,24 @@ jobs:
       - name: Build the package
         run: make build
 
-      - name: Find the package File
-        id: find_file
+      - name: Set package file info
+        id: pkg
         run: |
-          FILE=$(find "$(realpath ./dist)" -type f -name "*.whl")
-          FILE=$(echo "$FILE" | tr -d '[:space:]')
+          shopt -s nullglob
+          FILES=(dist/*.whl)
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "::error::No .whl file found in dist/"
+            exit 1
+          fi
+          FILE="${FILES[0]}"
           echo "FILE_PATH=$FILE" >> "$GITHUB_ENV"
-          FILE_PREFIX=$(echo "$FILE" | grep -oP '^.*/\K[^/]+-\d+\.\d+\.\d+')
+          FILE_PREFIX=$(basename "$FILE" | sed -E 's/^([^-]+-[0-9]+\.[0-9]+\.[0-9]+).*/\1/')
           echo "FILE_NAME=$FILE_PREFIX" >> "$GITHUB_ENV"
 
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@v4.8.0 # zizmor: ignore[unpinned-uses]
+        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
         id: git-cliff
+        if: ${{ !env.ACT }}
         with:
           config: github-keepachangelog
           args: -v --latest --strip header
@@ -47,7 +53,7 @@ jobs:
 
       - name: Upload whl file to release
         if: ${{ !env.ACT }}
-        uses: svenstaro/upload-release-action@v2 # zizmor: ignore[unpinned-uses]
+        uses: svenstaro/upload-release-action@29e53e917877a24fad85510ded594ab3c9ca12de # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ env.FILE_PATH }}
@@ -56,6 +62,29 @@ jobs:
           body: ${{ steps.git-cliff.outputs.content }}
           overwrite: true
 
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !env.ACT }}
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/vinted_scraper
+
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        if: ${{ !env.ACT }}
+        with:
+          name: dist
+          path: dist/
+
       - name: Publish the package to PyPI
         if: ${{ !env.ACT }}
-        uses: pypa/gh-action-pypi-publish@release/v1 # zizmor: ignore[unpinned-uses]
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0

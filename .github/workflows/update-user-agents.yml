@@ -6,34 +6,80 @@ on:
   schedule:
     - cron: 0 6 1 */4 *
 
-permissions: read-all
+permissions: {}
 
 jobs:
-  open-pr:
-    permissions:
-      pull-requests: write
-      contents: write
+  update:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
 
     steps:
-      - uses: actions/checkout@v6.0.2 # zizmor: ignore[unpinned-uses]
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          fetch-depth: 0
           persist-credentials: false
+
+      - name: Setup Python
+        uses: "./.github/actions/setup-python"
+        with:
+          install-project: "false"
 
       - name: update the user agents list
         run: make update.user.agent
 
-      - name: Lint Code Base to fmt the user agent json
-        run: make lint
+      - name: Validate, format and schema-check JSON
+        run: |
+          python -c "
+          import json, pathlib, sys
+          p = pathlib.Path('src/vinted_scraper/utils/agents.json')
+          data = json.loads(p.read_text())
+          # Schema validation: must be a non-empty list of objects with 'ua' key
+          if not isinstance(data, list) or len(data) == 0:
+              print('::error::agents.json must be a non-empty list')
+              sys.exit(1)
+          if not all(isinstance(item, dict) and 'ua' in item and isinstance(item['ua'], str) and len(item['ua']) < 500 for item in data):
+              print('::error::agents.json must contain objects with a \"ua\" string under 500 chars')
+              sys.exit(1)
+          if len(data) > 200:
+              print('::error::agents.json exceeds maximum of 200 entries')
+              sys.exit(1)
+          p.write_text(json.dumps(data, indent=2) + '\n')
+          print(f'Validated {len(data)} user agents')
+          "
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !env.ACT }}
+        with:
+          name: user-agents
+          path: src/vinted_scraper/utils/agents.json
+
+  open-pr:
+    needs: update
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        if: ${{ !env.ACT }}
+        with:
+          name: user-agents
+          path: src/vinted_scraper/utils/
 
       - name: Open Pull Request
         if: ${{ !env.ACT }}
-        uses: peter-evans/create-pull-request@v8 # zizmor: ignore[unpinned-uses]
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           title: "chore: update user agents"
           body: "Update `agents.json`."
-          commit-message: Update agents.json
+          commit-message: "chore: update agents.json"
           assignees: "giglium"
           labels: "feature"
           token: ${{ secrets.GITHUB_TOKEN }}
