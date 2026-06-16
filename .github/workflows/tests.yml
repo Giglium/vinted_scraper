@@ -8,12 +8,20 @@ on:
     tags:
       - "*"
   pull_request:
+  workflow_dispatch:
 
-permissions: read-all
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   test_python_version:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
 
     strategy:
       fail-fast: false
@@ -28,16 +36,16 @@ jobs:
           - "3.14"
 
     steps:
-      - uses: actions/checkout@v6.0.2 # zizmor: ignore[unpinned-uses]
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          fetch-depth: 0
           persist-credentials: false
 
-      - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v8.1.0 # zizmor: ignore[unpinned-uses]
+      - name: Setup
+        uses: "./.github/actions/setup-python"
         with:
           python-version: ${{ matrix.python-version }}
-          enable-cache: false
+          enable-cache: "true"
+          install-project: "false"
 
       - name: Run tests
-        run: make test
+        run: uv run --locked python -m unittest discover

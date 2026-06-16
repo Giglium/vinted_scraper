@@ -6,14 +6,21 @@ on:
     tags:
       - "*.*.*"
 
-permissions:
-  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v6.0.2 # zizmor: ignore[unpinned-uses]
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
@@ -23,7 +30,7 @@ jobs:
       - name: Generate Docs
         run: make docs
 
-      - uses: actions/upload-pages-artifact@v5 # zizmor: ignore[unpinned-uses]
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         if: ${{ !env.ACT }}
         with:
           path: docs/
@@ -31,6 +38,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       pages: write
       id-token: write
@@ -40,4 +48,4 @@ jobs:
     steps:
       - id: deployment
         if: ${{ !env.ACT }}
-        uses: actions/deploy-pages@v5 # zizmor: ignore[unpinned-uses]
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
