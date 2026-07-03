@@ -6,13 +6,14 @@ This module provides common utilities including:
 - HTTP header generation
 """
 
+import html as _html
 import json
 import os
 import random
 import re
 import sys
 from functools import lru_cache
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 if sys.version_info >= (3, 9):
     from importlib.resources import files
@@ -125,3 +126,77 @@ def get_curl_headers(
         "Referer": base_url,
         "Cookie": cookie_str,
     }
+
+
+# <script type="application/ld+json"> ... </script> blocks
+_LD_JSON_RE = re.compile(
+    r'<script[^>]+type="application/ld\+json"[^>]*>(.*?)</script>',
+    re.DOTALL | re.IGNORECASE,
+)
+# <meta property="og:description" content="..."> fallback
+_OG_DESCRIPTION_RE = re.compile(
+    r'<meta[^>]+(?:property|name)="og:description"[^>]+content="([^"]*)"',
+    re.IGNORECASE,
+)
+
+
+def _iter_ld_json_objects(data: Any):
+    """Yield every object contained in a parsed JSON-LD payload.
+
+    JSON-LD can be a single object, a list of objects, or an object holding an
+    ``@graph`` list. This flattens all of those cases.
+
+    Args:
+        data: The value returned by ``json.loads`` on a JSON-LD block.
+
+    Yields:
+        Each ``dict`` object found in the payload.
+    """
+    stack = [data]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, list):
+            stack.extend(node)
+        elif isinstance(node, dict):
+            graph = node.get("@graph")
+            if isinstance(graph, list):
+                stack.extend(graph)
+            yield node
+
+
+def parse_item_page(page_html: str) -> Optional[Dict[str, Any]]:
+    """Extract the schema.org ``Product`` metadata from an item page's HTML.
+
+    Vinted embeds each item page with a ``<script type="application/ld+json">``
+    block describing the item as a schema.org ``Product`` (with ``name``,
+    ``description``, ``brand``, ``offers``, ``image`` ...). This is useful as a
+    fallback when the JSON API item endpoint is blocked (see
+    https://github.com/Giglium/vinted_scraper/issues/59), because the HTML page
+    is a plain document navigation and is not blocked the same way.
+
+    Args:
+        page_html: The raw HTML of an item page (e.g. ``/items/{id}``).
+
+    Returns:
+        The schema.org ``Product`` object as a dict, or, if no such block is
+        present, ``{"description": ...}`` built from the ``og:description`` meta
+        tag. Returns ``None`` when no description can be found at all.
+    """
+    for block in _LD_JSON_RE.findall(page_html):
+        try:
+            data = json.loads(block.strip())
+        except (ValueError, TypeError):
+            continue
+        for obj in _iter_ld_json_objects(data):
+            obj_type = obj.get("@type")
+            is_product = obj_type == "Product" or (
+                isinstance(obj_type, list) and "Product" in obj_type
+            )
+            if is_product:
+                return obj
+
+    match = _OG_DESCRIPTION_RE.search(page_html)
+    if match and match.group(1).strip():
+        return {"description": _html.unescape(match.group(1)).strip()}
+
+    return None

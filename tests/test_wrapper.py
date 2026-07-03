@@ -17,6 +17,7 @@ from tests.utils import (
     USER_AGENT,
     create_cookie_response,
     create_mock,
+    read_html_from_file,
     setup_mock_get,
 )
 
@@ -76,6 +77,28 @@ class TestVintedWrapper(unittest.TestCase):
 
         self.assertEqual(result, {"item": {}})
         mock_client.return_value.get.assert_called_once()
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_item_page(self, mock_client):
+        """item_page parses the description from the item page HTML."""
+        setup_mock_get(mock_client, text=read_html_from_file("item_page_dummy"))
+
+        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = wrapper.item_page("123")
+
+        self.assertEqual(result["name"], "Sony Cybershot DSC-W120")
+        self.assertIn("original box", result["description"])
+        # the item page endpoint is a document navigation, not the JSON API
+        self.assertIn("/items/123", str(mock_client.return_value.get.call_args))
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_item_page_raises_on_error(self, mock_client):
+        """item_page raises RuntimeError when the page cannot be fetched."""
+        setup_mock_get(mock_client, status_code=403, text="")
+
+        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        with self.assertRaises(RuntimeError):
+            wrapper.item_page("123")
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_curl_401_retry(self, mock_client):

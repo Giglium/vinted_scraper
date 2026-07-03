@@ -53,6 +53,22 @@ The package offers the following methods:
 </details>
 
 <details>
+ <summary><code>item_page</code> - <code>Reads item metadata (description, name, brand, offers) from the public item page instead of the blocked JSON API.</code></summary>
+
+> Fallback for when `item()` returns a `403` (see [#59](https://github.com/Giglium/vinted_scraper/issues/59)). The item page is a plain document navigation and is not blocked the same way; the data is read from the embedded schema.org `Product` block. The page is heavy (~2 MB), so fetch it only for the items you actually need.
+
+**Parameters**
+
+> | name   | type     | data type | description                                    |
+> | ------ | -------- | --------- | ---------------------------------------------- |
+> | id     | required | str       | The unique identifier of the item to retrieve  |
+> | params | optional | Dict      | Optional query parameters                      |
+
+**Returns:** `Optional[Dict[str, Any]]` — the schema.org `Product` object (e.g. `result["description"]`), or `None` if the page has no description.
+
+</details>
+
+<details>
  <summary><code>curl</code> - <code>Perform an HTTP GET request to the given endpoint.</code></summary>
 
 **Parameters**
@@ -116,7 +132,7 @@ DEBUG:vinted_scraper._vinted_wrapper:API Response: /api/v2/catalog/items - Statu
 
 ### Common Issues
 
-- **403 Forbidden Error**: The `item()` method frequently return 403 errors ([#58](https://github.com/Giglium/vinted_scraper/issues/59)).
+- **403 Forbidden Error**: The `item()` method frequently return 403 errors ([#59](https://github.com/Giglium/vinted_scraper/issues/59)). As a workaround you can use `item_page()`, which reads the item description from the public item page (a document navigation that is not blocked the same way) instead of the JSON API.
 
 - **Cookie Fetch Failed**: If cookies cannot be fetched:
   - Verify the base URL is correct

@@ -178,6 +178,38 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         self._log_item(item_id, params)
         return await self.curl(self._item_endpoint(item_id), params=params)
 
+    async def item_page(
+        self, item_id: str, params: Optional[Dict] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Read item metadata from the public item page (HTML), not the JSON API.
+
+        This is a fallback for when :meth:`item` returns a ``403`` because the
+        JSON item endpoint is blocked (see
+        https://github.com/Giglium/vinted_scraper/issues/59). The item page is a
+        plain document navigation and is not blocked the same way. It embeds a
+        schema.org ``Product`` block from which fields such as ``description``,
+        ``name``, ``brand`` and ``offers`` can be recovered.
+
+        Args:
+            item_id: The unique identifier of the item.
+            params: Optional query parameters.
+
+        Returns:
+            The schema.org ``Product`` metadata dict (e.g. ``result["description"]``),
+            or ``None`` if the page contains no description.
+
+        Raises:
+            RuntimeError: If the item page cannot be fetched (non-200 status).
+        """
+        self._log_item(item_id, params)
+        endpoint = self._item_page_endpoint(item_id)
+        headers = self._build_page_headers()
+        response = await self._client.get(endpoint, headers=headers, params=params)
+        self._log_curl_response(
+            endpoint, response.status_code, response.headers, response.text
+        )
+        return self._handle_item_page_response(response, endpoint)
+
     async def curl(
         self,
         endpoint: str,

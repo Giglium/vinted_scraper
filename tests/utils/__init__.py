@@ -1,5 +1,5 @@
 # pylint: disable=missing-module-docstring
-from ._fs import read_data_from_file
+from ._fs import read_data_from_file, read_html_from_file
 from ._log import assert_no_logs
 from ._mock import (
     BASE_URL,
@@ -14,6 +14,7 @@ from ._mock import (
 
 __all__ = [
     "read_data_from_file",
+    "read_html_from_file",
     "BASE_URL",
     "COOKIE_VALUE",
     "HTTP_OK",

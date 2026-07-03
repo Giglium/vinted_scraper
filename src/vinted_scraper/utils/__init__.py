@@ -31,6 +31,7 @@ from ._misc import (
     get_cookie_headers,
     get_curl_headers,
     get_random_user_agent,
+    parse_item_page,
     url_validator,
 )
 
@@ -59,5 +60,6 @@ __all__ = [
     "get_cookie_headers",
     "get_curl_headers",
     "get_random_user_agent",
+    "parse_item_page",
     "url_validator",
 ]

@@ -26,6 +26,7 @@ from .utils import (
     log_refresh_cookie,
     log_search,
     log_sleep,
+    parse_item_page,
     url_validator,
 )
 
@@ -154,6 +155,39 @@ class BaseVintedWrapper:
         """
         return get_curl_headers(self.baseurl, self.user_agent, self.session_cookie)
 
+    def _build_page_headers(self) -> Dict[str, str]:
+        """Build browser-like headers for an item page (document) request.
+
+        Returns:
+            Header dictionary including the session cookie, if available.
+        """
+        headers = get_cookie_headers(self.baseurl, self.user_agent)
+        cookie_str = "; ".join(
+            f"{k}={v}" for k, v in (self.session_cookie or {}).items()
+        )
+        if cookie_str:
+            headers["Cookie"] = cookie_str
+        return headers
+
+    @staticmethod
+    def _handle_item_page_response(response, endpoint: str) -> Optional[Dict[str, Any]]:
+        """Process an item page (HTML) response and extract the item metadata.
+
+        Args:
+            response: httpx response object.
+            endpoint: The endpoint that was called.
+
+        Returns:
+            The schema.org ``Product`` metadata dict, or ``None`` if the page
+            contains no description.
+
+        Raises:
+            RuntimeError: If the response status is not 200.
+        """
+        if response.status_code != HTTP_OK:
+            BaseVintedWrapper._raise_curl_error(endpoint, response.status_code)
+        return parse_item_page(response.text)
+
     def _log_curl_request(
         self, endpoint: str, headers: Dict[str, str], params: Optional[Dict]
     ) -> None:
@@ -228,6 +262,19 @@ class BaseVintedWrapper:
             item_id: The unique identifier of the item.
         """
         return f"{API_ITEMS}/{item_id}/details"
+
+    @staticmethod
+    def _item_page_endpoint(item_id: str) -> str:
+        """Return the public item page (HTML) endpoint for the given item_id.
+
+        Unlike the JSON item endpoint, this is a plain document navigation. It is
+        used as a fallback to read the item description when the JSON API is
+        blocked (see https://github.com/Giglium/vinted_scraper/issues/59).
+
+        Args:
+            item_id: The unique identifier of the item.
+        """
+        return f"/items/{item_id}"
 
     def _log_search(self, params: Optional[Dict]) -> None:
         """Log a search call.

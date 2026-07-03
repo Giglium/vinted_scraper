@@ -10,9 +10,11 @@ from src.vinted_scraper.utils import (
     get_cookie_headers,
     get_curl_headers,
     get_random_user_agent,
+    parse_item_page,
     url_validator,
 )
 from src.vinted_scraper.utils._misc import _load_agents
+from tests.utils import read_html_from_file
 from tests.utils._mock import BASE_URL, COOKIE_VALUE, USER_AGENT
 
 
@@ -112,6 +114,51 @@ class TestMiscUtils(unittest.TestCase):
 
         # Restore cache state
         _load_agents.cache_clear()
+
+    def test_parse_item_page_json_ld_product(self):
+        """parse_item_page returns the schema.org Product from the JSON-LD block."""
+        html = read_html_from_file("item_page_dummy")
+        product = parse_item_page(html)
+        self.assertIsInstance(product, dict)
+        self.assertEqual(product["@type"], "Product")
+        self.assertEqual(product["name"], "Sony Cybershot DSC-W120")
+        self.assertIn("original box", product["description"])
+        self.assertIn("\n", product["description"])  # multi-line preserved
+
+    def test_parse_item_page_prefers_json_ld_over_meta(self):
+        """The JSON-LD Product wins over the og:description meta tag."""
+        html = (
+            '<meta property="og:description" content="wrong meta">'
+            '<script type="application/ld+json">'
+            '{"@type":"Product","description":"right json-ld"}</script>'
+        )
+        self.assertEqual(parse_item_page(html)["description"], "right json-ld")
+
+    def test_parse_item_page_json_ld_graph(self):
+        """A Product nested inside an @graph list is found."""
+        html = (
+            '<script type="application/ld+json">'
+            '{"@graph":[{"@type":"BreadcrumbList"},'
+            '{"@type":"Product","description":"in graph"}]}</script>'
+        )
+        self.assertEqual(parse_item_page(html)["description"], "in graph")
+
+    def test_parse_item_page_meta_fallback(self):
+        """Without a JSON-LD Product, og:description is used and HTML-unescaped."""
+        html = '<meta property="og:description" content="camera &amp; case">'
+        self.assertEqual(parse_item_page(html), {"description": "camera & case"})
+
+    def test_parse_item_page_ignores_malformed_json_ld(self):
+        """A broken JSON-LD block is skipped, falling back to the meta tag."""
+        html = (
+            '<script type="application/ld+json">{not valid json}</script>'
+            '<meta property="og:description" content="fallback ok">'
+        )
+        self.assertEqual(parse_item_page(html), {"description": "fallback ok"})
+
+    def test_parse_item_page_returns_none_when_absent(self):
+        """parse_item_page returns None when no description is present."""
+        self.assertIsNone(parse_item_page("<html><body>nothing</body></html>"))
 
 
 if __name__ == "__main__":
