@@ -40,6 +40,7 @@ jobs:
 
       - name: Upload coverage reports to Codecov
         if: ${{ env.HAS_CODECOV == 'true' }}
+        # yamllint disable-line rule:line-length
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           fail_ci_if_error: true
@@ -48,6 +49,7 @@ jobs:
 
       - name: Upload coverage reports to Codacy
         if: ${{ env.HAS_CODACY == 'true' }}
+        # yamllint disable-line rule:line-length
         uses: codacy/codacy-coverage-reporter-action@89d6c85cfafaec52c72b6c5e8b2878d33104c699 # v1
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
@@ -55,7 +57,9 @@ jobs:
           language: Python
 
       - name: Generate coverage comment
+        # yamllint disable-line rule:line-length
         if: ${{ github.event.workflow_run.event == 'pull_request' && env.HAS_CODECOV != 'true' && env.HAS_CODACY != 'true' }}
+        # yamllint disable-line rule:line-length
         uses: py-cov-action/python-coverage-comment-action@5d8df5979747514c914e1c5a12335a7cf9a2745f # v4.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 from src.vinted_scraper import AsyncVintedScraper, AsyncVintedWrapper
-from src.vinted_scraper.models import VintedJsonModel
+from src.vinted_scraper.models import VintedItem, VintedJsonModel
 from src.vinted_scraper.utils import SESSION_COOKIE_NAME
 from tests.utils import (
     BASE_URL,
@@ -20,6 +20,7 @@ from tests.utils import (
     create_mock,
     read_html_from_file,
     setup_async_mock_get,
+    setup_async_mock_stream,
 )
 
 
@@ -90,34 +91,28 @@ class TestAsyncVintedWrapper(unittest.IsolatedAsyncioTestCase):
 
     @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
     async def test_item(self, mock_client):
-        """Test item method"""
-        setup_async_mock_get(mock_client, {"item": {}})
+        """item reads metadata from the public item page head."""
+        setup_async_mock_stream(
+            mock_client, text=read_html_from_file("item_page_dummy")
+        )
 
         wrapper = AsyncVintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
         result = await wrapper.item("123")
-        self.assertEqual(result, {"item": {}})
-        mock_client.return_value.get.assert_called_once()
+
+        self.assertEqual(result["title"], "A game")
+        self.assertIn("Jumbling tower game.", result["description"])
+        self.assertEqual(result["url"], "https://www.fakeurl.com/item/item_id")
+        self.assertEqual(result["image"], "https://www.fakeurl.com/a.jpg")
+        self.assertIn("/items/123", str(mock_client.return_value.stream.call_args))
 
     @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
-    async def test_item_page(self, mock_client):
-        """item_page parses the description from the item page HTML."""
-        setup_async_mock_get(mock_client, text=read_html_from_file("item_page_dummy"))
-
-        wrapper = AsyncVintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
-        result = await wrapper.item_page("123")
-
-        self.assertEqual(result["name"], "Sony Cybershot DSC-W120")
-        self.assertIn("original box", result["description"])
-        self.assertIn("/items/123", str(mock_client.return_value.get.call_args))
-
-    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
-    async def test_item_page_raises_on_error(self, mock_client):
-        """item_page raises RuntimeError when the page cannot be fetched."""
-        setup_async_mock_get(mock_client, status_code=403, text="")
+    async def test_item_raises_on_error(self, mock_client):
+        """item raises RuntimeError when the page cannot be fetched."""
+        setup_async_mock_stream(mock_client, status_code=403, text="")
 
         wrapper = AsyncVintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
         with self.assertRaises(RuntimeError):
-            await wrapper.item_page("123")
+            await wrapper.item("123")
 
     @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
     async def test_curl_401_retry(self, mock_client):
@@ -191,6 +186,21 @@ class TestAsyncVintedWrapper(unittest.IsolatedAsyncioTestCase):
         self.assertIn("500", str(ctx.exception))
         self.assertIsInstance(ctx.exception, RuntimeError)
 
+    @patch("src.vinted_scraper._async_wrapper.asyncio.sleep", new_callable=AsyncMock)
+    async def test_fetch_cookie_retries_with_sleep(self, mock_sleep):
+        """Test fetch_cookie sleeps between retries on non-200 responses."""
+        mock_client = MagicMock()
+        mock_response = create_mock(status_code=500)
+        mock_client.get = AsyncMock(return_value=mock_response)
+        mock_client.base_url = BASE_URL
+
+        with self.assertRaises(RuntimeError):
+            with self.assertLogs(level=logging.ERROR):
+                await AsyncVintedWrapper.fetch_cookie(
+                    mock_client, {}, [SESSION_COOKIE_NAME], retries=2
+                )
+        mock_sleep.assert_called_once()
+
 
 class TestAsyncVintedScraper(unittest.IsolatedAsyncioTestCase):
     """Test AsyncVintedScraper class"""
@@ -210,13 +220,15 @@ class TestAsyncVintedScraper(unittest.IsolatedAsyncioTestCase):
     @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
     async def test_item_returns_vinted_item(self, mock_client):
         """Test item method returns VintedItem object"""
-        setup_async_mock_get(mock_client, {"item": {"id": 123, "title": "Test Item"}})
+        setup_async_mock_stream(
+            mock_client, text=read_html_from_file("item_page_dummy")
+        )
 
         scraper = AsyncVintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
         result = await scraper.item("123")
-        self.assertEqual(result.id, 123)
-        self.assertEqual(result.title, "Test Item")
-        mock_client.return_value.get.assert_called_once()
+        self.assertEqual(result.title, "A game")
+        self.assertIn("Jumbling tower game.", result.description)
+        mock_client.return_value.stream.assert_called_once()
 
     @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
     async def test_curl_returns_vinted_base(self, mock_client):
@@ -229,6 +241,32 @@ class TestAsyncVintedScraper(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.json_data["data"], "test")
         self.assertEqual(result.json_data["value"], 42)
         mock_client.return_value.get.assert_called_once()
+
+    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
+    async def test_enrich_populates_description(self, mock_client):
+        """Test enrich method fetches description and populates item."""
+        html = '<meta property="og:description" content="Nice shoes - size 42 leather">'
+        setup_async_mock_stream(mock_client, text=html)
+
+        scraper = AsyncVintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        item = VintedItem(json_data={"id": 456, "title": "Nice shoes"})
+        result = await scraper.enrich(item)
+
+        self.assertIs(result, item)
+        self.assertEqual(result.description, "size 42 leather")
+
+    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
+    async def test_enrich_no_description_found(self, mock_client):
+        """Test enrich does not set description when og:description is missing."""
+        html = "<html><head></head><body></body></html>"
+        setup_async_mock_stream(mock_client, text=html)
+
+        scraper = AsyncVintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        item = VintedItem(json_data={"id": 789, "title": "Some item"})
+        result = await scraper.enrich(item)
+
+        self.assertIs(result, item)
+        self.assertIsNone(result.description)
 
 
 class TestAsyncVintedWrapperEdgeCases(unittest.IsolatedAsyncioTestCase):
@@ -318,6 +356,38 @@ class TestAsyncVintedWrapperEdgeCases(unittest.IsolatedAsyncioTestCase):
         result = await scraper.search({"search_text": "test"})
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 3)
+
+    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
+    async def test_item_head_tag_split_across_chunks(self, mock_client):
+        """item() detects </head> even when it spans two async chunks."""
+        html = read_html_from_file("item_page_dummy")
+        # Split so "</head>" is broken across boundaries: "</he" | "ad>..."
+        split_idx = html.lower().index("</head>") + 4  # after "</he"
+        chunk1 = html[:split_idx]
+        chunk2 = html[split_idx:]
+        setup_async_mock_stream(mock_client, chunks=[chunk1, chunk2])
+
+        wrapper = AsyncVintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = await wrapper.item("123")
+
+        self.assertEqual(result["title"], "A game")
+        self.assertIn("Jumbling tower game.", result["description"])
+
+    @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
+    async def test_item_head_tag_split_single_char_boundary(self, mock_client):
+        """item() detects </head> split at each possible single-char boundary."""
+        html = read_html_from_file("item_page_dummy")
+        head_idx = html.lower().index("</head>")
+
+        # Split right after "<" — the rest "/head>..." is in chunk2
+        chunk1 = html[: head_idx + 1]
+        chunk2 = html[head_idx + 1 :]
+        setup_async_mock_stream(mock_client, chunks=[chunk1, chunk2])
+
+        wrapper = AsyncVintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = await wrapper.item("123")
+
+        self.assertEqual(result["title"], "A game")
 
 
 if __name__ == "__main__":

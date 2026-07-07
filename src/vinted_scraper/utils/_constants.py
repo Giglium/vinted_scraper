@@ -18,4 +18,16 @@ API_BASE_PATH: Final = "/api/v2"
 
 # API Endpoints
 API_CATALOG_ITEMS: Final = f"{API_BASE_PATH}/catalog/items"
-API_ITEMS: Final = f"{API_BASE_PATH}/items"
+API_ITEM_PAGE: Final = "/items/{item_id}"
+
+__all__ = [
+    "SESSION_COOKIE_NAME",
+    "DEFAULT_TIMEOUT",
+    "DEFAULT_RETRIES",
+    "RETRY_BASE_SLEEP",
+    "HTTP_OK",
+    "HTTP_UNAUTHORIZED",
+    "API_BASE_PATH",
+    "API_CATALOG_ITEMS",
+    "API_ITEM_PAGE",
+]

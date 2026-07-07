@@ -9,7 +9,9 @@ from ._mock import (
     create_cookie_response,
     create_mock,
     setup_async_mock_get,
+    setup_async_mock_stream,
     setup_mock_get,
+    setup_mock_stream,
 )
 
 __all__ = [
@@ -24,4 +26,6 @@ __all__ = [
     "create_cookie_response",
     "setup_mock_get",
     "setup_async_mock_get",
+    "setup_mock_stream",
+    "setup_async_mock_stream",
 ]

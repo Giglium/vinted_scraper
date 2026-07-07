@@ -7,6 +7,7 @@ Test the log utils class
 import logging
 import unittest
 
+from src.vinted_scraper import OgField
 from src.vinted_scraper.utils import (
     log_constructor,
     log_cookie_fetch_failed,
@@ -186,22 +187,22 @@ class TestLogUtils(unittest.TestCase):
         """
         log = self.logger
         item_id = "123456"
-        params = {"locale": "en"}
+        fields = [OgField.TITLE, OgField.DESCRIPTION]
         # Case DEBUG enabled
         with self.assertLogs(level=logging.DEBUG) as cm:
-            log_item(log=log, item_id=item_id, params=params)
+            log_item(log=log, item_id=item_id, fields=fields)
             self.assertIn("Calling item", cm.output[0])
             self.assertIn(item_id, cm.output[0])
-            self.assertIn(str(params), cm.output[0])
+            self.assertIn(str(fields), cm.output[0])
 
         # Case Debug disable
         assert_no_logs(
-            log_item, self, log=log, level=logging.INFO, item_id=item_id, params=params
+            log_item, self, log=log, level=logging.INFO, item_id=item_id, fields=fields
         )
 
-        # Case with None params
+        # Case with None fields
         with self.assertLogs(level=logging.DEBUG) as cm:
-            log_item(log=log, item_id=item_id, params=None)
+            log_item(log=log, item_id=item_id, fields=None)
             self.assertIn("Calling item", cm.output[0])
             self.assertIn(item_id, cm.output[0])
 

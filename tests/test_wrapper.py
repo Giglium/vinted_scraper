@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from src.vinted_scraper import VintedScraper, VintedWrapper
-from src.vinted_scraper.models import VintedJsonModel
+from src.vinted_scraper.models import VintedItem, VintedJsonModel
 from src.vinted_scraper.utils import SESSION_COOKIE_NAME
 from tests.utils import (
     BASE_URL,
@@ -19,6 +19,7 @@ from tests.utils import (
     create_mock,
     read_html_from_file,
     setup_mock_get,
+    setup_mock_stream,
 )
 
 
@@ -69,36 +70,27 @@ class TestVintedWrapper(unittest.TestCase):
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_item(self, mock_client):
-        """Test item method"""
-        setup_mock_get(mock_client, {"item": {}})
+        """item reads metadata from the public item page head."""
+        setup_mock_stream(mock_client, text=read_html_from_file("item_page_dummy"))
 
         wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
         result = wrapper.item("123")
 
-        self.assertEqual(result, {"item": {}})
-        mock_client.return_value.get.assert_called_once()
+        self.assertEqual(result["title"], "A game")
+        self.assertIn("Jumbling tower game.", result["description"])
+        self.assertEqual(result["url"], "https://www.fakeurl.com/item/item_id")
+        self.assertEqual(result["image"], "https://www.fakeurl.com/a.jpg")
+        # the item endpoint is a document navigation, not the JSON API
+        self.assertIn("/items/123", str(mock_client.return_value.stream.call_args))
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
-    def test_item_page(self, mock_client):
-        """item_page parses the description from the item page HTML."""
-        setup_mock_get(mock_client, text=read_html_from_file("item_page_dummy"))
-
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
-        result = wrapper.item_page("123")
-
-        self.assertEqual(result["name"], "Sony Cybershot DSC-W120")
-        self.assertIn("original box", result["description"])
-        # the item page endpoint is a document navigation, not the JSON API
-        self.assertIn("/items/123", str(mock_client.return_value.get.call_args))
-
-    @patch("src.vinted_scraper._wrapper.httpx.Client")
-    def test_item_page_raises_on_error(self, mock_client):
-        """item_page raises RuntimeError when the page cannot be fetched."""
-        setup_mock_get(mock_client, status_code=403, text="")
+    def test_item_raises_on_error(self, mock_client):
+        """item raises RuntimeError when the page cannot be fetched."""
+        setup_mock_stream(mock_client, status_code=403, text="")
 
         wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
         with self.assertRaises(RuntimeError):
-            wrapper.item_page("123")
+            wrapper.item("123")
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_curl_401_retry(self, mock_client):
@@ -170,6 +162,20 @@ class TestVintedWrapper(unittest.TestCase):
         self.assertIn("500", str(ctx.exception))
         self.assertIsInstance(ctx.exception, RuntimeError)
 
+    @patch("src.vinted_scraper._wrapper.time.sleep")
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_fetch_cookie_retries_with_sleep(self, mock_client, mock_sleep):
+        """Test fetch_cookie sleeps between retries on non-200 responses."""
+        setup_mock_get(mock_client, status_code=500)
+        mock_client.return_value.base_url = BASE_URL
+
+        with self.assertRaises(RuntimeError):
+            with self.assertLogs(level=logging.ERROR):
+                VintedWrapper.fetch_cookie(
+                    mock_client.return_value, {}, [SESSION_COOKIE_NAME], retries=2
+                )
+        mock_sleep.assert_called_once()
+
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_context_manager(self, mock_client):
         """Test context manager __enter__ and __exit__"""
@@ -197,14 +203,14 @@ class TestVintedScraper(unittest.TestCase):
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_item_returns_vinted_item(self, mock_client):
         """Test item method returns VintedItem object"""
-        setup_mock_get(mock_client, {"item": {"id": 123, "title": "Test Item"}})
+        setup_mock_stream(mock_client, text=read_html_from_file("item_page_dummy"))
 
         scraper = VintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
         result = scraper.item("123")
 
-        self.assertEqual(result.id, 123)
-        self.assertEqual(result.title, "Test Item")
-        mock_client.return_value.get.assert_called_once()
+        self.assertEqual(result.title, "A game")
+        self.assertIn("Jumbling tower game.", result.description)
+        mock_client.return_value.stream.assert_called_once()
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_curl_returns_vinted_base(self, mock_client):
@@ -218,6 +224,32 @@ class TestVintedScraper(unittest.TestCase):
         self.assertEqual(result.json_data["data"], "test")
         self.assertEqual(result.json_data["value"], 42)
         mock_client.return_value.get.assert_called_once()
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_enrich_populates_description(self, mock_client):
+        """Test enrich method fetches description and populates item."""
+        html = '<meta property="og:description" content="Nice shoes - size 42 leather">'
+        setup_mock_stream(mock_client, text=html)
+
+        scraper = VintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        item = VintedItem(json_data={"id": 456, "title": "Nice shoes"})
+        result = scraper.enrich(item)
+
+        self.assertIs(result, item)
+        self.assertEqual(result.description, "size 42 leather")
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_enrich_no_description_found(self, mock_client):
+        """Test enrich does not set description when og:description is missing."""
+        html = "<html><head></head><body></body></html>"
+        setup_mock_stream(mock_client, text=html)
+
+        scraper = VintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        item = VintedItem(json_data={"id": 789, "title": "Some item"})
+        result = scraper.enrich(item)
+
+        self.assertIs(result, item)
+        self.assertIsNone(result.description)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 """Vinted item model."""
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from ._brand import VintedBrand
 from ._image import VintedImage
@@ -14,21 +14,63 @@ def _parse_price(value) -> Optional[float]:
     """Parse a price value from the API response.
 
     Args:
-        value: Price as a dict (with "amount" key), a string, or None.
+        value: Price as a dict (with "amount" key), a numeric type, a string,
+            or None.
 
     Returns:
-        Parsed float price, or None if the value is not a recognised format.
+        Parsed float price, or None if the value is not a recognised format
+        or cannot be converted to a number.
     """
-    if isinstance(value, dict):
-        return float(value["amount"])
-    if isinstance(value, str):
-        return float(value)
+    try:
+        if isinstance(value, dict):
+            return float(value["amount"])
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            return float(value)
+    except (ValueError, KeyError):
+        return None
     return None
+
+
+def _parse_price_with_currency(
+    value,
+) -> Tuple[Optional[float], Optional[str]]:
+    """Parse a price value and optional currency from the API response.
+
+    Handles the dict format ``{"amount": "9.99", "currency_code": "EUR"}``
+    as well as plain numeric/string values (currency will be ``None``).
+
+    Args:
+        value: Price as a dict (with "amount" and optionally "currency_code"
+            keys), a numeric type, a string, or None.
+
+    Returns:
+        Tuple of (price, currency). Either or both may be ``None`` if the
+        value cannot be parsed or the currency is not present.
+    """
+    try:
+        if isinstance(value, dict):
+            price = float(value["amount"])
+            currency = value.get("currency_code")
+            return price, currency
+        if isinstance(value, (int, float)):
+            return float(value), None
+        if isinstance(value, str):
+            return float(value), None
+    except (ValueError, KeyError):
+        return None, None
+    return None, None
 
 
 @dataclass
 class VintedItem(VintedJsonModel):
     """Represents a Vinted marketplace item with all its attributes.
+
+    Only the fields that can be populated from a search response
+    (:meth:`VintedScraper.search`) or the public item page
+    (:meth:`VintedScraper.item`) are exposed. The item metadata read from the
+    page is limited to ``title``, ``description``, ``url`` and ``image``.
 
     Note:
         Some attributes may be `None` if not present in the API response.
@@ -37,52 +79,26 @@ class VintedItem(VintedJsonModel):
     id: Optional[int] = None
     title: Optional[str] = None
     description: Optional[str] = None
-    status_id: Optional[int] = None
-    disposal_conditions: Optional[int] = None
-    catalog_id: Optional[int] = None
-    is_hidden: Optional[bool] = None
-    is_reserved: Optional[bool] = None
-    is_closed: Optional[bool] = None
-    is_draft: Optional[bool] = None
-    is_processing: Optional[bool] = None
-    item_closing_action: Optional[str] = None
     currency: Optional[str] = None
     photos: Optional[List[VintedImage]] = None
     price: Optional[float] = None
-    transaction_permitted: Optional[bool] = None
-    reservation: Optional[str] = None
-    offline_verification: Optional[bool] = None
-    offer_price: Optional[float] = None
     conversion: Optional[str] = None
-    is_cross_currency_payment: Optional[bool] = None
     favourite_count: Optional[int] = None
     is_favourite: Optional[bool] = None
     view_count: Optional[int] = None
     user: Optional[VintedUser] = None
-    can_edit: Optional[bool] = None
-    can_delete: Optional[bool] = None
-    can_reserve: Optional[bool] = None
-    instant_buy: Optional[bool] = None
-    can_buy: Optional[bool] = None
-    can_bundle: Optional[bool] = None
     promoted: Optional[bool] = None
     brand: Optional[VintedBrand] = None
     path: Optional[str] = None
     url: Optional[str] = None
-    color1: Optional[str] = None
+    image: Optional[str] = None
     status: Optional[str] = None
-    localization: Optional[str] = None
-    item_alert: Optional[str] = None
     service_fee: Optional[float] = None
-    offline_verification_fee: Optional[float] = None
     total_item_price: Optional[float] = None
-    can_push_up: Optional[bool] = None
-    stats_visible: Optional[bool] = None
     is_visible: Optional[bool] = None
     brand_title: Optional[str] = None
     size_title: Optional[str] = None
     content_source: Optional[str] = None
-    badge: Optional[str] = None
     item_box: Optional[dict] = None
     search_tracking_params: Optional[dict] = None
 
@@ -99,17 +115,15 @@ class VintedItem(VintedJsonModel):
                     VintedImage(json_data=i) for i in self.json_data["photos"]
                 ]
 
-            if "brand_dto" in self.json_data and self.json_data["brand_dto"]:
-                self.brand = VintedBrand(json_data=self.json_data["brand_dto"])
-            elif "brand_title" in self.json_data and self.json_data["brand_title"]:
+            if "brand_title" in self.json_data and self.json_data["brand_title"]:
                 self.brand = VintedBrand()
                 self.brand.title = self.json_data["brand_title"]
 
-            if isinstance(self.json_data.get("price"), dict):
-                self.price = float(self.json_data["price"]["amount"])
-                self.currency = self.json_data["price"]["currency_code"]
-            elif isinstance(self.json_data.get("price"), str):
-                self.price = float(self.json_data["price"])
+            self.price, currency = _parse_price_with_currency(
+                self.json_data.get("price")
+            )
+            if currency is not None:
+                self.currency = currency
 
             self.service_fee = _parse_price(self.json_data.get("service_fee"))
             self.total_item_price = _parse_price(self.json_data.get("total_item_price"))

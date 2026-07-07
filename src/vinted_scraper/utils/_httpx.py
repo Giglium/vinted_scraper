@@ -6,6 +6,11 @@ import httpx
 
 from ._constants import DEFAULT_TIMEOUT
 
+__all__ = [
+    "get_httpx_config",
+    "extract_cookie_from_response",
+]
+
 
 def get_httpx_config(baseurl: str, config: Optional[Dict] = None) -> Dict:
     """Returns configuration dictionary for httpx.Client.

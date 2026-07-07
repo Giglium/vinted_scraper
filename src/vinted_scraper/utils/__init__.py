@@ -3,9 +3,11 @@
 This module provides common utilities used throughout the package.
 """
 
+# pylint: disable=duplicate-code
+
 from ._constants import (
     API_CATALOG_ITEMS,
-    API_ITEMS,
+    API_ITEM_PAGE,
     DEFAULT_RETRIES,
     DEFAULT_TIMEOUT,
     HTTP_OK,
@@ -13,6 +15,7 @@ from ._constants import (
     RETRY_BASE_SLEEP,
     SESSION_COOKIE_NAME,
 )
+from ._headers import get_cookie_headers, get_curl_headers, url_validator
 from ._httpx import extract_cookie_from_response, get_httpx_config
 from ._log import (
     log_constructor,
@@ -27,13 +30,8 @@ from ._log import (
     log_search,
     log_sleep,
 )
-from ._misc import (
-    get_cookie_headers,
-    get_curl_headers,
-    get_random_user_agent,
-    parse_item_page,
-    url_validator,
-)
+from ._og import parse_item_page
+from ._user_agent import get_random_user_agent
 
 __all__ = [
     "SESSION_COOKIE_NAME",
@@ -43,7 +41,7 @@ __all__ = [
     "HTTP_OK",
     "HTTP_UNAUTHORIZED",
     "API_CATALOG_ITEMS",
-    "API_ITEMS",
+    "API_ITEM_PAGE",
     "extract_cookie_from_response",
     "get_httpx_config",
     "log_constructor",

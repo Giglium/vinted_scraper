@@ -40,7 +40,9 @@ body:
     id: expected
     attributes:
       label: Expected behavior
-      description: A clear and concise description of what you expected to happen.
+      description: >-
+        A clear and concise description of what you
+        expected to happen.
     validations:
       required: true
 
@@ -58,8 +60,12 @@ body:
     attributes:
       label: Debug logs
       description: |
-        Please enable debug logging and paste the complete output below.
-        See the [Debugging section in README](https://github.com/giglium/vinted_scraper#debugging) for instructions.
+        Please enable debug logging and paste the
+        complete output below.
+        See the [Debugging section in README][1] for
+        instructions.
+
+        [1]: https://github.com/giglium/vinted_scraper#debugging
       render: text
     validations:
       required: false
@@ -112,6 +118,8 @@ body:
     id: additional
     attributes:
       label: Additional context
-      description: Any other context, stacktraces, or information about the problem.
+      description: >-
+        Any other context, stacktraces, or information
+        about the problem.
     validations:
       required: false

@@ -4,7 +4,9 @@ description: "Sets up the environment for jobs during CI workflow"
 
 inputs:
   python-version:
-    description: "Python version to install. If not specified, uses .python-version file."
+    description: >-
+      Python version to install.
+      If not specified, uses .python-version file.
     required: false
     default: ""
   enable-cache:
@@ -20,12 +22,15 @@ runs:
   using: composite
   steps:
     - name: "Set up Python"
+      # yamllint disable-line rule:line-length
       uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
       with:
         python-version: ${{ inputs.python-version || '' }}
+        # yamllint disable-line rule:line-length
         python-version-file: ${{ inputs.python-version == '' && '.python-version' || '' }}
 
     - name: Install uv
+      # yamllint disable-line rule:line-length
       uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
       with:
         version: "0.11.21"
@@ -33,18 +38,22 @@ runs:
 
     - name: Verify lockfile exists
       if: inputs.install-project == 'true'
+      # yamllint disable rule:line-length
       run: |
         if [ ! -f uv.lock ]; then
           echo "::error::uv.lock not found. Run 'uv lock' locally and commit the lockfile."
           exit 1
         fi
+      # yamllint enable rule:line-length
       shell: bash
 
     - name: Cache virtual environment
       if: inputs.install-project == 'true'
+      # yamllint disable-line rule:line-length
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: .venv
+        # yamllint disable-line rule:line-length
         key: venv-${{ runner.os }}-${{ inputs.python-version || 'default' }}-${{ hashFiles('uv.lock') }}
         restore-keys: |
           venv-${{ runner.os }}-${{ inputs.python-version || 'default' }}-

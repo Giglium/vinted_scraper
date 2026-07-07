@@ -1,4 +1,4 @@
-# pylint: disable=duplicate-code,unused-variable
+# pylint: disable=duplicate-code
 """AsyncVintedWrapper asynchronous example."""
 
 from examples._utils import configure_logging, run_with_retries
@@ -14,12 +14,14 @@ async def main() -> None:
     params = {"search_text": "board games"}
 
     # Perform async search - returns Dict[str, Any]
-    response = await wrapper.search(params)  # noqa: F841
+    response = await wrapper.search(params)
 
-    # Response is a dictionary with "items" key
-    # Uncomment to see results:
-    # for item in response["items"]:
-    #     print(f"{item['title']} - €{item['price']}")
+    # Fetch item details for the first result
+    if response["items"]:
+        first = response["items"][0]
+        item_data = await wrapper.item(str(first["id"]))
+        print(f"Title: {item_data.get('title')}")
+        print(f"Description: {item_data.get('description')}")
 
 
 if __name__ == "__main__":

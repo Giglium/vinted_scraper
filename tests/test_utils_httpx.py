@@ -1,5 +1,5 @@
 # jscpd:ignore-start
-# pylint: disable=protected-access,duplicate-code
+# pylint: disable=duplicate-code
 """Tests for httpx utility functions."""
 
 import unittest
@@ -39,16 +39,14 @@ class TestHttpxUtils(unittest.TestCase):
 
     def test_extract_cookie_from_response(self):
         """Test extract_cookie_from_response correctly extracts cookies from httpx response."""
-        # set the request parameter, without that, res.raise_for_status() will fail
         request = httpx.Request("GET", BASE_URL)
 
-        # Test cookie extraction
-        response = httpx.Response(200, request=request)
-
-        cookies = httpx.Cookies()
-        cookies.set(SESSION_COOKIE_NAME, COOKIE_VALUE, domain=BASE_URL)
-        response._cookies = cookies
-
+        # Test cookie extraction via Set-Cookie header
+        response = httpx.Response(
+            200,
+            request=request,
+            headers=[("Set-Cookie", f"{SESSION_COOKIE_NAME}={COOKIE_VALUE}")],
+        )
         result = extract_cookie_from_response(response, [SESSION_COOKIE_NAME])
         self.assertEqual(result[SESSION_COOKIE_NAME], COOKIE_VALUE)
 
@@ -65,14 +63,15 @@ class TestHttpxUtils(unittest.TestCase):
         self.assertEqual(result, {})
 
         # Test multiple cookies
-        response = httpx.Response(200, request=request)
-
-        cookies = httpx.Cookies()
-        cookies.set("another_cookie", "another_value", domain=BASE_URL)
-        cookies.set(SESSION_COOKIE_NAME, COOKIE_VALUE, domain=BASE_URL)
-        cookies.set("other_cookie", "other_value", domain=BASE_URL)
-        response._cookies = cookies
-
+        response = httpx.Response(
+            200,
+            request=request,
+            headers=[
+                ("Set-Cookie", "another_cookie=another_value"),
+                ("Set-Cookie", f"{SESSION_COOKIE_NAME}={COOKIE_VALUE}"),
+                ("Set-Cookie", "other_cookie=other_value"),
+            ],
+        )
         result = extract_cookie_from_response(
             response, [SESSION_COOKIE_NAME, "another_cookie"]
         )

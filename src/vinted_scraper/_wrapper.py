@@ -10,7 +10,19 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from ._base_wrapper import BaseVintedWrapper
-from .utils import DEFAULT_RETRIES, HTTP_OK, HTTP_UNAUTHORIZED
+from .utils import (
+    DEFAULT_RETRIES,
+    HTTP_OK,
+    HTTP_UNAUTHORIZED,
+    log_cookie_retry,
+    log_curl_request,
+    log_curl_response,
+    log_interaction,
+    log_item,
+    log_refresh_cookie,
+    log_search,
+    parse_item_page,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -61,7 +73,7 @@ class VintedWrapper(BaseVintedWrapper):
         Raises:
             RuntimeError: If cookies cannot be fetched after all retries.
         """
-        self._log_refresh_cookie()
+        log_refresh_cookie(_log)
         return VintedWrapper.fetch_cookie(
             self._client,
             self._get_cookie_headers(),
@@ -93,7 +105,7 @@ class VintedWrapper(BaseVintedWrapper):
         response = None
 
         for i in range(retries):
-            BaseVintedWrapper._log_cookie_interaction(i, retries)
+            log_interaction(_log, i, retries)
             response = client.get("/", headers=headers)
 
             cookies = BaseVintedWrapper._process_cookie_response(response, cookie_names)
@@ -104,7 +116,8 @@ class VintedWrapper(BaseVintedWrapper):
                 sleep_time = BaseVintedWrapper._handle_cookie_failure(
                     response, i, retries
                 )
-                time.sleep(sleep_time)
+                if i < retries - 1:
+                    time.sleep(sleep_time)
 
         BaseVintedWrapper._raise_cookie_error(client.base_url, response)
 
@@ -126,60 +139,59 @@ class VintedWrapper(BaseVintedWrapper):
         Returns:
             Dictionary containing JSON response with search results.
         """
-        self._log_search(params)
+        log_search(_log, params)
         return self.curl(self._search_endpoint(), params=params)
 
-    def item(self, item_id: str, params: Optional[Dict] = None) -> Dict[str, Any]:
-        """Retrieve detailed information about a specific item.
+    def item(self, item_id: str, fields: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Read item metadata from the public item page (HTML).
+
+        The JSON item endpoint (``/api/v2/items/{id}/details``) is blocked by the
+        anti-bot protection and returns ``403`` (see
+        https://github.com/Giglium/vinted_scraper/issues/59), so the item data is
+        read from the public item page instead. Uses HTTP streaming to download
+        only the ``<head>`` section, extracting OpenGraph meta tags without
+        fetching the full page body.
 
         Args:
             item_id: The unique identifier of the item.
-            params: Optional query parameters.
+            fields: List of ``OgField`` values to extract. Defaults to all
+                fields (``[OgField.TITLE, OgField.DESCRIPTION, OgField.URL,
+                OgField.IMAGE]``).
 
         Returns:
-            Dictionary containing JSON response with item details.
-
-        Raises:
-            RuntimeError: If the item is not found or API returns an error.
-
-        Note:
-            It returns a 403 error after a few uses.
-            See: https://github.com/Giglium/vinted_scraper/issues/59
-        """
-        self._log_item(item_id, params)
-        return self.curl(self._item_endpoint(item_id), params=params)
-
-    def item_page(
-        self, item_id: str, params: Optional[Dict] = None
-    ) -> Optional[Dict[str, Any]]:
-        """Read item metadata from the public item page (HTML), not the JSON API.
-
-        This is a fallback for when :meth:`item` returns a ``403`` because the
-        JSON item endpoint is blocked (see
-        https://github.com/Giglium/vinted_scraper/issues/59). The item page is a
-        plain document navigation and is not blocked the same way. It embeds a
-        schema.org ``Product`` block from which fields such as ``description``,
-        ``name``, ``brand`` and ``offers`` can be recovered.
-
-        Args:
-            item_id: The unique identifier of the item.
-            params: Optional query parameters.
-
-        Returns:
-            The schema.org ``Product`` metadata dict (e.g. ``result["description"]``),
-            or ``None`` if the page contains no description.
+            A dict always containing ``id``, plus keys ``title``,
+            ``description``, ``url``, and ``image`` (each present only if
+            found and requested).
 
         Raises:
             RuntimeError: If the item page cannot be fetched (non-200 status).
         """
-        self._log_item(item_id, params)
-        endpoint = self._item_page_endpoint(item_id)
+        log_item(_log, item_id, fields)
+        endpoint = self._item_endpoint(item_id)
         headers = self._build_page_headers()
-        response = self._client.get(endpoint, headers=headers, params=params)
-        self._log_curl_response(
-            endpoint, response.status_code, response.headers, response.text
-        )
-        return self._handle_item_page_response(response, endpoint)
+
+        parts: List[str] = []
+        with self._client.stream("GET", endpoint, headers=headers) as response:
+            status_code = response.status_code
+            if status_code == HTTP_OK:
+                tail = ""
+                for chunk in response.iter_text(chunk_size=4096):
+                    parts.append(chunk)
+                    # Check boundary: </head> may span two consecutive chunks
+                    combined = tail + chunk.lower()
+                    if "</head>" in combined:
+                        break
+                    tail = chunk[-6:].lower()
+            else:
+                response.read()
+        head_html = "".join(parts)
+
+        log_curl_response(_log, endpoint, status_code, response.headers, head_html)
+
+        if status_code == HTTP_OK:
+            return parse_item_page(item_id, head_html, fields)
+
+        self._raise_curl_error(endpoint, status_code)
 
     def curl(
         self,
@@ -203,19 +215,19 @@ class VintedWrapper(BaseVintedWrapper):
             RuntimeError: If response status is not 200 or JSON parsing fails.
         """
         headers = self._build_curl_headers()
-        self._log_curl_request(endpoint, headers, params)
+        log_curl_request(_log, self.baseurl, endpoint, headers, params)
 
         response = self._client.get(endpoint, headers=headers, params=params)
 
-        self._log_curl_response(
-            endpoint, response.status_code, response.headers, response.text
+        log_curl_response(
+            _log, endpoint, response.status_code, response.headers, response.text
         )
 
         if response.status_code == HTTP_OK:
             return self._handle_curl_response(response, endpoint)
 
         if response.status_code == HTTP_UNAUTHORIZED and _retries < DEFAULT_RETRIES:
-            self._log_cookie_retry(response.status_code)
+            log_cookie_retry(_log, response.status_code)
             self.session_cookie = self.refresh_cookie()
             return self.curl(endpoint, params, _retries=_retries + 1)
 
@@ -238,6 +250,15 @@ class VintedWrapper(BaseVintedWrapper):
             exc_tb: Exception traceback (unused).
         """
         self._client.close()
+
+    def __del__(self) -> None:  # pragma: no cover
+        """Best-effort cleanup of the HTTP client on garbage collection.
+
+        Prefer using the context manager (``with`` statement) for
+        deterministic resource cleanup.
+        """
+        if hasattr(self, "_client") and not self._client.is_closed:
+            self._client.close()
 
 
 # jscpd:ignore-end
