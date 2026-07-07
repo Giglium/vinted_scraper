@@ -6,7 +6,7 @@ from typing import Any, Dict, List, NoReturn, Optional
 
 from .utils import (
     API_CATALOG_ITEMS,
-    API_ITEMS,
+    API_ITEM_PAGE,
     HTTP_OK,
     RETRY_BASE_SLEEP,
     SESSION_COOKIE_NAME,
@@ -18,13 +18,6 @@ from .utils import (
     log_constructor,
     log_cookie_fetch_failed,
     log_cookie_fetched,
-    log_cookie_retry,
-    log_curl_request,
-    log_curl_response,
-    log_interaction,
-    log_item,
-    log_refresh_cookie,
-    log_search,
     log_sleep,
     url_validator,
 )
@@ -84,6 +77,9 @@ class BaseVintedWrapper:
         if self.cookie_names is None:
             self.cookie_names = [SESSION_COOKIE_NAME]
 
+        # After defaults are set, narrow types for downstream consumers
+        assert self.cookie_names is not None  # nosec: guaranteed by above
+
         return get_httpx_config(self.baseurl, self.config)
 
     # -- cookie helpers -------------------------------------------------------
@@ -140,7 +136,7 @@ class BaseVintedWrapper:
         _log.error("Cannot fetch session cookie from %s", base_url)
         raise RuntimeError(
             f"Cannot fetch session cookie from {base_url}, because of "
-            f"status code: {response.status_code if response is not None else 'none'}"
+            f"status code: {response.status_code if response is not None else 'none'} "
             "different from 200."
         )
 
@@ -154,29 +150,19 @@ class BaseVintedWrapper:
         """
         return get_curl_headers(self.baseurl, self.user_agent, self.session_cookie)
 
-    def _log_curl_request(
-        self, endpoint: str, headers: Dict[str, str], params: Optional[Dict]
-    ) -> None:
-        """Log an outgoing API request.
+    def _build_page_headers(self) -> Dict[str, str]:
+        """Build browser-like headers for an item page (document) request.
 
-        Args:
-            endpoint: API endpoint path.
-            headers: Request headers.
-            params: Query parameters dictionary.
+        Returns:
+            Header dictionary including the session cookie, if available.
         """
-        log_curl_request(_log, self.baseurl, endpoint, headers, params)
-
-    @staticmethod
-    def _log_curl_response(endpoint: str, status_code: int, headers, text: str) -> None:
-        """Log an incoming API response.
-
-        Args:
-            endpoint: API endpoint that was called.
-            status_code: HTTP status code.
-            headers: Response headers.
-            text: Response body text.
-        """
-        log_curl_response(_log, endpoint, status_code, headers, text)
+        headers = get_cookie_headers(self.baseurl, self.user_agent)
+        cookie_str = "; ".join(
+            f"{k}={v}" for k, v in (self.session_cookie or {}).items()
+        )
+        if cookie_str:
+            headers["Cookie"] = cookie_str
+        return headers
 
     @staticmethod
     def _handle_curl_response(response, endpoint: str) -> Dict[str, Any]:
@@ -222,33 +208,18 @@ class BaseVintedWrapper:
 
     @staticmethod
     def _item_endpoint(item_id: str) -> str:
-        """Return the item details endpoint for the given item_id.
+        """Return the public item page (HTML) endpoint for the given item_id.
+
+        The JSON item endpoint (``/api/v2/items/{id}/details``) is blocked by the
+        anti-bot protection and returns ``403`` (see
+        https://github.com/Giglium/vinted_scraper/issues/59). This public item
+        page is a plain document navigation and is not blocked the same way; the
+        item metadata is read from its OpenGraph ``<head>`` tags.
 
         Args:
             item_id: The unique identifier of the item.
         """
-        return f"{API_ITEMS}/{item_id}/details"
-
-    def _log_search(self, params: Optional[Dict]) -> None:
-        """Log a search call.
-
-        Args:
-            params: Search parameters dictionary.
-        """
-        log_search(_log, params)
-
-    def _log_item(self, item_id: str, params: Optional[Dict]) -> None:
-        """Log an item call.
-
-        Args:
-            item_id: Item identifier.
-            params: Query parameters dictionary.
-        """
-        log_item(_log, item_id, params)
-
-    def _log_refresh_cookie(self) -> None:
-        """Log a cookie refresh."""
-        log_refresh_cookie(_log)
+        return API_ITEM_PAGE.format(item_id=item_id)
 
     def _get_cookie_headers(self) -> Dict:
         """Build headers for the cookie-fetch request.
@@ -257,22 +228,3 @@ class BaseVintedWrapper:
             Dictionary of HTTP headers.
         """
         return get_cookie_headers(self.baseurl, self.user_agent)
-
-    @staticmethod
-    def _log_cookie_interaction(attempt: int, retries: int) -> None:
-        """Log a cookie-fetch attempt.
-
-        Args:
-            attempt: Current attempt number (0-indexed).
-            retries: Total number of retries allowed.
-        """
-        log_interaction(_log, attempt, retries)
-
-    @staticmethod
-    def _log_cookie_retry(status_code: int) -> None:
-        """Log a 401-triggered cookie retry.
-
-        Args:
-            status_code: HTTP status code that triggered retry.
-        """
-        log_cookie_retry(_log, status_code)

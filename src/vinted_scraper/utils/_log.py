@@ -3,8 +3,22 @@
 
 import logging
 from logging import Logger
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
+
+__all__ = [
+    "log_constructor",
+    "log_interaction",
+    "log_sleep",
+    "log_refresh_cookie",
+    "log_search",
+    "log_item",
+    "log_curl_request",
+    "log_curl_response",
+    "log_cookie_fetched",
+    "log_cookie_retry",
+    "log_cookie_fetch_failed",
+]
 
 
 def log_constructor(
@@ -27,10 +41,12 @@ def log_constructor(
         config: Configuration dictionary.
     """
     log.debug(
-        f"Initializing {self.__class__.__name__}(baseurl={baseurl}, "
-        f"user_agent={user_agent[:50] + '...' if user_agent else None}, "
-        f"session_cookie={'provided' if session_cookie else 'auto-fetch'}, "
-        f"config={config})"
+        "Initializing %s(baseurl=%s, user_agent=%s, session_cookie=%s, config=%s)",
+        self.__class__.__name__,
+        baseurl,
+        (user_agent[:50] + "...") if user_agent else None,
+        "provided" if session_cookie else "auto-fetch",
+        config,
     )
 
 
@@ -42,7 +58,7 @@ def log_interaction(log: Logger, i: int, retries: int) -> None:
         i: Current attempt number (0-indexed).
         retries: Total number of retries allowed.
     """
-    log.debug(f"Cookie fetch attempt {i + 1}/{retries}")
+    log.debug("Cookie fetch attempt %d/%d", i + 1, retries)
 
 
 def log_sleep(log: Logger, time: int) -> None:
@@ -52,7 +68,7 @@ def log_sleep(log: Logger, time: int) -> None:
         log: Logger instance.
         time: Sleep duration in seconds.
     """
-    log.debug(f"Sleeping for {time} seconds")
+    log.debug("Sleeping for %d seconds", time)
 
 
 def log_refresh_cookie(log: Logger) -> None:
@@ -71,18 +87,18 @@ def log_search(log: Logger, params: Optional[Dict]) -> None:
         log: Logger instance.
         params: Search parameters dictionary.
     """
-    log.debug(f"Calling search() with params: {params}")
+    log.debug("Calling search() with params: %s", params)
 
 
-def log_item(log: Logger, item_id: str, params: Optional[Dict]) -> None:
-    """Logs item() method call with item ID and parameters.
+def log_item(log: Logger, item_id: str, fields: Optional[List[str]]) -> None:
+    """Logs item() method call with item ID and fields.
 
     Args:
         log: Logger instance.
         item_id: Item identifier.
-        params: Query parameters dictionary.
+        fields: List of ``OgField`` values to extract.
     """
-    log.debug(f"Calling item(item_id={item_id}, params={params})")
+    log.debug("Calling item(item_id=%s, fields=%s)", item_id, fields)
 
 
 def _build_curl_command(url: str, headers: Dict[str, str]) -> str:
@@ -129,8 +145,8 @@ def log_curl_request(
         full_url = f"{full_url}?{urlencode(params)}"
 
     curl_cmd = _build_curl_command(full_url, headers)
-    log.debug(f"API Request: GET {endpoint} with params {params}")
-    log.debug(f"Curl command:\n{curl_cmd}")
+    log.debug("API Request: GET %s with params %s", endpoint, params)
+    log.debug("Curl command:\n%s", curl_cmd)
 
 
 def log_curl_response(
@@ -152,14 +168,14 @@ def log_curl_response(
     if not log.isEnabledFor(logging.DEBUG):
         return
 
-    log.debug(f"API Response: {endpoint} - Status: {status_code}")
-    log.debug(f"Response Headers: {dict(headers)}")
+    log.debug("API Response: %s - Status: %d", endpoint, status_code)
+    log.debug("Response Headers: %s", dict(headers))
     if body is not None:
         # Truncate body if too long (over 1000 chars)
         if len(body) > 1000:
-            log.debug(f"Response Body (truncated): {body[:1000]}...")
+            log.debug("Response Body (truncated): %s...", body[:1000])
         else:
-            log.debug(f"Response Body: {body}")
+            log.debug("Response Body: %s", body)
 
 
 def log_cookie_fetched(log: Logger, cookie_value: str) -> None:
@@ -169,7 +185,7 @@ def log_cookie_fetched(log: Logger, cookie_value: str) -> None:
         log: Logger instance.
         cookie_value: Fetched cookie value (truncated in log).
     """
-    log.debug(f"Session cookie fetched successfully: {cookie_value[:20]}...")
+    log.debug("Session cookie fetched successfully: %s...", cookie_value[:20])
 
 
 def log_cookie_retry(log: Logger, status_code: int) -> None:
@@ -179,7 +195,7 @@ def log_cookie_retry(log: Logger, status_code: int) -> None:
         log: Logger instance.
         status_code: HTTP status code that triggered retry.
     """
-    log.debug(f"Received {status_code} status, refreshing session cookie and retrying")
+    log.debug("Received %d status, refreshing session cookie and retrying", status_code)
 
 
 def log_cookie_fetch_failed(
@@ -194,5 +210,8 @@ def log_cookie_fetch_failed(
         retries: Total number of retries allowed.
     """
     log.debug(
-        f"Cookie fetch failed (attempt {attempt + 1}/{retries}) with status {status_code or 'unknown'}"
+        "Cookie fetch failed (attempt %d/%d) with status %s",
+        attempt + 1,
+        retries,
+        status_code or "unknown",
     )

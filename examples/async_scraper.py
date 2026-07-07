@@ -1,9 +1,8 @@
-# pylint: disable=duplicate-code,unused-variable
+# pylint: disable=duplicate-code
 """AsyncVintedScraper asynchronous example."""
 
+from examples._utils import configure_logging, run_with_retries
 from vinted_scraper import AsyncVintedScraper
-
-from ._utils import configure_logging, run_with_retries
 
 
 async def main() -> None:
@@ -15,12 +14,14 @@ async def main() -> None:
     params = {"search_text": "board games"}
 
     # Perform async search - returns List[VintedItem]
-    items = await scraper.search(params)  # noqa: F841
+    items = await scraper.search(params)
 
-    # Items are typed objects with attributes
-    # Uncomment to see results:
-    # for item in items:
-    #     print(f"{item.title} - €{item.price}")
+    # Enrich first item with description from the item page
+    if items:
+        first = items[0]
+        await scraper.enrich(first)
+        print(f"Title: {first.title}")
+        print(f"Description: {first.description}")
 
 
 if __name__ == "__main__":

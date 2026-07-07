@@ -37,18 +37,18 @@ The package offers the following methods:
 </details>
 
 <details>
- <summary><code>item</code> - <code>Gets detailed information about a specific item and its seller.</code></summary>
+ <summary><code>item</code> - <code>Reads item metadata (title, description, url, image) from the public item page.</code></summary>
 
-> It returns a 403 error after a few uses. See [#58](https://github.com/Giglium/vinted_scraper/issues/59)).
+> The JSON item endpoint is blocked by the anti-bot protection and returns `403` (see [#59](https://github.com/Giglium/vinted_scraper/issues/59)), so the data is read from the public item page instead. Only the fields exposed by the page's OpenGraph `<head>` tags are populated, and only the `<head>` is streamed (the full page body is not downloaded).
 
 **Parameters**
 
-> | name   | type     | data type | description                                   |
-> | ------ | -------- | --------- | --------------------------------------------- |
-> | id     | required | str       | The unique identifier of the item to retrieve |
-> | params | optional | Dict      | I don't know if they exist                    |
+> | name   | type     | data type | description                                      |
+> | ------ | -------- | --------- | ------------------------------------------------ |
+> | id     | required | str       | The unique identifier of the item to retrieve    |
+> | fields | optional | List[str] | OG fields to extract (defaults to all available) |
 
-**Returns:** `VintedItem` (VintedScraper) or `Dict[str, Any]` (VintedWrapper)
+**Returns:** `Optional[VintedItem]` (VintedScraper) or `Optional[Dict[str, Any]]` (VintedWrapper) — the metadata (e.g. `result["description"]`), or `None` if the page has no description.
 
 </details>
 
@@ -116,7 +116,7 @@ DEBUG:vinted_scraper._vinted_wrapper:API Response: /api/v2/catalog/items - Statu
 
 ### Common Issues
 
-- **403 Forbidden Error**: The `item()` method frequently return 403 errors ([#58](https://github.com/Giglium/vinted_scraper/issues/59)).
+- **403 Forbidden Error**: The Vinted JSON item endpoint frequently returns 403 errors ([#59](https://github.com/Giglium/vinted_scraper/issues/59)). Because of this, `item()` reads the item metadata from the public item page (a document navigation that is not blocked the same way) instead of the JSON API, so only the fields exposed by the page (`title`, `description`, `url`, `image`) are available.
 
 - **Cookie Fetch Failed**: If cookies cannot be fetched:
   - Verify the base URL is correct

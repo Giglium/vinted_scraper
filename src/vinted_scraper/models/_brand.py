@@ -10,12 +10,11 @@ from ._json_model import VintedJsonModel
 class VintedBrand(VintedJsonModel):
     """Represents a brand on Vinted.
 
+    Search responses only provide the brand name (``brand_title``), so only
+    ``title`` is exposed.
+
     Note:
         Some attributes may be `None` if not present in the API response.
     """
 
-    id: Optional[int] = None
     title: Optional[str] = None
-    slug: Optional[str] = None
-    path: Optional[str] = None
-    is_favourite: Optional[bool] = None

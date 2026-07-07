@@ -1,4 +1,4 @@
-# pylint: disable=duplicate-code,unused-variable
+# pylint: disable=duplicate-code
 """VintedScraper synchronous example."""
 
 from examples._utils import configure_logging, run_with_retries
@@ -14,12 +14,14 @@ def main() -> None:
     params = {"search_text": "board games"}
 
     # Perform search - returns List[VintedItem]
-    items = scraper.search(params)  # noqa: F841
+    items = scraper.search(params)
 
-    # Items are typed objects with attributes
-    # Uncomment to see results:
-    # for item in items:
-    #     print(f"{item.title} - €{item.price}")
+    # Enrich first item with description from the item page
+    if items:
+        first = items[0]
+        scraper.enrich(first)
+        print(f"Title: {first.title}")
+        print(f"Description: {first.description}")
 
 
 if __name__ == "__main__":

@@ -14,7 +14,9 @@ from tests.utils import (
     COOKIE_VALUE,
     create_cookie_response,
     create_mock,
+    read_html_from_file,
     setup_mock_get,
+    setup_mock_stream,
 )
 
 
@@ -42,17 +44,19 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_item_with_invalid_id(self, mock_client):
         """Test item method with various ID formats"""
-        setup_mock_get(mock_client, {"item": {"id": 123}})
+        setup_mock_stream(mock_client, text=read_html_from_file("item_page_dummy"))
 
         wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
 
         # Test with string ID
         result = wrapper.item("123")
-        self.assertEqual(result, {"item": {"id": 123}})
+        self.assertEqual(result["title"], "A game")
+        self.assertIn("/items/123", str(mock_client.return_value.stream.call_args))
 
         # Test with numeric ID
         result = wrapper.item(123)
-        self.assertEqual(result, {"item": {"id": 123}})
+        self.assertEqual(result["title"], "A game")
+        self.assertIn("/items/123", str(mock_client.return_value.stream.call_args))
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_curl_with_special_characters_in_params(self, mock_client):
@@ -154,6 +158,38 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
         wrapper = VintedWrapper(BASE_URL)
         self.assertEqual(wrapper.session_cookie, {SESSION_COOKIE_NAME: COOKIE_VALUE})
         mock_client.return_value.get.assert_called_once()
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_item_head_tag_split_across_chunks(self, mock_client):
+        """item() detects </head> even when it spans two chunks."""
+        html = read_html_from_file("item_page_dummy")
+        # Split so "</head>" is broken across boundaries: "</he" | "ad>..."
+        split_idx = html.lower().index("</head>") + 4  # after "</he"
+        chunk1 = html[:split_idx]
+        chunk2 = html[split_idx:]
+        setup_mock_stream(mock_client, chunks=[chunk1, chunk2])
+
+        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = wrapper.item("123")
+
+        self.assertEqual(result["title"], "A game")
+        self.assertIn("Jumbling tower game.", result["description"])
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_item_head_tag_split_single_char_boundary(self, mock_client):
+        """item() detects </head> split at each possible single-char boundary."""
+        html = read_html_from_file("item_page_dummy")
+        head_idx = html.lower().index("</head>")
+
+        # Split right after "<" — the rest "/head>..." is in chunk2
+        chunk1 = html[: head_idx + 1]
+        chunk2 = html[head_idx + 1 :]
+        setup_mock_stream(mock_client, chunks=[chunk1, chunk2])
+
+        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        result = wrapper.item("123")
+
+        self.assertEqual(result["title"], "A game")
 
 
 if __name__ == "__main__":

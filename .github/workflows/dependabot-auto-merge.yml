@@ -23,6 +23,7 @@ jobs:
     steps:
       - name: Fetch Dependabot metadata
         id: metadata
+        # yamllint disable-line rule:line-length
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -31,6 +32,7 @@ jobs:
         if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
         run: gh pr review --approve "$PR_URL"
         env:
+          # yamllint disable-line rule:line-length
           PR_URL: ${{ github.event.workflow_run.head_repository.html_url }}/pull/${{ github.event.workflow_run.pull_requests[0].number }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -38,5 +40,6 @@ jobs:
         if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
         run: gh pr merge --auto --squash "$PR_URL"
         env:
+          # yamllint disable-line rule:line-length
           PR_URL: ${{ github.event.workflow_run.head_repository.html_url }}/pull/${{ github.event.workflow_run.pull_requests[0].number }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

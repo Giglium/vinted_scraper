@@ -29,6 +29,7 @@ jobs:
         run: make update.user.agent
 
       - name: Validate, format and schema-check JSON
+        # yamllint disable rule:line-length
         run: |
           python -c "
           import json, pathlib, sys
@@ -47,7 +48,9 @@ jobs:
           p.write_text(json.dumps(data, indent=2) + '\n')
           print(f'Validated {len(data)} user agents')
           "
+        # yamllint enable rule:line-length
 
+      # yamllint disable-line rule:line-length
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !env.ACT }}
         with:
@@ -63,10 +66,12 @@ jobs:
       contents: write
 
     steps:
+      # yamllint disable-line rule:line-length
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
+      # yamllint disable-line rule:line-length
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         if: ${{ !env.ACT }}
         with:
@@ -75,6 +80,7 @@ jobs:
 
       - name: Open Pull Request
         if: ${{ !env.ACT }}
+        # yamllint disable-line rule:line-length
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           title: "chore: update user agents"

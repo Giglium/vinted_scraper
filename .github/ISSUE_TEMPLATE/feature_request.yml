@@ -13,7 +13,9 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: I have searched existing issues and discussions for this feature
+        - label: >-
+            I have searched existing issues and
+            discussions for this feature
           required: true
 
   - type: textarea
@@ -36,7 +38,9 @@ body:
     id: alternatives
     attributes:
       label: Alternatives considered
-      description: Describe any alternative solutions or features you've considered.
+      description: >-
+        Describe any alternative solutions or features
+        you've considered.
     validations:
       required: false
 

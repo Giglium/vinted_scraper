@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from ._async_wrapper import AsyncVintedWrapper
-from .models import VintedItem, VintedJsonModel
+from .models import OgField, VintedItem, VintedJsonModel
 
 _log = logging.getLogger(__name__)
 
@@ -42,25 +42,52 @@ class AsyncVintedScraper(AsyncVintedWrapper):
         response = await super().search(params)
         return [VintedItem(json_data=item) for item in response["items"]]
 
-    async def item(self, item_id: str, params: Optional[Dict] = None) -> VintedItem:
-        """Retrieve detailed information about a specific item asynchronously.
+    async def item(
+        self, item_id: str, fields: Optional[List[str]] = None
+    ) -> VintedItem:
+        """Read item metadata from the public item page (HTML), asynchronously.
+
+        The JSON item endpoint is blocked by the anti-bot protection and returns
+        ``403`` (see https://github.com/Giglium/vinted_scraper/issues/59), so the
+        data is read from the public item page instead. Only the fields exposed
+        by the page's OpenGraph tags are populated (``title``, ``description``,
+        ``url``, ``image``).
 
         Args:
             item_id: The unique identifier of the item.
-            params: Optional query parameters.
+            fields: List of ``OgField`` values to extract. Defaults to all
+                fields (``[OgField.TITLE, OgField.DESCRIPTION, OgField.URL,
+                OgField.IMAGE]``).
 
         Returns:
-            VintedItem object with detailed item information including seller details.
+            A VintedItem built from the page metadata. Always contains ``id``.
 
         Raises:
-            RuntimeError: If the item is not found or API returns an error.
-
-        Note:
-             It returns a 403 error after a few uses.
-             See: https://github.com/Giglium/vinted_scraper/issues/59
+            RuntimeError: If the item page cannot be fetched (non-200 status).
         """
-        response = await super().item(item_id, params)
-        return VintedItem(json_data=response["item"])
+        data = await super().item(item_id, fields)
+        return VintedItem(json_data=data)
+
+    async def enrich(self, item: VintedItem) -> VintedItem:
+        """Enrich an existing VintedItem with description from the item page.
+
+        Fetches the ``og:description`` from the public item page and populates
+        the item's ``description`` attribute. Useful for enriching items
+        obtained from search results (which lack a full description).
+
+        Args:
+            item: A VintedItem to enrich (must have a valid ``id``).
+
+        Returns:
+            The same VintedItem instance with ``description`` populated.
+
+        Raises:
+            RuntimeError: If the item page cannot be fetched (non-200 status).
+        """
+        data = await super().item(str(item.id), [OgField.DESCRIPTION])
+        if OgField.DESCRIPTION in data:
+            item.description = data[OgField.DESCRIPTION]
+        return item
 
     async def curl(
         self, endpoint: str, params: Optional[Dict] = None, *, _retries: int = 0
