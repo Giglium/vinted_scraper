@@ -28,7 +28,7 @@ jobs:
       HAS_CODACY: ${{ secrets.CODACY_PROJECT_TOKEN != '' }}
 
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -60,7 +60,7 @@ jobs:
         # yamllint disable-line rule:line-length
         if: ${{ github.event.workflow_run.event == 'pull_request' && env.HAS_CODECOV != 'true' && env.HAS_CODACY != 'true' }}
         # yamllint disable-line rule:line-length
-        uses: py-cov-action/python-coverage-comment-action@5d8df5979747514c914e1c5a12335a7cf9a2745f # v4.1
+        uses: py-cov-action/python-coverage-comment-action@a05be3d2e8a6272d3ef5fb2840ab20368bb2eb71 # v4.3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PR_RUN_ID: ${{ github.event.workflow_run.id }}
