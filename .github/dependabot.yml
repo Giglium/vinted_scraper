@@ -7,15 +7,22 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 10
     groups:
+      super-linter:
+        patterns:
+          - "super-linter/super-linter"
       github-actions:
         patterns:
           - "*"
+        exclude-patterns:
+          - "super-linter/super-linter"
         update-types:
           - "minor"
           - "patch"
       github-actions-major:
         patterns:
           - "*"
+        exclude-patterns:
+          - "super-linter/super-linter"
         update-types:
           - "major"
     commit-message:

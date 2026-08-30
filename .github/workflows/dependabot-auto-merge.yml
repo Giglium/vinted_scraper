@@ -27,6 +27,7 @@ jobs:
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ github.event.workflow_run.pull_requests[0].number }}
 
       - name: Approve patch updates
         if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
