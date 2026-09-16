@@ -51,13 +51,12 @@ act.update.user.agent: #! Run the Update user agent github action
 
 .PHONY: coverage
 coverage:  ## Run the unit test and generate the coverage report
-	@uv run coverage run --source=$(PROJECT_FOLDER) -m unittest discover
+	@uv run coverage run --branch --source=$(PROJECT_FOLDER) -m unittest discover
 	@uv run coverage xml
 	@uv run coverage report -m
 
 .PHONY: fmt
 fmt: ## Properly format the python code, to format others (YAML, Markdown, etc..) use the `make lint` command
-	@uv run no_implicit_optional $(ROOT)
 	@uv run black $(ROOT)
 	@uv run isort $(ROOT) --profile black
 

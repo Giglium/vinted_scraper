@@ -4,7 +4,6 @@ version = "5.0.1"
 description = "A very simple Python package for scraping Vinted. Supports both synchronous and asynchronous operations with automatic cookie management and typed responses."
 readme = "README.md"
 requires-python = ">= 3.8"
-license = "MIT"
 authors = [{ name = "Giglium" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -16,8 +15,10 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: OS Independent",
     "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
 ]
 
 dependencies = [
@@ -40,9 +41,8 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "black==26.5.1 ; python_full_version == '3.14.*'",
-    "coverage==7.16.0 ; python_full_version == '3.14.*'",
-    "isort==9.0.1 ; python_full_version == '3.14.*'",
-    "no-implicit-optional==1.4 ; python_full_version == '3.14.*'",
-    "pdoc==16.0.0 ; python_full_version == '3.14.*'",
+    "black==26.5.1 ; python_full_version == '3.15.*'",
+    "coverage==7.16.0 ; python_full_version == '3.15.*'",
+    "isort==9.0.1 ; python_full_version == '3.15.*'",
+    "pdoc==16.0.0 ; python_full_version == '3.15.*'",
 ]
