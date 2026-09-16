@@ -23,6 +23,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+      issues: write
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -43,3 +44,18 @@ jobs:
 
       - name: Run the scraper quickstart
         run: uv run -m examples.scraper
+
+      - name: Open an issue if a scheduled quickstart failed
+        if: failure() && github.event_name == 'schedule'
+        # yamllint disable-line rule:line-length
+        uses: imjohnbo/issue-bot@3188c6ce06249206709d3b1f274d0d4c5a521601 # v3.4.5
+        with:
+          title: "Quickstarts failed: the live check didn't work"
+          labels: bug
+          pinned: false
+          close-previous: true
+          body: |
+            The scheduled quickstarts run failed. At least one of the example scripts
+            no longer runs cleanly.
+
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
