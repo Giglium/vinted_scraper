@@ -155,6 +155,19 @@ class TestVintedModels(unittest.TestCase):
         self.assertEqual(image.id, TEST_IMAGE_ID)
         self.assertEqual(image.url, "http://example.com/image.jpg")
 
+    def test_vinted_image_with_none(self):
+        """VintedImage handles a None json_data without touching nested fields."""
+        image = VintedImage(json_data=None)
+        self.assertIsNone(image.id)
+        self.assertIsNone(image.high_resolution)
+        self.assertIsNone(image.thumbnails)
+
+    def test_vinted_user_with_none(self):
+        """VintedUser handles a None json_data without touching the photo field."""
+        user = VintedUser(json_data=None)
+        self.assertIsNone(user.id)
+        self.assertIsNone(user.photo)
+
     def test_vinted_item_with_empty_photos_list(self):
         """Test VintedItem handles empty photos list."""
         data = {"id": TEST_ITEM_ID, "photos": []}

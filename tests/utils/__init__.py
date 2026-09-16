@@ -6,12 +6,15 @@ from ._mock import (
     COOKIE_VALUE,
     HTTP_OK,
     USER_AGENT,
-    create_cookie_response,
     create_mock,
+    make_session,
+    setup_async_mock_cookie_stream,
     setup_async_mock_get,
     setup_async_mock_stream,
+    setup_mock_cookie_stream,
     setup_mock_get,
     setup_mock_stream,
+    setup_two_clients,
 )
 
 __all__ = [
@@ -23,9 +26,12 @@ __all__ = [
     "USER_AGENT",
     "assert_no_logs",
     "create_mock",
-    "create_cookie_response",
+    "make_session",
     "setup_mock_get",
     "setup_async_mock_get",
     "setup_mock_stream",
     "setup_async_mock_stream",
+    "setup_mock_cookie_stream",
+    "setup_async_mock_cookie_stream",
+    "setup_two_clients",
 ]

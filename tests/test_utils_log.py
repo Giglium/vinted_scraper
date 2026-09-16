@@ -11,7 +11,6 @@ from src.vinted_scraper import OgField
 from src.vinted_scraper.utils import (
     log_constructor,
     log_cookie_fetch_failed,
-    log_cookie_fetched,
     log_cookie_retry,
     log_curl_request,
     log_curl_response,
@@ -19,9 +18,16 @@ from src.vinted_scraper.utils import (
     log_item,
     log_refresh_cookie,
     log_search,
+    log_session_fetched,
     log_sleep,
 )
-from tests.utils import BASE_URL, COOKIE_VALUE, USER_AGENT, assert_no_logs
+from tests.utils import (
+    BASE_URL,
+    COOKIE_VALUE,
+    USER_AGENT,
+    assert_no_logs,
+    make_session,
+)
 
 
 class TestLogUtils(unittest.TestCase):
@@ -55,7 +61,7 @@ class TestLogUtils(unittest.TestCase):
                 self=self,
                 baseurl=BASE_URL,
                 user_agent=USER_AGENT,
-                session_cookie=COOKIE_VALUE,
+                session=COOKIE_VALUE,
                 config=config,
             )
             self.assertEqual(len(cm.output), 1)
@@ -70,7 +76,7 @@ class TestLogUtils(unittest.TestCase):
                 self=self,
                 baseurl=BASE_URL,
                 user_agent=USER_AGENT,
-                session_cookie=None,
+                session=None,
                 config=config,
             )
             self.assertIn("auto-fetch", cm.output[0])
@@ -84,7 +90,7 @@ class TestLogUtils(unittest.TestCase):
             self=self,
             baseurl=BASE_URL,
             user_agent=USER_AGENT,
-            session_cookie=COOKIE_VALUE,
+            session=COOKIE_VALUE,
             config=config,
         )
 
@@ -215,8 +221,8 @@ class TestLogUtils(unittest.TestCase):
         - Checking that the message is not logged when DEBUG is disabled
         """
         log = self.logger
-        base_url = BASE_URL
-        endpoint = "/catalog/items"
+        base_url = "https://api.fakeurl.com"
+        endpoint = "/svc-catalogue/items"
         headers = {
             "User-Agent": USER_AGENT,
             "Cookie": f"_vinted_fr_session={COOKIE_VALUE}",
@@ -233,9 +239,10 @@ class TestLogUtils(unittest.TestCase):
                 params=params,
             )
             self.assertEqual(len(cm.output), 2)
-            self.assertIn("API Request: GET /catalog/items with params", cm.output[0])
+            self.assertIn(f"API Request: GET {endpoint} with params", cm.output[0])
+            # the relative endpoint is concatenated against the client base_url
             self.assertIn("Curl command:", cm.output[1])
-            self.assertIn("curl", cm.output[1])
+            self.assertIn(f"{base_url}{endpoint}", cm.output[1])
             self.assertIn(USER_AGENT, cm.output[1])
 
         # Case DEBUG enabled without params
@@ -248,9 +255,7 @@ class TestLogUtils(unittest.TestCase):
                 params=None,
             )
             self.assertEqual(len(cm.output), 2)
-            self.assertIn(
-                "API Request: GET /catalog/items with params None", cm.output[0]
-            )
+            self.assertIn(f"API Request: GET {endpoint} with params None", cm.output[0])
 
         # Case Debug disable (early return)
         assert_no_logs(
@@ -329,24 +334,23 @@ class TestLogUtils(unittest.TestCase):
             body=body,
         )
 
-    def test_log_cookie_fetched(self):
+    def test_log_session_fetched(self):
         """
-        Test the log_cookie_fetched function.
+        Test the log_session_fetched function.
         """
         log = self.logger
-        cookie_value = "abc123def456ghi789"
+        session = make_session()
 
         with self.assertLogs(level=logging.DEBUG) as cm:
-            log_cookie_fetched(log=log, cookie_value=cookie_value)
-            self.assertIn("Session cookie fetched successfully", cm.output[0])
-            self.assertIn("abc123def456ghi789"[:20], cm.output[0])
+            log_session_fetched(log=log, session=session)
+            self.assertIn("Session fetched successfully", cm.output[0])
 
         assert_no_logs(
-            log_cookie_fetched,
+            log_session_fetched,
             self,
             log=log,
             level=logging.INFO,
-            cookie_value=cookie_value,
+            session=session,
         )
 
     def test_log_cookie_retry(self):

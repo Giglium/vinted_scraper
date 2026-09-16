@@ -12,11 +12,13 @@ from src.vinted_scraper.utils import SESSION_COOKIE_NAME
 from tests.utils import (
     BASE_URL,
     COOKIE_VALUE,
-    create_cookie_response,
     create_mock,
+    make_session,
     read_html_from_file,
+    setup_mock_cookie_stream,
     setup_mock_get,
     setup_mock_stream,
+    setup_two_clients,
 )
 
 
@@ -28,7 +30,7 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
         """Test search with empty parameters"""
         setup_mock_get(mock_client, {"items": []})
 
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        wrapper = VintedWrapper(BASE_URL, make_session())
         result = wrapper.search({})
         self.assertEqual(result, {"items": []})
 
@@ -37,7 +39,7 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
         """Test search with None parameters"""
         setup_mock_get(mock_client, {"items": []})
 
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        wrapper = VintedWrapper(BASE_URL, make_session())
         result = wrapper.search(None)
         self.assertEqual(result, {"items": []})
 
@@ -46,7 +48,7 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
         """Test item method with various ID formats"""
         setup_mock_stream(mock_client, text=read_html_from_file("item_page_dummy"))
 
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        wrapper = VintedWrapper(BASE_URL, make_session())
 
         # Test with string ID
         result = wrapper.item("123")
@@ -63,42 +65,41 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
         """Test curl with special characters in parameters"""
         setup_mock_get(mock_client, {"success": True})
 
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        wrapper = VintedWrapper(BASE_URL, make_session())
         result = wrapper.curl("/test", {"query": "test&special=chars"})
         self.assertEqual(result, {"success": True})
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_multiple_401_retries_then_success(self, mock_client):
-        """Test multiple 401 responses before success"""
+        """Test multiple 401 responses before success.
+
+        API calls use ``.get``; each 401 triggers a streamed cookie refresh
+        (``.stream``), so the two paths are mocked independently.
+        """
         mock_client.return_value.get.side_effect = [
             create_mock(status_code=401, text=""),
-            create_cookie_response(),
             create_mock(status_code=401, text=""),
-            create_cookie_response(),
             create_mock({"success": True}),
         ]
+        setup_mock_cookie_stream(mock_client)
 
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        wrapper = VintedWrapper(BASE_URL, make_session())
         result = wrapper.curl("/test")
         self.assertEqual(result, {"success": True})
-        self.assertEqual(mock_client.return_value.get.call_count, 5)
+        self.assertEqual(mock_client.return_value.get.call_count, 3)
+        self.assertEqual(mock_client.return_value.stream.call_count, 2)
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_401_retry_exhaustion(self, mock_client):
         """Test that curl raises after DEFAULT_RETRIES consecutive 401s"""
-        # Each 401 triggers a cookie refresh (1 GET) then a retry (1 GET) = 2 GETs per retry
-        # With DEFAULT_RETRIES=3, we need: 3 x (401 + cookie_refresh) + final 401
-        mock_client.return_value.get.side_effect = [
-            create_mock(status_code=401, text=""),
-            create_cookie_response(),
-            create_mock(status_code=401, text=""),
-            create_cookie_response(),
-            create_mock(status_code=401, text=""),
-            create_cookie_response(),
-            create_mock(status_code=401, text=""),
-        ]
+        # Every API GET returns 401; each 401 triggers a streamed cookie refresh
+        # that succeeds, so the loop is bounded by DEFAULT_RETRIES.
+        mock_client.return_value.get.return_value = create_mock(
+            status_code=401, text=""
+        )
+        setup_mock_cookie_stream(mock_client)
 
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        wrapper = VintedWrapper(BASE_URL, make_session())
         with self.assertRaises(RuntimeError) as ctx:
             wrapper.curl("/test")
         self.assertIn("401", str(ctx.exception))
@@ -108,7 +109,7 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
         """Test VintedScraper with empty items list"""
         setup_mock_get(mock_client, {"items": []})
 
-        scraper = VintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        scraper = VintedScraper(BASE_URL, make_session())
         result = scraper.search({"search_text": "nonexistent"})
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 0)
@@ -127,37 +128,70 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
             },
         )
 
-        scraper = VintedScraper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        scraper = VintedScraper(BASE_URL, make_session())
         result = scraper.search({"search_text": "test"})
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 3)
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_wrapper_close_on_exception(self, mock_client):
-        """Test that client is closed even when exception occurs"""
-        mock_client.return_value.get.side_effect = RuntimeError("Network error")
+        """Test that both clients are closed even when an exception occurs."""
+        site, api = setup_two_clients(mock_client)
+        api.get.side_effect = RuntimeError("Network error")
 
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        wrapper = VintedWrapper(BASE_URL, make_session())
         with self.assertRaises(RuntimeError):
             with wrapper:
                 wrapper.search({})
 
-        mock_client.return_value.close.assert_called_once()
+        site.close.assert_called_once()
+        api.close.assert_called_once()
 
     def test_constructor_with_none_user_agent(self):
         """Test constructor generates user agent when None provided"""
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE}, None)
+        wrapper = VintedWrapper(BASE_URL, make_session(), None)
         self.assertIsNotNone(wrapper.user_agent)
         self.assertIsInstance(wrapper.user_agent, str)
         self.assertGreater(len(wrapper.user_agent), 0)
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_constructor_auto_fetch_cookie(self, mock_client):
-        """Test constructor auto-fetches cookie when not provided"""
-        mock_client.return_value.get.return_value = create_cookie_response()
+        """Constructor auto-fetches the session when no identity part is given."""
+        setup_mock_cookie_stream(mock_client)
         wrapper = VintedWrapper(BASE_URL)
-        self.assertEqual(wrapper.session_cookie, {SESSION_COOKIE_NAME: COOKIE_VALUE})
-        mock_client.return_value.get.assert_called_once()
+        self.assertEqual(wrapper.session.cookies, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        mock_client.return_value.stream.assert_called_once()
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_constructor_skips_fetch_when_only_token_given(self, mock_client):
+        """Providing any identity part (e.g. csrf_token) skips the fetch."""
+        setup_mock_cookie_stream(mock_client)
+        wrapper = VintedWrapper(
+            BASE_URL, make_session(cookie=False, csrf_token="the-csrf")
+        )
+        self.assertEqual(wrapper.session.csrf_token, "the-csrf")
+        self.assertEqual(wrapper.session.cookies, {})
+        mock_client.return_value.stream.assert_not_called()
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_constructor_keeps_explicit_cookie_names(self, mock_client):
+        """An explicit cookie_names is kept instead of the default."""
+        setup_mock_cookie_stream(mock_client)
+        wrapper = VintedWrapper(BASE_URL, make_session(), cookie_names=["custom"])
+        self.assertEqual(wrapper.cookie_names, ["custom"])
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_item_without_session_sends_no_cookie(self, mock_client):
+        """item() works when the wrapper has no session (no Cookie header)."""
+        setup_mock_stream(mock_client, text=read_html_from_file("item_page_dummy"))
+
+        wrapper = VintedWrapper(BASE_URL, make_session())
+        wrapper.session = None  # simulate a wrapper without a resolved session
+        result = wrapper.item("123")
+
+        self.assertEqual(result["title"], "A game")
+        _, kwargs = mock_client.return_value.stream.call_args
+        self.assertNotIn("Cookie", kwargs["headers"])
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_item_head_tag_split_across_chunks(self, mock_client):
@@ -169,7 +203,7 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
         chunk2 = html[split_idx:]
         setup_mock_stream(mock_client, chunks=[chunk1, chunk2])
 
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        wrapper = VintedWrapper(BASE_URL, make_session())
         result = wrapper.item("123")
 
         self.assertEqual(result["title"], "A game")
@@ -186,7 +220,7 @@ class TestVintedWrapperEdgeCases(unittest.TestCase):
         chunk2 = html[head_idx + 1 :]
         setup_mock_stream(mock_client, chunks=[chunk1, chunk2])
 
-        wrapper = VintedWrapper(BASE_URL, {SESSION_COOKIE_NAME: COOKIE_VALUE})
+        wrapper = VintedWrapper(BASE_URL, make_session())
         result = wrapper.item("123")
 
         self.assertEqual(result["title"], "A game")

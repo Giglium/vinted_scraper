@@ -2,23 +2,21 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, NoReturn, Optional
+from typing import Any, Dict, List, NoReturn, Optional, Tuple
 
+from .models import VintedSession
 from .utils import (
     API_CATALOG_ITEMS,
     API_ITEM_PAGE,
-    HTTP_OK,
-    RETRY_BASE_SLEEP,
     SESSION_COOKIE_NAME,
-    extract_cookie_from_response,
+    api_base_url,
+    format_cookie_header,
     get_cookie_headers,
     get_curl_headers,
     get_httpx_config,
     get_random_user_agent,
     log_constructor,
-    log_cookie_fetch_failed,
-    log_cookie_fetched,
-    log_sleep,
+    site_base_url,
     url_validator,
 )
 
@@ -34,7 +32,8 @@ class BaseVintedWrapper:
 
     Attributes:
         baseurl: Vinted domain URL (e.g., "https://www.vinted.com").
-        session_cookie: Session cookie dict. Auto-fetched if None.
+        session: The API identity (cookies + CSRF token + anonymous id) as a
+            ``VintedSession``. Auto-fetched when None or empty.
         user_agent: Custom user agent string. Auto-generated if None.
         config: httpx client configuration dict.
         cookie_names: List of cookie names to extract.
@@ -42,19 +41,27 @@ class BaseVintedWrapper:
     """
 
     baseurl: str
-    session_cookie: Optional[Dict[str, str]] = None
+    session: Optional[VintedSession] = None
     user_agent: Optional[str] = None
     config: Optional[Dict] = None
     cookie_names: Optional[List[str]] = None
 
-    def _validate_and_init(self) -> Dict:
-        """Validate base URL, set defaults, and return httpx config.
+    def _needs_session(self) -> bool:
+        """Return whether a session must be fetched from the landing page.
+
+        Returns:
+            ``True`` when the session is unset or empty.
+        """
+        return self.session is None or self.session.is_empty()
+
+    def _validate_and_init(self) -> Tuple[Dict, Dict]:
+        """Validate base URL, set defaults, and return both httpx configs.
 
         Called by subclass ``__post_init__`` implementations.
 
         Returns:
-            Dictionary suitable for passing to ``httpx.Client`` or
-            ``httpx.AsyncClient``.
+            Tuple ``(site_config, api_config)``, each suitable for passing to
+            ``httpx.Client`` or ``httpx.AsyncClient``.
 
         Raises:
             RuntimeError: If the base URL is invalid.
@@ -68,7 +75,7 @@ class BaseVintedWrapper:
             self=self,
             baseurl=self.baseurl,
             user_agent=self.user_agent,
-            session_cookie=self.session_cookie,
+            session=self.session,
             config=self.config,
         )
 
@@ -77,67 +84,15 @@ class BaseVintedWrapper:
         if self.cookie_names is None:
             self.cookie_names = [SESSION_COOKIE_NAME]
 
-        # After defaults are set, narrow types for downstream consumers
         assert self.cookie_names is not None  # nosec: guaranteed by above
 
-        return get_httpx_config(self.baseurl, self.config)
+        # Normalize to the www. site form; derive the api. host from it.
+        self.baseurl = site_base_url(self.baseurl)
+        api_base = api_base_url(self.baseurl)
 
-    # -- cookie helpers -------------------------------------------------------
-
-    @staticmethod
-    def _process_cookie_response(
-        response, cookie_names: List[str]
-    ) -> Optional[Dict[str, str]]:
-        """Extract cookies from a successful response.
-
-        Args:
-            response: httpx response object.
-            cookie_names: Cookie names to look for.
-
-        Returns:
-            Cookie dict if found, else ``None``.
-        """
-        if response.status_code == HTTP_OK:
-            cookies = extract_cookie_from_response(response, cookie_names)
-            if cookies:
-                log_cookie_fetched(_log, str(cookies))
-                return cookies
-            _log.warning("Cannot find session cookie in response")
-        return None
-
-    @staticmethod
-    def _handle_cookie_failure(response, attempt: int, retries: int) -> float:
-        """Log a failed cookie attempt and return the sleep duration.
-
-        Args:
-            response: httpx response object.
-            attempt: Current attempt number (0-indexed).
-            retries: Total retry count.
-
-        Returns:
-            Seconds to sleep before the next attempt.
-        """
-        log_cookie_fetch_failed(_log, response.status_code, attempt, retries)
-        sleep_time = RETRY_BASE_SLEEP**attempt
-        log_sleep(_log, sleep_time)
-        return sleep_time
-
-    @staticmethod
-    def _raise_cookie_error(base_url, response) -> NoReturn:
-        """Raise after all cookie-fetch retries are exhausted.
-
-        Args:
-            base_url: The base URL that was targeted.
-            response: Last httpx response (may be ``None``).
-
-        Raises:
-            RuntimeError: Always.
-        """
-        _log.error("Cannot fetch session cookie from %s", base_url)
-        raise RuntimeError(
-            f"Cannot fetch session cookie from {base_url}, because of "
-            f"status code: {response.status_code if response is not None else 'none'} "
-            "different from 200."
+        return (
+            get_httpx_config(self.baseurl, self.config),
+            get_httpx_config(api_base, self.config),
         )
 
     # -- curl helpers ---------------------------------------------------------
@@ -148,7 +103,7 @@ class BaseVintedWrapper:
         Returns:
             Header dictionary.
         """
-        return get_curl_headers(self.baseurl, self.user_agent, self.session_cookie)
+        return get_curl_headers(self.baseurl, self.user_agent, self.session)
 
     def _build_page_headers(self) -> Dict[str, str]:
         """Build browser-like headers for an item page (document) request.
@@ -157,9 +112,8 @@ class BaseVintedWrapper:
             Header dictionary including the session cookie, if available.
         """
         headers = get_cookie_headers(self.baseurl, self.user_agent)
-        cookie_str = "; ".join(
-            f"{k}={v}" for k, v in (self.session_cookie or {}).items()
-        )
+        cookies = self.session.cookies if self.session else {}
+        cookie_str = format_cookie_header(cookies)
         if cookie_str:
             headers["Cookie"] = cookie_str
         return headers
@@ -203,7 +157,7 @@ class BaseVintedWrapper:
 
     @staticmethod
     def _search_endpoint() -> str:
-        """Return the catalog search endpoint."""
+        """Return the catalog search endpoint (relative path)."""
         return API_CATALOG_ITEMS
 
     @staticmethod

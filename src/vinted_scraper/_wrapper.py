@@ -5,15 +5,22 @@
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 
 from ._base_wrapper import BaseVintedWrapper
+from .models import VintedSession
 from .utils import (
+    CSRF_MARKER,
     DEFAULT_RETRIES,
+    HEAD_END_TAG,
     HTTP_OK,
     HTTP_UNAUTHORIZED,
+    STREAM_CHUNK_SIZE,
+    ChunkAccumulator,
+    build_session,
+    handle_session_failure,
     log_cookie_retry,
     log_curl_request,
     log_curl_response,
@@ -22,6 +29,7 @@ from .utils import (
     log_refresh_cookie,
     log_search,
     parse_item_page,
+    raise_session_error,
 )
 
 _log = logging.getLogger(__name__)
@@ -36,7 +44,7 @@ class VintedWrapper(BaseVintedWrapper):
 
     Attributes:
         baseurl: Vinted domain URL (e.g., "https://www.vinted.com").
-        session_cookie: Session cookie dict. Auto-fetched if None.
+        session: API identity (VintedSession). Auto-fetched if None or empty.
         user_agent: Custom user agent string. Auto-generated if None.
         config: httpx client configuration dict.
         cookie_names: List of cookie names to extract. Defaults to ["access_token_web"].
@@ -46,49 +54,54 @@ class VintedWrapper(BaseVintedWrapper):
     """
 
     _client: httpx.Client = field(init=False, repr=False)
+    _api_client: httpx.Client = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         """Initialize VintedWrapper after dataclass initialization.
 
-        Validates the base URL, sets up user agent, initializes httpx client,
-        and fetches session cookies if not provided.
+        Validates the base URL, sets up user agent, initializes the two httpx
+        clients (site host and ``api.`` host), and fetches the session identity
+        (cookie + tokens) when none of its parts were provided.
 
         Raises:
             RuntimeError: If the base URL is invalid.
         """
-        httpx_config = self._validate_and_init()
-        self._client = httpx.Client(**httpx_config)
-        if self.session_cookie is None:
-            self.session_cookie = self.refresh_cookie()
+        site_config, api_config = self._validate_and_init()
+        self._client = httpx.Client(**site_config)
+        self._api_client = httpx.Client(**api_config)
+        if self._needs_session():
+            self.refresh_session()
 
-    def refresh_cookie(self, retries: int = DEFAULT_RETRIES) -> Dict[str, str]:
-        """Manually refresh the session cookie.
+    def refresh_session(self, retries: int = DEFAULT_RETRIES) -> VintedSession:
+        """Manually refresh the session cookie and API tokens.
 
         Args:
             retries: Number of retry attempts (default: 3).
 
         Returns:
-            Dictionary containing session cookies.
+            The ``VintedSession`` returned by :meth:`fetch_session`.
 
         Raises:
             RuntimeError: If cookies cannot be fetched after all retries.
         """
         log_refresh_cookie(_log)
-        return VintedWrapper.fetch_cookie(
+        session = VintedWrapper.fetch_session(
             self._client,
             self._get_cookie_headers(),
             self.cookie_names,
             retries,
         )
+        self.session = session
+        return session
 
     @staticmethod
-    def fetch_cookie(
+    def fetch_session(
         client: httpx.Client,
         headers: Dict,
         cookie_names: List[str],
         retries: int = DEFAULT_RETRIES,
-    ) -> Dict[str, str]:
-        """Fetch session cookies from Vinted using HTTP GET request.
+    ) -> VintedSession:
+        """Fetch the full session identity from Vinted's landing page.
 
         Args:
             client: httpx.Client instance.
@@ -97,7 +110,7 @@ class VintedWrapper(BaseVintedWrapper):
             retries: Number of retry attempts (default: 3).
 
         Returns:
-            Dictionary of extracted session cookies.
+            A ``VintedSession`` with the cookies, CSRF token and anonymous id.
 
         Raises:
             RuntimeError: If cookies cannot be fetched after all retries.
@@ -106,20 +119,50 @@ class VintedWrapper(BaseVintedWrapper):
 
         for i in range(retries):
             log_interaction(_log, i, retries)
-            response = client.get("/", headers=headers)
+            html, response = VintedWrapper._stream_until(
+                client, "/", headers, CSRF_MARKER
+            )
 
-            cookies = BaseVintedWrapper._process_cookie_response(response, cookie_names)
-            if cookies:
-                return cookies
+            if response.status_code == HTTP_OK:
+                session = build_session(response, html, cookie_names)
+                if session.is_usable():
+                    return session
 
-            if response.status_code != HTTP_OK:
-                sleep_time = BaseVintedWrapper._handle_cookie_failure(
-                    response, i, retries
-                )
-                if i < retries - 1:
-                    time.sleep(sleep_time)
+            sleep_time = handle_session_failure(response, i, retries)
+            if i < retries - 1:
+                time.sleep(sleep_time)
 
-        BaseVintedWrapper._raise_cookie_error(client.base_url, response)
+        raise_session_error(client.base_url, response)
+
+    @staticmethod
+    def _stream_until(
+        client: httpx.Client, url: str, headers: Dict, stop_marker: str
+    ) -> Tuple[str, httpx.Response]:
+        """Stream ``url``, reading only up to ``stop_marker``.
+
+        Shared by :meth:`item` (stops at ``</head>``) and the session fetch
+        (stops at the CSRF marker) so that neither downloads the full page body.
+        The chunk-boundary bookkeeping lives in :class:`ChunkAccumulator`.
+
+        Args:
+            client: httpx.Client instance.
+            url: The URL or endpoint path to request.
+            headers: Request headers for the GET.
+            stop_marker: The text marker that ends the read.
+
+        Returns:
+            Tuple of ``(html, response)``. ``html`` is empty for non-200
+            responses.
+        """
+        acc = ChunkAccumulator(stop_marker)
+        with client.stream("GET", url, headers=headers) as response:
+            if response.status_code == HTTP_OK:
+                for chunk in response.iter_text(chunk_size=STREAM_CHUNK_SIZE):
+                    if acc.add(chunk):
+                        break
+            else:
+                response.read()
+        return acc.text, response
 
     def search(self, params: Optional[Dict] = None) -> Dict[str, Any]:
         """Search for items on Vinted.
@@ -140,7 +183,7 @@ class VintedWrapper(BaseVintedWrapper):
             Dictionary containing JSON response with search results.
         """
         log_search(_log, params)
-        return self.curl(self._search_endpoint(), params=params)
+        return self.curl(self._search_endpoint(), params=params, api_endpoint=True)
 
     def item(self, item_id: str, fields: Optional[List[str]] = None) -> Dict[str, Any]:
         """Read item metadata from the public item page (HTML).
@@ -170,21 +213,10 @@ class VintedWrapper(BaseVintedWrapper):
         endpoint = self._item_endpoint(item_id)
         headers = self._build_page_headers()
 
-        parts: List[str] = []
-        with self._client.stream("GET", endpoint, headers=headers) as response:
-            status_code = response.status_code
-            if status_code == HTTP_OK:
-                tail = ""
-                for chunk in response.iter_text(chunk_size=4096):
-                    parts.append(chunk)
-                    # Check boundary: </head> may span two consecutive chunks
-                    combined = tail + chunk.lower()
-                    if "</head>" in combined:
-                        break
-                    tail = chunk[-6:].lower()
-            else:
-                response.read()
-        head_html = "".join(parts)
+        head_html, response = VintedWrapper._stream_until(
+            self._client, endpoint, headers, HEAD_END_TAG
+        )
+        status_code = response.status_code
 
         log_curl_response(_log, endpoint, status_code, response.headers, head_html)
 
@@ -198,15 +230,21 @@ class VintedWrapper(BaseVintedWrapper):
         endpoint: str,
         params: Optional[Dict] = None,
         *,
+        api_endpoint: bool = False,
         _retries: int = 0,
     ) -> Dict[str, Any]:
-        """Send a custom HTTP GET request to any Vinted API endpoint.
+        """Send a custom HTTP GET request to a relative Vinted API endpoint.
 
-        Automatically handles headers, cookies, retries, and error responses.
+        The ``endpoint`` is always relative and is concatenated with the chosen
+        client's ``base_url``: the ``api.`` host when ``api_endpoint`` is True,
+        otherwise the site (``www.``) host. Automatically handles headers,
+        cookies, retries, and error responses.
 
         Args:
-            endpoint: API endpoint path (e.g., "/api/v2/users/username").
+            endpoint: Relative API endpoint path (e.g., "/api/v2/users/name").
             params: Optional query parameters.
+            api_endpoint: Route the request to the ``api.`` host instead of the
+                site host.
 
         Returns:
             Dictionary containing the parsed JSON response.
@@ -214,10 +252,11 @@ class VintedWrapper(BaseVintedWrapper):
         Raises:
             RuntimeError: If response status is not 200 or JSON parsing fails.
         """
+        client = self._api_client if api_endpoint else self._client
         headers = self._build_curl_headers()
-        log_curl_request(_log, self.baseurl, endpoint, headers, params)
+        log_curl_request(_log, str(client.base_url), endpoint, headers, params)
 
-        response = self._client.get(endpoint, headers=headers, params=params)
+        response = client.get(endpoint, headers=headers, params=params)
 
         log_curl_response(
             _log, endpoint, response.status_code, response.headers, response.text
@@ -228,8 +267,10 @@ class VintedWrapper(BaseVintedWrapper):
 
         if response.status_code == HTTP_UNAUTHORIZED and _retries < DEFAULT_RETRIES:
             log_cookie_retry(_log, response.status_code)
-            self.session_cookie = self.refresh_cookie()
-            return self.curl(endpoint, params, _retries=_retries + 1)
+            self.refresh_session()
+            return self.curl(
+                endpoint, params, api_endpoint=api_endpoint, _retries=_retries + 1
+            )
 
         self._raise_curl_error(endpoint, response.status_code)
 
@@ -242,7 +283,7 @@ class VintedWrapper(BaseVintedWrapper):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # pragma: no cover
-        """Exit context manager and close HTTP client.
+        """Exit context manager and close both HTTP clients.
 
         Args:
             exc_type: Exception type (unused).
@@ -250,15 +291,18 @@ class VintedWrapper(BaseVintedWrapper):
             exc_tb: Exception traceback (unused).
         """
         self._client.close()
+        self._api_client.close()
 
     def __del__(self) -> None:  # pragma: no cover
-        """Best-effort cleanup of the HTTP client on garbage collection.
+        """Best-effort cleanup of the HTTP clients on garbage collection.
 
         Prefer using the context manager (``with`` statement) for
         deterministic resource cleanup.
         """
-        if hasattr(self, "_client") and not self._client.is_closed:
-            self._client.close()
+        for attr in ("_client", "_api_client"):
+            client = getattr(self, attr, None)
+            if client is not None and not client.is_closed:
+                client.close()
 
 
 # jscpd:ignore-end

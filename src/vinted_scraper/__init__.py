@@ -18,7 +18,7 @@ from ._async_scraper import AsyncVintedScraper
 from ._async_wrapper import AsyncVintedWrapper
 from ._scraper import VintedScraper
 from ._wrapper import VintedWrapper
-from .models import OgField
+from .models import OgField, VintedSession
 
 __all__ = [
     "AsyncVintedWrapper",
@@ -26,4 +26,5 @@ __all__ = [
     "AsyncVintedScraper",
     "VintedScraper",
     "OgField",
+    "VintedSession",
 ]

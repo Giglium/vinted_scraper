@@ -15,7 +15,7 @@ __all__ = [
     "log_item",
     "log_curl_request",
     "log_curl_response",
-    "log_cookie_fetched",
+    "log_session_fetched",
     "log_cookie_retry",
     "log_cookie_fetch_failed",
 ]
@@ -27,7 +27,7 @@ def log_constructor(
     self: object,
     baseurl: str,
     user_agent: Optional[str],
-    session_cookie: Optional[str],
+    session: Optional[object],
     config: Optional[Dict],
 ) -> None:
     """Logs initialization of VintedScraper/VintedWrapper.
@@ -37,15 +37,15 @@ def log_constructor(
         self: The object being initialized.
         baseurl: Base URL being used.
         user_agent: User agent string (truncated in log).
-        session_cookie: Session cookie (logged as 'provided' or 'auto-fetch').
+        session: Session identity (logged as 'provided' or 'auto-fetch').
         config: Configuration dictionary.
     """
     log.debug(
-        "Initializing %s(baseurl=%s, user_agent=%s, session_cookie=%s, config=%s)",
+        "Initializing %s(baseurl=%s, user_agent=%s, session=%s, config=%s)",
         self.__class__.__name__,
         baseurl,
         (user_agent[:50] + "...") if user_agent else None,
-        "provided" if session_cookie else "auto-fetch",
+        "provided" if session else "auto-fetch",
         config,
     )
 
@@ -131,15 +131,13 @@ def log_curl_request(
 
     Args:
         log: Logger instance.
-        base_url: API base URL.
-        endpoint: API endpoint path.
+        base_url: The chosen client's base URL (site or ``api.`` host).
+        endpoint: Relative API endpoint path.
         headers: Request headers.
         params: Query parameters dictionary.
     """
     if not log.isEnabledFor(logging.DEBUG):
         return
-
-    # Build full URL with query params
     full_url = f"{base_url}{endpoint}"
     if params:
         full_url = f"{full_url}?{urlencode(params)}"
@@ -178,14 +176,14 @@ def log_curl_response(
             log.debug("Response Body: %s", body)
 
 
-def log_cookie_fetched(log: Logger, cookie_value: str) -> None:
-    """Logs successful cookie fetch.
+def log_session_fetched(log: Logger, session: object) -> None:
+    """Logs a successful session fetch.
 
     Args:
         log: Logger instance.
-        cookie_value: Fetched cookie value (truncated in log).
+        session: The fetched session (its repr is truncated in the log).
     """
-    log.debug("Session cookie fetched successfully: %s...", cookie_value[:20])
+    log.debug("Session fetched successfully: %s...", str(session)[:80])
 
 
 def log_cookie_retry(log: Logger, status_code: int) -> None:

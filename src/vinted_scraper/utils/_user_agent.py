@@ -7,7 +7,7 @@ import sys
 from functools import lru_cache
 from typing import Dict, List
 
-if sys.version_info >= (3, 9):
+if sys.version_info >= (3, 9):  # pragma: no cover
     from importlib.resources import files
 
 __all__ = [
