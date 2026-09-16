@@ -2,10 +2,13 @@
 name: Coverage
 
 on:
-  workflow_run: # zizmor: ignore[dangerous-triggers]
-    workflows: ["Test"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
