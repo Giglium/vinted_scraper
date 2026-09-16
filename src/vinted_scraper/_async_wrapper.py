@@ -48,6 +48,8 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         user_agent: Custom user agent string. Auto-generated if None.
         config: httpx client configuration dict.
         cookie_names: List of cookie names to extract. Defaults to ["access_token_web"].
+        locale: Optional ``Locale`` override (e.g. "en-US"). Read from the
+            landing page when None, falling back to a guess from ``baseurl``.
 
     Example:
         See https://github.com/Giglium/vinted_scraper/blob/main/examples/async_wrapper.py
@@ -64,6 +66,7 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         config: Optional[Dict] = None,
         cookie_names: Optional[List[str]] = None,
         session: Optional[VintedSession] = None,
+        locale: Optional[str] = None,
     ):
         """Factory method to create an AsyncVintedWrapper instance.
 
@@ -77,6 +80,8 @@ class AsyncVintedWrapper(BaseVintedWrapper):
             config: httpx client configuration dict.
             cookie_names: List of cookie names to extract. Defaults to ["access_token_web"].
             session: A prefetched ``VintedSession``. Auto-fetched if None/empty.
+            locale: Optional ``Locale`` override. When None, the locale is read
+                from the landing page, falling back to a guess from ``baseurl``.
 
         Returns:
             Initialized AsyncVintedWrapper instance with a resolved session.
@@ -88,6 +93,7 @@ class AsyncVintedWrapper(BaseVintedWrapper):
             user_agent=user_agent,
             config=config,
             cookie_names=cookie_names,
+            locale=locale,
         )
         if self._needs_session():
             await self.refresh_session()

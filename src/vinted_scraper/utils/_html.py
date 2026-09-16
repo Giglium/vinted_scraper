@@ -10,6 +10,7 @@ from ._constants import CSRF_MARKER
 __all__ = [
     "parse_item_page",
     "extract_csrf_token",
+    "extract_locale_from_html",
     "ChunkAccumulator",
 ]
 
@@ -19,6 +20,11 @@ _CSRF_RE = re.compile(
     re.escape(CSRF_MARKER) + r'"\s*:\s*"'
     r"([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
     r'[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"'
+)
+
+_HTML_LANG_RE = re.compile(
+    r"<html\b[^>]*?\blang=[\"']([A-Za-z]{2}(?:-[A-Za-z0-9]+)?)[\"']",
+    re.IGNORECASE,
 )
 
 
@@ -78,6 +84,20 @@ def extract_csrf_token(html: str) -> Optional[str]:
         The CSRF token (a UUID), or ``None`` if not present.
     """
     match = _CSRF_RE.search(html)
+    return match.group(1) if match else None
+
+
+def extract_locale_from_html(html: str) -> Optional[str]:
+    """Extract the market locale from the landing page's ``<html lang>`` tag.
+
+    Args:
+        html: The HTML content (the streamed head fragment is enough).
+
+    Returns:
+        The locale tag (e.g. ``"cs-CZ"``, ``"en-US"``), or ``None`` if the
+        ``<html lang>`` attribute is absent.
+    """
+    match = _HTML_LANG_RE.search(html)
     return match.group(1) if match else None
 
 

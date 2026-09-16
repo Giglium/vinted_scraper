@@ -22,11 +22,13 @@ class VintedSession:
         cookies: Session cookies keyed by name.
         csrf_token: CSRF token for the API, if available. Not auto-fetched.
         anon_id: Anonymous id for the API, if available.
+        locale: Market locale tag (e.g. ``"cs-CZ"``)
     """
 
     cookies: Dict[str, str] = field(default_factory=dict)
     csrf_token: Optional[str] = None
     anon_id: Optional[str] = None
+    locale: Optional[str] = None
 
     def is_empty(self) -> bool:
         """Return whether no identity part is set.

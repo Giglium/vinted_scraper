@@ -48,6 +48,8 @@ class VintedWrapper(BaseVintedWrapper):
         user_agent: Custom user agent string. Auto-generated if None.
         config: httpx client configuration dict.
         cookie_names: List of cookie names to extract. Defaults to ["access_token_web"].
+        locale: Optional ``Locale`` override (e.g. "en-US"). Read from the
+            landing page when None, falling back to a guess from ``baseurl``.
 
     Example:
         See https://github.com/Giglium/vinted_scraper/blob/main/examples/wrapper.py

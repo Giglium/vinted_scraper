@@ -344,6 +344,61 @@ class TestVintedScraper(unittest.TestCase):
         self.assertIsNone(result.description)
 
 
+class TestVintedWrapperLocale(unittest.TestCase):
+    """Locale resolution: constructor override, session locale, URL fallback."""
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_locale_prefers_constructor_override(self, _mock_client):
+        """An explicit locale= wins over the session and the URL fallback."""
+        wrapper = VintedWrapper(BASE_URL, make_session(anon_id="a"), locale="en-US")
+        wrapper.session.locale = "cs-CZ"
+        self.assertEqual(wrapper._locale(), "en-US")
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_locale_uses_session_locale(self, _mock_client):
+        """Without an override, the locale read from the session is used."""
+        wrapper = VintedWrapper(BASE_URL, make_session(anon_id="a"))
+        wrapper.session.locale = "cs-CZ"
+        self.assertEqual(wrapper._locale(), "cs-CZ")
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_locale_falls_back_to_base_url(self, _mock_client):
+        """With neither override nor session locale, guess from the base URL."""
+        wrapper = VintedWrapper("https://www.vinted.cz", make_session(anon_id="a"))
+        # make_session() leaves locale=None, so the URL fallback applies
+        self.assertEqual(wrapper._locale(), "cs-CZ")
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_fetched_session_carries_html_lang_locale(self, mock_client):
+        """A fetched session picks up the locale from the page's <html lang>."""
+        setup_mock_cookie_stream(
+            mock_client,
+            headers={"X-Anon-Id": "anon-42"},
+            html='<html lang="cs-CZ"><head></head>',
+        )
+        mock_client.return_value.base_url = BASE_URL
+
+        session = VintedWrapper.fetch_session(
+            mock_client.return_value, {}, [SESSION_COOKIE_NAME]
+        )
+        self.assertEqual(session.locale, "cs-CZ")
+
+    @patch("src.vinted_scraper._wrapper.httpx.Client")
+    def test_fetch_session_without_html_lang_warns(self, mock_client):
+        """A page without <html lang> yields a usable session but warns."""
+        setup_mock_cookie_stream(
+            mock_client, headers={"X-Anon-Id": "anon-42"}, html="<html><head></head>"
+        )
+        mock_client.return_value.base_url = BASE_URL
+
+        with self.assertLogs(level=logging.WARNING) as cm:
+            session = VintedWrapper.fetch_session(
+                mock_client.return_value, {}, [SESSION_COOKIE_NAME]
+            )
+        self.assertIsNone(session.locale)
+        self.assertTrue(any("locale" in line for line in cm.output))
+
+
 if __name__ == "__main__":
     unittest.main()
 # jscpd:ignore-end

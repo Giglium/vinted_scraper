@@ -11,6 +11,7 @@ from typing import List, NoReturn
 
 from ..models import VintedSession
 from ._constants import RETRY_BASE_SLEEP
+from ._html import extract_locale_from_html
 from ._httpx import extract_anon_id_from_response, extract_cookie_from_response
 from ._log import log_cookie_fetch_failed, log_session_fetched, log_sleep
 
@@ -27,26 +28,20 @@ __all__ = [
 _log = logging.getLogger(__name__)
 
 
-def build_session(  # pylint: disable=unused-argument
-    response, html: str, cookie_names: List[str]
-) -> VintedSession:
-    """Build a ``VintedSession`` from a (2xx) landing-page response.
+def build_session(response, html: str, cookie_names: List[str]) -> VintedSession:
+    """Build a ``VintedSession`` from a the landing-page response.
 
-    Bundles the cookies (from the response) and the anonymous id (from the
-    headers). A warning is logged for any part the landing page did not hand
-    over, since that points at a real fetch problem (unlike a caller-supplied
-    partial session, which is allowed to be incomplete, and so the
-    ``VintedSession`` model stays silent on construction).
+    Bundles the cookies (from the response), the anonymous id (from the
+    headers) and the market ``locale`` (from the page's ``<html lang>`` tag). A
+    warning is logged for any missing.
 
     The CSRF token is currently **not** auto-fetched: the API accepts calls
-    without it, so parsing it out of ``html`` is skipped. ``html`` (the streamed
-    head fragment) is still accepted so this can be re-enabled without touching
-    the call sites — set ``csrf_token=extract_csrf_token(html)`` below.
+    without it, so parsing it out of ``html`` is skipped.
 
     Args:
         response: The landing page response.
-        html: The HTML head fragment read from the landing page request
-            (currently unused; kept for re-enabling CSRF extraction).
+        html: The HTML head fragment read from the landing page request; parsed
+            for the ``<html lang>`` locale (and, if re-enabled, the CSRF token).
         cookie_names: Cookie names to extract.
 
     Returns:
@@ -56,11 +51,14 @@ def build_session(  # pylint: disable=unused-argument
         cookies=extract_cookie_from_response(response, cookie_names),
         # csrf_token=extract_csrf_token(html),  # not currently required by the API
         anon_id=extract_anon_id_from_response(response),
+        locale=extract_locale_from_html(html),
     )
     if not session.cookies:
         _log.warning("Session is missing 'cookies'")
     if session.anon_id is None:
         _log.warning("Session is missing 'anon_id'")
+    if session.locale is None:
+        _log.warning("Could not read 'locale' from the <html lang>")
     log_session_fetched(_log, session)
     return session
 
