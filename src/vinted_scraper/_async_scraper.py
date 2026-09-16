@@ -90,13 +90,20 @@ class AsyncVintedScraper(AsyncVintedWrapper):
         return item
 
     async def curl(
-        self, endpoint: str, params: Optional[Dict] = None, *, _retries: int = 0
+        self,
+        endpoint: str,
+        params: Optional[Dict] = None,
+        *,
+        api_endpoint: bool = False,
+        _retries: int = 0,
     ) -> VintedJsonModel:
-        """Send an async HTTP GET request to any Vinted API endpoint.
+        """Send an async HTTP GET request to a relative Vinted API endpoint.
 
         Args:
-            endpoint: The API endpoint path (e.g., "/api/v2/users/username").
+            endpoint: The relative API endpoint path (e.g., "/api/v2/users/x").
             params: Optional query parameters.
+            api_endpoint: Route the request to the ``api.`` host instead of the
+                site host.
 
         Returns:
             VintedJsonModel containing the JSON response.
@@ -104,5 +111,7 @@ class AsyncVintedScraper(AsyncVintedWrapper):
         Raises:
             RuntimeError: If the request fails or returns a non-200 status code.
         """
-        response = await super().curl(endpoint, params, _retries=_retries)
+        response = await super().curl(
+            endpoint, params, api_endpoint=api_endpoint, _retries=_retries
+        )
         return VintedJsonModel(json_data=response)

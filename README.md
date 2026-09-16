@@ -53,14 +53,15 @@ The package offers the following methods:
 </details>
 
 <details>
- <summary><code>curl</code> - <code>Perform an HTTP GET request to the given endpoint.</code></summary>
+ <summary><code>curl</code> - <code>Perform an HTTP GET request to the given relative endpoint.</code></summary>
 
 **Parameters**
 
-> | name     | type     | data type | description                                    |
-> | -------- | -------- | --------- | ---------------------------------------------- |
-> | endpoint | required | str       | The endpoint to make the request to            |
-> | params   | optional | Dict      | Query parameters like the pagination and so on |
+> | name         | type     | data type | description                                    |
+> | ------------ | -------- | --------- | ---------------------------------------------- |
+> | endpoint     | required | str       | The relative endpoint to make the request to   |
+> | params       | optional | Dict      | Query parameters like the pagination and so on |
+> | api_endpoint | optional | bool      | Route to the `api.` host (default: `False`)    |
 
 **Returns:** `VintedJsonModel` (VintedScraper) or `Dict[str, Any]` (VintedWrapper)
 
@@ -78,6 +79,14 @@ for item in items:
     print(f"{item.title} - {item.price}")
 ```
 
+> The base URL may be passed with or without the `www.` prefix (e.g. `https://vinted.com` or `https://www.vinted.com`); it is normalized internally.
+>
+> ```python
+> from vinted_scraper import VintedScraper
+>
+> scraper = VintedScraper("https://www.vinted.com")
+> ```
+>
 > Check out the [examples](https://github.com/Giglium/vinted_scraper/tree/main/examples) for more!
 
 ## Debugging
@@ -103,13 +112,13 @@ scraper.search({"search_text": "board games"})
 <summary>Debug output (click to expand)</summary>
 
 ```bash
-DEBUG:vinted_scraper._vinted_wrapper:Initializing VintedScraper(baseurl=https://www.vinted.com, user_agent=None, session_cookie=auto-fetch, config=None)
+DEBUG:vinted_scraper._vinted_wrapper:Initializing VintedScraper(baseurl=https://www.vinted.com, user_agent=None, session=auto-fetch, config=None)
 DEBUG:vinted_scraper._vinted_wrapper:Refreshing session cookie
 DEBUG:vinted_scraper._vinted_wrapper:Cookie fetch attempt 1/3
-DEBUG:vinted_scraper._vinted_wrapper:Session cookie fetched successfully: eyJraWQiOiJFNTdZZHJ1...
+DEBUG:vinted_scraper._vinted_wrapper:Session fetched successfully: VintedSession(cookies={'access_token_web': 'eyJraWQiOiJFNTdZ...'}, csrf_token=None, anon_id='...')...
 DEBUG:vinted_scraper._vinted_wrapper:Calling search() with params: {'search_text': 'board games'}
-DEBUG:vinted_scraper._vinted_wrapper:API Request: GET /api/v2/catalog/items with params {'search_text': 'board games'}
-DEBUG:vinted_scraper._vinted_wrapper:API Response: /api/v2/catalog/items - Status: 200
+DEBUG:vinted_scraper._vinted_wrapper:API Request: GET /svc-catalogue/items with params {'search_text': 'board games'}
+DEBUG:vinted_scraper._vinted_wrapper:API Response: /svc-catalogue/items - Status: 200
 ```
 
 </details>
@@ -120,7 +129,7 @@ DEBUG:vinted_scraper._vinted_wrapper:API Response: /api/v2/catalog/items - Statu
 
 - **Cookie Fetch Failed**: If cookies cannot be fetched:
   - Verify the base URL is correct
-  - Check your internet connection, some VPN are banned. Try manually getting the cookie by running the following:
+  - Check your internet connection, there is an anti-bot protection, so requests from datacenter IPs/VPNs may be rejected. Try manually getting the cookie by running the following:
 
   ```bash
     curl -v -c - -L "<base-url>" | grep access_token_web

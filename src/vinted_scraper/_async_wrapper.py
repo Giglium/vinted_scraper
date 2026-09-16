@@ -1,19 +1,26 @@
 # jscpd:ignore-start
-# pylint: disable=duplicate-code
+# pylint: disable=duplicate-code,too-many-arguments,too-many-positional-arguments
 """Async Vinted wrapper for raw JSON responses."""
 
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 
 from ._base_wrapper import BaseVintedWrapper
+from .models import VintedSession
 from .utils import (
+    CSRF_MARKER,
     DEFAULT_RETRIES,
+    HEAD_END_TAG,
     HTTP_OK,
     HTTP_UNAUTHORIZED,
+    STREAM_CHUNK_SIZE,
+    ChunkAccumulator,
+    build_session,
+    handle_session_failure,
     log_cookie_retry,
     log_curl_request,
     log_curl_response,
@@ -22,6 +29,7 @@ from .utils import (
     log_refresh_cookie,
     log_search,
     parse_item_page,
+    raise_session_error,
 )
 
 _log = logging.getLogger(__name__)
@@ -36,7 +44,7 @@ class AsyncVintedWrapper(BaseVintedWrapper):
 
     Attributes:
         baseurl: Vinted domain URL (e.g., "https://www.vinted.com").
-        session_cookie: Session cookie dict. Auto-fetched if None.
+        session: API identity (VintedSession). Auto-fetched if None or empty.
         user_agent: Custom user agent string. Auto-generated if None.
         config: httpx client configuration dict.
         cookie_names: List of cookie names to extract. Defaults to ["access_token_web"].
@@ -46,6 +54,7 @@ class AsyncVintedWrapper(BaseVintedWrapper):
     """
 
     _client: httpx.AsyncClient = field(init=False, repr=False)
+    _api_client: httpx.AsyncClient = field(init=False, repr=False)
 
     @classmethod
     async def create(
@@ -54,31 +63,41 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         user_agent: Optional[str] = None,
         config: Optional[Dict] = None,
         cookie_names: Optional[List[str]] = None,
+        session: Optional[VintedSession] = None,
     ):
         """Factory method to create an AsyncVintedWrapper instance.
 
-        Use this instead of direct instantiation to automatically fetch the session cookie.
+        Use this instead of direct instantiation to automatically fetch the
+        session identity. Pass
+        ``session`` to reuse a prefetched one and skip the network fetch.
 
         Args:
             baseurl: Vinted domain URL (e.g., "https://www.vinted.com").
             user_agent: Custom user agent string. Auto-generated if None.
             config: httpx client configuration dict.
             cookie_names: List of cookie names to extract. Defaults to ["access_token_web"].
+            session: A prefetched ``VintedSession``. Auto-fetched if None/empty.
 
         Returns:
-            Initialized AsyncVintedWrapper instance with fetched cookies.
+            Initialized AsyncVintedWrapper instance with a resolved session.
         """
         _log.debug("Creating the async wrapper using the factory method")
         self = cls(
-            baseurl, user_agent=user_agent, config=config, cookie_names=cookie_names
+            baseurl,
+            session=session,
+            user_agent=user_agent,
+            config=config,
+            cookie_names=cookie_names,
         )
-        self.session_cookie = await self.refresh_cookie()
+        if self._needs_session():
+            await self.refresh_session()
         return self
 
     def __post_init__(self) -> None:
         """Initialize AsyncVintedWrapper after dataclass initialization.
 
-        Validates the base URL, sets up user agent, and initializes httpx async client.
+        Validates the base URL, sets up user agent, and initializes the two
+        httpx async clients (site host and ``api.`` host).
 
         Raises:
             RuntimeError: If the base URL is invalid.
@@ -87,37 +106,40 @@ class AsyncVintedWrapper(BaseVintedWrapper):
             Use the create() factory method instead of direct instantiation to
             automatically fetch the session cookie.
         """
-        httpx_config = self._validate_and_init()
-        self._client = httpx.AsyncClient(**httpx_config)
+        site_config, api_config = self._validate_and_init()
+        self._client = httpx.AsyncClient(**site_config)
+        self._api_client = httpx.AsyncClient(**api_config)
 
-    async def refresh_cookie(self, retries: int = DEFAULT_RETRIES) -> Dict[str, str]:
-        """Manually refresh the session cookie asynchronously.
+    async def refresh_session(self, retries: int = DEFAULT_RETRIES) -> VintedSession:
+        """Manually refresh the session cookie and API tokens.
 
         Args:
             retries: Number of retry attempts (default: 3).
 
         Returns:
-            Dictionary containing session cookies.
+            The ``VintedSession`` returned by :meth:`fetch_session`.
 
         Raises:
             RuntimeError: If cookies cannot be fetched after all retries.
         """
         log_refresh_cookie(_log)
-        return await AsyncVintedWrapper.fetch_cookie(
+        session = await AsyncVintedWrapper.fetch_session(
             self._client,
             self._get_cookie_headers(),
             self.cookie_names,
             retries,
         )
+        self.session = session
+        return session
 
     @staticmethod
-    async def fetch_cookie(
+    async def fetch_session(
         client: httpx.AsyncClient,
         headers: Dict,
         cookie_names: List[str],
         retries: int = DEFAULT_RETRIES,
-    ) -> Dict[str, str]:
-        """Fetch session cookies from Vinted using async HTTP GET request.
+    ) -> VintedSession:
+        """Fetch the full session identity from Vinted's landing page (async).
 
         Args:
             client: httpx.AsyncClient instance.
@@ -126,7 +148,7 @@ class AsyncVintedWrapper(BaseVintedWrapper):
             retries: Number of retry attempts (default: 3).
 
         Returns:
-            Dictionary of extracted session cookies.
+            A ``VintedSession`` with the cookies, CSRF token and anonymous id.
 
         Raises:
             RuntimeError: If cookies cannot be fetched after all retries.
@@ -135,20 +157,50 @@ class AsyncVintedWrapper(BaseVintedWrapper):
 
         for i in range(retries):
             log_interaction(_log, i, retries)
-            response = await client.get("/", headers=headers)
+            html, response = await AsyncVintedWrapper._stream_until(
+                client, "/", headers, CSRF_MARKER
+            )
 
-            cookies = BaseVintedWrapper._process_cookie_response(response, cookie_names)
-            if cookies:
-                return cookies
+            if response.status_code == HTTP_OK:
+                session = build_session(response, html, cookie_names)
+                if session.is_usable():
+                    return session
 
-            if response.status_code != HTTP_OK:
-                sleep_time = BaseVintedWrapper._handle_cookie_failure(
-                    response, i, retries
-                )
-                if i < retries - 1:
-                    await asyncio.sleep(sleep_time)
+            sleep_time = handle_session_failure(response, i, retries)
+            if i < retries - 1:
+                await asyncio.sleep(sleep_time)
 
-        BaseVintedWrapper._raise_cookie_error(client.base_url, response)
+        raise_session_error(client.base_url, response)
+
+    @staticmethod
+    async def _stream_until(
+        client: httpx.AsyncClient, url: str, headers: Dict, stop_marker: str
+    ) -> Tuple[str, httpx.Response]:
+        """Stream ``url``, reading only up to ``stop_marker``.
+
+        Shared by :meth:`item` (stops at ``</head>``) and the session fetch
+        (stops at the CSRF marker) so that neither downloads the full page body.
+        The chunk-boundary bookkeeping lives in :class:`ChunkAccumulator`.
+
+        Args:
+            client: httpx.AsyncClient instance.
+            url: The URL or endpoint path to request.
+            headers: Request headers for the GET.
+            stop_marker: The text marker that ends the read.
+
+        Returns:
+            Tuple of ``(html, response)``. ``html`` is empty for non-200
+            responses.
+        """
+        acc = ChunkAccumulator(stop_marker)
+        async with client.stream("GET", url, headers=headers) as response:
+            if response.status_code == HTTP_OK:
+                async for chunk in response.aiter_text(chunk_size=STREAM_CHUNK_SIZE):
+                    if acc.add(chunk):
+                        break
+            else:
+                await response.aread()
+        return acc.text, response
 
     async def search(self, params: Optional[Dict] = None) -> Dict[str, Any]:
         """Search for items on Vinted asynchronously.
@@ -169,7 +221,9 @@ class AsyncVintedWrapper(BaseVintedWrapper):
             Dictionary containing JSON response with search results.
         """
         log_search(_log, params)
-        return await self.curl(self._search_endpoint(), params=params)
+        return await self.curl(
+            self._search_endpoint(), params=params, api_endpoint=True
+        )
 
     async def item(
         self, item_id: str, fields: Optional[List[str]] = None
@@ -201,21 +255,10 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         endpoint = self._item_endpoint(item_id)
         headers = self._build_page_headers()
 
-        parts: List[str] = []
-        async with self._client.stream("GET", endpoint, headers=headers) as response:
-            status_code = response.status_code
-            if status_code == HTTP_OK:
-                tail = ""
-                async for chunk in response.aiter_text(chunk_size=4096):
-                    parts.append(chunk)
-                    # Check boundary: </head> may span two consecutive chunks
-                    combined = tail + chunk.lower()
-                    if "</head>" in combined:
-                        break
-                    tail = chunk[-6:].lower()
-            else:
-                await response.aread()
-        head_html = "".join(parts)
+        head_html, response = await AsyncVintedWrapper._stream_until(
+            self._client, endpoint, headers, HEAD_END_TAG
+        )
+        status_code = response.status_code
 
         log_curl_response(_log, endpoint, status_code, response.headers, head_html)
 
@@ -229,15 +272,21 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         endpoint: str,
         params: Optional[Dict] = None,
         *,
+        api_endpoint: bool = False,
         _retries: int = 0,
     ) -> Dict[str, Any]:
-        """Send an async HTTP GET request to any Vinted API endpoint.
+        """Send an async HTTP GET request to a relative Vinted API endpoint.
 
-        Automatically handles headers, cookies, retries, and error responses.
+        The ``endpoint`` is always relative and is concatenated with the chosen
+        client's ``base_url``: the ``api.`` host when ``api_endpoint`` is True,
+        otherwise the site (``www.``) host. Automatically handles headers,
+        cookies, retries, and error responses.
 
         Args:
-            endpoint: API endpoint path (e.g., "/api/v2/users/username").
+            endpoint: Relative API endpoint path (e.g., "/api/v2/users/name").
             params: Optional query parameters.
+            api_endpoint: Route the request to the ``api.`` host instead of the
+                site host.
 
         Returns:
             Dictionary containing the parsed JSON response.
@@ -245,10 +294,11 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         Raises:
             RuntimeError: If response status is not 200 or JSON parsing fails.
         """
+        client = self._api_client if api_endpoint else self._client
         headers = self._build_curl_headers()
-        log_curl_request(_log, self.baseurl, endpoint, headers, params)
+        log_curl_request(_log, str(client.base_url), endpoint, headers, params)
 
-        response = await self._client.get(endpoint, headers=headers, params=params)
+        response = await client.get(endpoint, headers=headers, params=params)
 
         log_curl_response(
             _log, endpoint, response.status_code, response.headers, response.text
@@ -259,8 +309,10 @@ class AsyncVintedWrapper(BaseVintedWrapper):
 
         if response.status_code == HTTP_UNAUTHORIZED and _retries < DEFAULT_RETRIES:
             log_cookie_retry(_log, response.status_code)
-            self.session_cookie = await self.refresh_cookie()
-            return await self.curl(endpoint, params, _retries=_retries + 1)
+            await self.refresh_session()
+            return await self.curl(
+                endpoint, params, api_endpoint=api_endpoint, _retries=_retries + 1
+            )
 
         self._raise_curl_error(endpoint, response.status_code)
 
@@ -273,7 +325,7 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:  # pragma: no cover
-        """Exit async context manager and close HTTP client.
+        """Exit async context manager and close both HTTP clients.
 
         Args:
             exc_type: Exception type (unused).
@@ -281,9 +333,10 @@ class AsyncVintedWrapper(BaseVintedWrapper):
             exc_tb: Exception traceback (unused).
         """
         await self._client.aclose()
+        await self._api_client.aclose()
 
     def __del__(self) -> None:  # pragma: no cover
-        """Best-effort cleanup of the HTTP client on garbage collection.
+        """Best-effort cleanup of the HTTP clients on garbage collection.
 
         Prefer using the async context manager (``async with`` statement)
         for deterministic resource cleanup.
@@ -292,13 +345,16 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         ``close()`` (sync). Since ``__del__`` cannot await, we attempt a
         synchronous close via the underlying transport if available.
         """
-        if hasattr(self, "_client") and not self._client.is_closed:
+        for attr in ("_client", "_api_client"):
+            client = getattr(self, attr, None)
+            if client is None or client.is_closed:
+                continue
             try:
                 # httpx >=0.28 removed the sync close() helper on AsyncClient
-                self._client.close()  # type: ignore[attr-defined]
+                client.close()  # type: ignore[attr-defined]
             except AttributeError:
                 # Fallback: close the underlying transport directly
-                transport = getattr(self._client, "_transport", None)
+                transport = getattr(client, "_transport", None)
                 if transport is not None and hasattr(transport, "close"):
                     transport.close()
 

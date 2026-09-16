@@ -10,6 +10,7 @@ Classes:
     VintedImage: Image data and URLs.
     VintedMedia: Media thumbnails.
     VintedHighResolution: High-res image metadata.
+    VintedSession: Session identity (cookies + CSRF token + anonymous id).
 """
 
 from ._brand import VintedBrand
@@ -19,6 +20,7 @@ from ._item import VintedItem
 from ._json_model import VintedJsonModel
 from ._media import VintedMedia
 from ._og_field import OgField
+from ._session import VintedSession
 from ._user import VintedUser
 
 __all__ = [
@@ -29,5 +31,6 @@ __all__ = [
     "VintedImage",
     "VintedItem",
     "VintedMedia",
+    "VintedSession",
     "VintedUser",
 ]

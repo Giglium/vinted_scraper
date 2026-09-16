@@ -4,11 +4,12 @@ from typing import Dict, List, Optional
 
 import httpx
 
-from ._constants import DEFAULT_TIMEOUT
+from ._constants import ANON_ID_HEADER, DEFAULT_TIMEOUT
 
 __all__ = [
     "get_httpx_config",
     "extract_cookie_from_response",
+    "extract_anon_id_from_response",
 ]
 
 
@@ -51,3 +52,15 @@ def extract_cookie_from_response(
         for name in cookie_names
         if response.cookies.get(name)
     }
+
+
+def extract_anon_id_from_response(response: httpx.Response) -> Optional[str]:
+    """Extracts the anonymous id header from an httpx response.
+
+    Args:
+        response: The httpx response object.
+
+    Returns:
+        The trimmed anonymous id, or ``None`` if absent/empty.
+    """
+    return (response.headers.get(ANON_ID_HEADER) or "").strip() or None

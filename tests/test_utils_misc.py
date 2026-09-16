@@ -1,22 +1,29 @@
 # jscpd:ignore-start
-# pylint: disable=duplicate-code
+# pylint: disable=duplicate-code,too-many-public-methods
 """Tests for misc utility functions."""
 
 import unittest
 from unittest.mock import patch
 
+from src.vinted_scraper.models._og_field import OgField
 from src.vinted_scraper.utils import (
     SESSION_COOKIE_NAME,
+    api_base_url,
     get_cookie_headers,
     get_curl_headers,
     get_random_user_agent,
     parse_item_page,
+    site_base_url,
     url_validator,
 )
-from src.vinted_scraper.utils._og import _extract_og
+from src.vinted_scraper.utils._html import (
+    ChunkAccumulator,
+    _extract_og,
+    extract_csrf_token,
+)
 from src.vinted_scraper.utils._user_agent import _load_agents
 from tests.utils import read_html_from_file
-from tests.utils._mock import BASE_URL, COOKIE_VALUE, USER_AGENT
+from tests.utils._mock import BASE_URL, COOKIE_VALUE, USER_AGENT, make_session
 
 
 class TestMiscUtils(unittest.TestCase):
@@ -91,15 +98,130 @@ class TestMiscUtils(unittest.TestCase):
         self.assertEqual(headers["Referer"], BASE_URL)
 
     def test_get_curl_headers(self):
-        """Test get_curl_headers returns correct headers including Cookie."""
-        headers = get_curl_headers(
-            BASE_URL, USER_AGENT, {SESSION_COOKIE_NAME: COOKIE_VALUE}
-        )
+        """Test get_curl_headers returns the catalog-compatible header set."""
+        headers = get_curl_headers(BASE_URL, USER_AGENT, make_session())
         self.assertIsInstance(headers, dict)
         self.assertEqual(headers["User-Agent"], USER_AGENT)
         self.assertEqual(headers["Origin"], BASE_URL)
         self.assertEqual(headers["Referer"], BASE_URL)
         self.assertEqual(headers["Cookie"], f"{SESSION_COOKIE_NAME}={COOKIE_VALUE}")
+        # marketplace-web headers required by the catalog service
+        self.assertEqual(headers["X-Next-App"], "marketplace-web")
+        self.assertEqual(headers["Sec-Fetch-Site"], "same-site")
+        self.assertEqual(headers["Platform"], "web")
+        # headers dropped from the previous lean set must not reappear
+        self.assertNotIn("Accept-Encoding", headers)
+        self.assertNotIn("Connection", headers)
+        # tokens are omitted when not provided
+        self.assertNotIn("X-Csrf-Token", headers)
+        self.assertNotIn("X-Anon-Id", headers)
+
+    def test_get_curl_headers_without_session(self):
+        """A None session yields the base headers with no Cookie/token."""
+        headers = get_curl_headers(BASE_URL, USER_AGENT, None)
+        self.assertNotIn("Cookie", headers)
+        self.assertNotIn("X-Csrf-Token", headers)
+        self.assertNotIn("X-Anon-Id", headers)
+
+    def test_get_curl_headers_includes_tokens_when_provided(self):
+        """CSRF token and anonymous id are added when available."""
+        headers = get_curl_headers(
+            BASE_URL,
+            USER_AGENT,
+            make_session(csrf_token="the-csrf", anon_id="the-anon"),
+        )
+        self.assertEqual(headers["X-Csrf-Token"], "the-csrf")
+        self.assertEqual(headers["X-Anon-Id"], "the-anon")
+
+    def test_get_curl_headers_csrf_without_anon_id(self):
+        """A CSRF token is sent while a missing anon id is left out."""
+        headers = get_curl_headers(
+            BASE_URL,
+            USER_AGENT,
+            make_session(csrf_token="the-csrf"),
+        )
+        self.assertEqual(headers["X-Csrf-Token"], "the-csrf")
+        self.assertNotIn("X-Anon-Id", headers)
+
+    def test_get_curl_headers_tokens_without_cookies(self):
+        """Tokens are still emitted when a session carries no cookies."""
+        headers = get_curl_headers(
+            BASE_URL,
+            USER_AGENT,
+            make_session(cookie=False, csrf_token="the-csrf", anon_id="the-anon"),
+        )
+        self.assertNotIn("Cookie", headers)
+        self.assertEqual(headers["X-Csrf-Token"], "the-csrf")
+        self.assertEqual(headers["X-Anon-Id"], "the-anon")
+
+    def test_extract_csrf_token(self):
+        """extract_csrf_token pulls the UUID next to the CSRF_TOKEN marker."""
+        uuid = "11111111-2222-3333-4444-555555555555"
+        html = f'window.__data = {{"CSRF_TOKEN":"{uuid}"}};'
+        self.assertEqual(extract_csrf_token(html), uuid)
+
+    def test_extract_csrf_token_absent(self):
+        """extract_csrf_token returns None when the marker is missing."""
+        self.assertIsNone(extract_csrf_token("<html><head></head></html>"))
+
+    def test_api_base_url_rewrites_www_to_api(self):
+        """A www. host is rewritten to its api. sibling."""
+        self.assertEqual(
+            api_base_url("https://www.vinted.com"), "https://api.vinted.com"
+        )
+
+    def test_api_base_url_adds_api_to_bare_host(self):
+        """A host without www. gets the api. prefix."""
+        self.assertEqual(api_base_url("https://vinted.fr"), "https://api.vinted.fr")
+
+    def test_api_base_url_only_strips_leading_www(self):
+        """Only the leading www. is replaced, not an embedded one."""
+        self.assertEqual(
+            api_base_url("https://www.wwwshop.com"), "https://api.wwwshop.com"
+        )
+
+    def test_api_base_url_without_scheme(self):
+        """A schemeless value is handled without producing a stray separator."""
+        self.assertEqual(api_base_url("www.vinted.com"), "api.vinted.com")
+
+    def test_site_base_url_adds_www_to_bare_host(self):
+        """site_base_url ensures the www. prefix on a bare host."""
+        self.assertEqual(site_base_url("https://vinted.fr"), "https://www.vinted.fr")
+
+    def test_site_base_url_keeps_existing_www(self):
+        """site_base_url leaves an already-www. host unchanged."""
+        self.assertEqual(
+            site_base_url("https://www.vinted.com"), "https://www.vinted.com"
+        )
+
+    def test_site_base_url_without_scheme(self):
+        """A schemeless value is handled without producing a stray separator."""
+        self.assertEqual(site_base_url("vinted.com"), "www.vinted.com")
+
+    def test_chunk_accumulator_stops_on_marker(self):
+        """add() returns True once the stop marker appears and keeps the text."""
+        acc = ChunkAccumulator("</head>")
+        self.assertFalse(acc.add("<html><head><title>x</title>"))
+        self.assertTrue(acc.add("</head><body>"))
+        self.assertEqual(acc.text, "<html><head><title>x</title></head><body>")
+
+    def test_chunk_accumulator_marker_across_boundary(self):
+        """The marker is detected even when split across two chunks."""
+        acc = ChunkAccumulator("</head>")
+        self.assertFalse(acc.add("...</he"))
+        self.assertTrue(acc.add("ad>..."))
+
+    def test_chunk_accumulator_is_case_insensitive(self):
+        """Marker matching ignores case."""
+        acc = ChunkAccumulator("</head>")
+        self.assertTrue(acc.add("<HEAD></HEAD>"))
+
+    def test_chunk_accumulator_handles_chunks_shorter_than_marker(self):
+        """A marker split into single-character chunks is still detected."""
+        acc = ChunkAccumulator("CSRF_TOKEN")
+        result = [acc.add(char) for char in "xxCSRF_TOKEN"]
+        self.assertTrue(result[-1])
+        self.assertFalse(any(result[:-1]))
 
     def test_load_agents_fallback_path(self):
         """Test _load_agents uses os.path fallback when sys.version_info < (3, 9)."""
@@ -130,6 +252,18 @@ class TestMiscUtils(unittest.TestCase):
         """The title is the description segment before the first ' - ' separator."""
         html = '<meta property="og:description" content="Nice shoes - size 42">'
         self.assertEqual(parse_item_page("456", html)["title"], "Nice shoes")
+
+    def test_parse_item_page_separator_but_title_and_description_not_requested(self):
+        """A ' - ' description is skipped when neither title nor description is asked."""
+        html = '<meta property="og:description" content="Nice shoes - size 42">'
+        result = parse_item_page("456", html, fields=[OgField.URL, OgField.IMAGE])
+        self.assertEqual(result, {"id": "456"})
+
+    def test_parse_item_page_no_separator_and_description_not_requested(self):
+        """A separator-free description is dropped when description is not requested."""
+        html = '<meta property="og:description" content="just a description">'
+        result = parse_item_page("789", html, fields=[OgField.URL, OgField.IMAGE])
+        self.assertEqual(result, {"id": "789"})
 
     def test_parse_item_page_without_separator_has_no_title(self):
         """No ' - ' separator means no derived title key."""

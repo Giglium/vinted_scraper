@@ -46,7 +46,7 @@ make coverage   # Run tests + generate coverage (source, XML, terminal report)
 - Async tests use `unittest.IsolatedAsyncioTestCase`
 - Sample data fixtures in `tests/samples/` (JSON and HTML files)
 - Shared test utilities in `tests/utils/` (`_mock.py`, `_fs.py`)
-- Coverage tool: `coverage` (generates `coverage.xml` and terminal report via `make coverage`)
+- Coverage tool: `coverage` (generates `coverage.xml` and terminal report via `make coverage`); the suite currently keeps source at 100%
 
 ### Formatting
 
@@ -105,9 +105,11 @@ Runs [Super Linter](https://github.com/super-linter/super-linter) v8.6.0 inside 
         ┌──────────────────────┐
         │    utils/            │
         │  _constants.py       │
+        │  _headers.py         │
+        │  _html.py            │
         │  _httpx.py           │
-        │  _misc.py            │
         │  _log.py             │
+        │  _user_agent.py      │
         │  agents.json         │
         └──────────────────────┘
                    │
@@ -121,6 +123,7 @@ Runs [Super Linter](https://github.com/super-linter/super-linter) v8.6.0 inside 
         │  VintedImage         │
         │  VintedMedia         │
         │  VintedHighResolution│
+        │  VintedSession       │
         └──────────────────────┘
 ```
 
@@ -144,23 +147,40 @@ Runs [Super Linter](https://github.com/super-linter/super-linter) v8.6.0 inside 
 
 4. **Async factory pattern**
    - `AsyncVintedWrapper` cannot fetch cookies in `__post_init__` (not async), so a `create()` classmethod factory is provided
-   - Alternatively, users can pass a prefetched `session_cookie`
+   - Alternatively, users can pass a prefetched `session=VintedSession(...)`
 
-5. **Cookie management and retry logic**
-   - Automatic session cookie fetch on construction (sync) or via `create()` (async)
-   - On HTTP 401, the wrapper transparently refreshes the cookie and retries
-   - Exponential backoff on cookie fetch failures (`RETRY_BASE_SLEEP ** attempt`)
+5. **Session management and retry logic**
+   - The identity (cookies + anonymous ID, plus an optional CSRF token) is a single `VintedSession` object (`models/_session.py`), passed to the constructor as `session=` and stored on the wrapper as `self.session`
+   - `fetch_session()` reads the identity from one landing-page request and returns a `VintedSession`
+   - `refresh_session()` calls it, replaces `self.session` with the fetched one, and returns it (a refresh fully replaces the identity rather than merging)
+   - A fetch happens only when `_needs_session()` is true, i.e. no session was passed or `VintedSession.is_empty()`; passing any identity part skips it
+   - A landing-page fetch only accepts a `200` response whose resulting session `is_usable()` (has both cookies and an anonymous ID). A `200` that hands over an unusable identity is treated as a failure: it falls through to the backoff/retry loop rather than being returned, so an anti-bot page that returns `200` without them does not silently produce a broken wrapper
+   - **CSRF token is not auto-fetched.** The API currently accepts calls without it, so `build_session()` skips parsing it out of the page HTML. It stays a supported `VintedSession` field (sent when set, and a caller may supply one), and the extraction machinery (`utils/_html.py::extract_csrf_token`, `CSRF_MARKER`) is kept so it can be re-enabled by a one-line change in `build_session()`
+   - `build_session()` (in `utils/_session.py`) is the single place that assembles a `VintedSession` from a landing-page response and logs a `warning` for each **fetched** part the page did not hand over (cookies, anon ID). The `VintedSession` model itself is silent on construction, so a caller-supplied partial session (allowed to be incomplete) does not warn
+   - **Intentional design:** `VintedSession` keeps its `cookies`, `csrf_token` and `anon_id` in its `repr` even though they are secrets. This is deliberate: the library exists to expose the identity so callers can inspect, persist and reuse it (`session=previous.session`). Hiding the values would work against that. Callers are responsible for not leaking a session `repr` into untrusted logs
+   - Automatic on construction (sync) or via `create()` (async)
+   - On HTTP 401, the wrapper transparently refreshes the session and retries
+   - Exponential backoff on failures (`RETRY_BASE_SLEEP ** attempt`)
 
-6. **Item metadata via OpenGraph scraping**
-   - The JSON item endpoint (`/api/v2/items/{id}/details`) is blocked by anti-bot protection
-   - Item data is extracted from OpenGraph `<meta>` tags in the public HTML item page `<head>`
-   - Only the `<head>` section is streamed (efficient, avoids downloading full page)
+6. **Streamed page reads (OpenGraph + CSRF)**
+   - The JSON item endpoint (`/api/v2/items/{id}/details`) is blocked by anti-bot protection, so `item()` reads OpenGraph `<meta>` tags from the public item page `<head>`
+   - `_stream_until(client, url, headers, stop_marker)` reads a page chunk by chunk and stops at `stop_marker`, so the full body is never downloaded: `item()` stops at `</head>`; the session fetch stops at the `CSRF_TOKEN` marker, which can sit after the `<head>`
+   - The session fetch keeps streaming to the `CSRF_TOKEN` marker even though the token is not currently parsed (see section 5): cookies and the anon ID come from the response object/headers, not the body, so this read is only needed if CSRF extraction is re-enabled. It is left in place so that re-enabling is a one-line change
+   - The chunk-boundary bookkeeping (marker spanning two chunks, case-insensitive, chunks shorter than the marker) lives once in `utils/_html.py::ChunkAccumulator`, reused by both wrappers
 
-7. **Private module convention**
+7. **Two hosts, two httpx clients**
+   - Catalog search moved off `/api/v2/catalog/items` to `/svc-catalogue/items`, served from the `api.` host (e.g. `https://api.vinted.com`); the landing page and item page use the site `www.` host
+   - Each wrapper holds two clients: `_client` (site host) and `_api_client` (`api.` host). Both are built-in `__post_init__` from the configs returned by `_validate_and_init()`, and both are closed by the context manager and `__del__`
+   - Endpoints stay **relative**: `curl(endpoint, params, *, api_endpoint=False)` concatenates the endpoint against the chosen client's `base_url` — the `api.` client when `api_endpoint=True`, the site client otherwise. The `api_endpoint` flag is part of the public `curl` API, so callers can target either host; `search()` uses it internally. `_search_endpoint()` returns the relative `/svc-catalogue/items`
+   - `baseurl` may be passed with or without `www.`; `_validate_and_init()` normalizes it to the `www.` site form via `site_base_url()` and derives the `api.` host via `api_base_url()` (both handle `www.`/bare input)
+   - The API needs an anonymous ID (returned as the `X-Anon-Id` response header), stored on the wrapper and refreshed together with the cookie. A CSRF token is sent as `X-Csrf-Token` when the session has one, but it is not auto-fetched and the API currently accepts calls without it (see section 5)
+   - `search()` and `curl()` deliberately share one header set (`get_curl_headers`) so every API call is sent with identical headers
+
+8. **Private module convention**
    - All implementation modules are prefixed with `_` (e.g., `_wrapper.py`, `_base_wrapper.py`)
    - Public API is explicitly exported via `__init__.py` and `__all__`
 
-8. **Error handling in models**
+9. **Error handling in models**
    - Price parsing (`_parse_price` and inline `VintedItem.__post_init__`) uses `try/except` to gracefully handle malformed values (e.g., non-numeric strings, missing dict keys). Invalid prices result in `None` rather than raising exceptions.
    - Models should never raise on construction due to unexpected API data; fields default to `None` when parsing fails.
 
@@ -170,8 +190,8 @@ Runs [Super Linter](https://github.com/super-linter/super-linter) v8.6.0 inside 
 src/vinted_scraper/
 ├── __init__.py              # Public API exports
 ├── _base_wrapper.py         # Shared base class (non-I/O logic)
-├── _wrapper.py              # Sync wrapper (httpx.Client)
-├── _async_wrapper.py        # Async wrapper (httpx.AsyncClient)
+├── _wrapper.py              # Sync wrapper (site + api httpx.Client)
+├── _async_wrapper.py        # Async wrapper (site + api httpx.AsyncClient)
 ├── _scraper.py              # Sync scraper (typed models)
 ├── _async_scraper.py        # Async scraper (typed models)
 ├── models/
@@ -182,13 +202,16 @@ src/vinted_scraper/
 │   ├── _brand.py            # VintedBrand
 │   ├── _image.py            # VintedImage
 │   ├── _media.py            # VintedMedia
-│   └── _high_resolution.py  # VintedHighResolution
+│   ├── _high_resolution.py  # VintedHighResolution
+│   └── _session.py           # VintedSession (cookies + anon id; optional CSRF token)
 ├── utils/
 │   ├── __init__.py          # Utility exports
-│   ├── _constants.py        # API paths, timeouts, status codes
-│   ├── _httpx.py            # httpx config and cookie extraction
-│   ├── _misc.py             # User agents, URL validation, headers, HTML parsing
+│   ├── _constants.py        # API paths, hosts, timeouts, status codes
+│   ├── _headers.py          # URL validation, host routing, HTTP headers
+│   ├── _html.py             # HTML head parsing (OpenGraph tags, CSRF token)
+│   ├── _httpx.py            # httpx config, cookie and anon-id extraction
 │   ├── _log.py              # Structured logging helpers
+│   ├── _user_agent.py       # User agent loading and selection
 │   └── agents.json          # User agent list (auto-updated)
 └── py.typed                 # PEP 561 marker
 
@@ -230,4 +253,4 @@ examples/
 - Error handling: `RuntimeError` for unrecoverable API/network errors
 - Logging: Structured via dedicated `_log.py` helpers, one logger per module
 - Imports: absolute from `src.vinted_scraper` in tests, relative within the package
-- URL validation: `baseurl` must match `^https://(www\.)?[\w.-]+\.\w{2,}$` (HTTPS enforced, `www.` optional, no path/port/query allowed)
+- URL validation: `baseurl` must match `^https://(www\.)?[\w.-]+\.\w{2,}$` (HTTPS enforced, `www.` optional, no path/port/query allowed). It is then normalized to its `www.` site form, and the `api.` host is derived from it

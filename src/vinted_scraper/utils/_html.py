@@ -1,14 +1,84 @@
-"""OpenGraph meta tag extraction from HTML."""
+"""HTML parsing helpers (OpenGraph meta tags and the CSRF token)."""
 
 import html as _html
 import re
 from typing import Any, Dict, List, Optional
 
 from ..models import OgField
+from ._constants import CSRF_MARKER
 
 __all__ = [
     "parse_item_page",
+    "extract_csrf_token",
+    "ChunkAccumulator",
 ]
+
+# The API requires a CSRF token that Vinted embeds in the landing page HTML
+# next to a ``CSRF_TOKEN`` marker, e.g. ``"CSRF_TOKEN":"<uuid>"``.
+_CSRF_RE = re.compile(
+    re.escape(CSRF_MARKER) + r'"\s*:\s*"'
+    r"([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+    r'[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"'
+)
+
+
+class ChunkAccumulator:
+    """Collects streamed text chunks until a stop marker appears.
+
+    Encapsulates the boundary bookkeeping shared by the sync and async
+    streaming loops: chunks are accumulated and the marker is matched
+    case-insensitively even when it spans two consecutive chunks, so callers
+    can stop reading as soon as the marker is seen and never download the rest
+    of the body.
+
+    Args:
+        stop_marker: The (lower-cased internally) marker that ends the read.
+    """
+
+    def __init__(self, stop_marker: str) -> None:
+        self._stop_marker = stop_marker.lower()
+        # Overlap kept between chunks so a marker split across a boundary is
+        # still detected.
+        self._tail_size = max(len(self._stop_marker) - 1, 0)
+        self._parts: List[str] = []
+        self._tail = ""
+
+    def add(self, chunk: str) -> bool:
+        """Append a chunk and report whether the stop marker has been seen.
+
+        Args:
+            chunk: The next text chunk read from the stream.
+
+        Returns:
+            ``True`` if the stop marker is now present (caller should stop).
+        """
+        self._parts.append(chunk)
+        combined = self._tail + chunk.lower()
+        if self._stop_marker in combined:
+            return True
+        self._tail = combined[-self._tail_size :] if self._tail_size else ""
+        return False
+
+    @property
+    def text(self) -> str:
+        """The concatenation of every chunk added so far."""
+        return "".join(self._parts)
+
+
+def extract_csrf_token(html: str) -> Optional[str]:
+    """Extract the CSRF token from a page's HTML.
+
+    Runs a single regex over the streamed HTML fragment, so the caller only
+    needs to read up to the ``CSRF_TOKEN`` marker rather than the whole page.
+
+    Args:
+        html: The HTML content (the fragment up to the marker is sufficient).
+
+    Returns:
+        The CSRF token (a UUID), or ``None`` if not present.
+    """
+    match = _CSRF_RE.search(html)
+    return match.group(1) if match else None
 
 
 def _build_og_re(tag: str) -> List[re.Pattern]:
