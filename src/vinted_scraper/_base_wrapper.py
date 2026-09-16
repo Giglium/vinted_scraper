@@ -15,6 +15,7 @@ from .utils import (
     get_curl_headers,
     get_httpx_config,
     get_random_user_agent,
+    locale_from_base_url,
     log_constructor,
     site_base_url,
     url_validator,
@@ -38,6 +39,10 @@ class BaseVintedWrapper:
         config: httpx client configuration dict.
         cookie_names: List of cookie names to extract.
             Defaults to ["access_token_web"].
+        locale: Optional ``Locale`` override (e.g. "en-US" to force USD prices
+            off a country host). When None, the locale is read from the landing
+            page's ``<html lang>`` tag, falling back to a value guessed from
+            ``baseurl``.
     """
 
     baseurl: str
@@ -45,6 +50,7 @@ class BaseVintedWrapper:
     user_agent: Optional[str] = None
     config: Optional[Dict] = None
     cookie_names: Optional[List[str]] = None
+    locale: Optional[str] = None
 
     def _needs_session(self) -> bool:
         """Return whether a session must be fetched from the landing page.
@@ -95,6 +101,22 @@ class BaseVintedWrapper:
             get_httpx_config(api_base, self.config),
         )
 
+    def _locale(self) -> str:
+        """Resolve the ``Locale`` value to send with requests.
+
+        Resolution order: the explicit ``locale`` override, then the ``locale``
+        read from the current ``session`` (from the landing page), then a guess
+        from ``baseurl``. Resolved per call so a session refresh is reflected.
+
+        Returns:
+            The ``Locale`` header value (e.g. ``"it-IT"``).
+        """
+        if self.locale is not None:
+            return self.locale
+        if self.session is not None and self.session.locale is not None:
+            return self.session.locale
+        return locale_from_base_url(self.baseurl)
+
     # -- curl helpers ---------------------------------------------------------
 
     def _build_curl_headers(self) -> Dict[str, str]:
@@ -103,7 +125,12 @@ class BaseVintedWrapper:
         Returns:
             Header dictionary.
         """
-        return get_curl_headers(self.baseurl, self.user_agent, self.session)
+        return get_curl_headers(
+            self.baseurl,
+            self.user_agent,
+            self._locale(),
+            self.session,
+        )
 
     def _build_page_headers(self) -> Dict[str, str]:
         """Build browser-like headers for an item page (document) request.
@@ -111,7 +138,7 @@ class BaseVintedWrapper:
         Returns:
             Header dictionary including the session cookie, if available.
         """
-        headers = get_cookie_headers(self.baseurl, self.user_agent)
+        headers = get_cookie_headers(self.baseurl, self.user_agent, self._locale())
         cookies = self.session.cookies if self.session else {}
         cookie_str = format_cookie_header(cookies)
         if cookie_str:
@@ -181,4 +208,4 @@ class BaseVintedWrapper:
         Returns:
             Dictionary of HTTP headers.
         """
-        return get_cookie_headers(self.baseurl, self.user_agent)
+        return get_cookie_headers(self.baseurl, self.user_agent, self._locale())

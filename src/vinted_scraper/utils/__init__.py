@@ -26,10 +26,16 @@ from ._headers import (
     format_cookie_header,
     get_cookie_headers,
     get_curl_headers,
+    locale_from_base_url,
     site_base_url,
     url_validator,
 )
-from ._html import ChunkAccumulator, extract_csrf_token, parse_item_page
+from ._html import (
+    ChunkAccumulator,
+    extract_csrf_token,
+    extract_locale_from_html,
+    parse_item_page,
+)
 from ._httpx import (
     extract_anon_id_from_response,
     extract_cookie_from_response,
@@ -68,8 +74,10 @@ __all__ = [
     "STREAM_CHUNK_SIZE",
     "site_base_url",
     "api_base_url",
+    "locale_from_base_url",
     "ChunkAccumulator",
     "extract_csrf_token",
+    "extract_locale_from_html",
     "extract_anon_id_from_response",
     "extract_cookie_from_response",
     "get_httpx_config",

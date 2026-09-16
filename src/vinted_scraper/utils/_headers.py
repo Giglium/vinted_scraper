@@ -9,12 +9,45 @@ __all__ = [
     "url_validator",
     "site_base_url",
     "api_base_url",
+    "locale_from_base_url",
     "format_cookie_header",
     "get_cookie_headers",
     "get_curl_headers",
 ]
 
 _URL_PATTERN = re.compile(r"^https://(www\.)?[\w.-]+\.\w{2,}$")
+
+# Fallback ``Locale`` values keyed by top-level domain, used only when the
+# locale could not be read from the landing page's ``<html lang>`` tag (see
+# ``utils/_html.py::extract_locale_from_html``).
+_DEFAULT_LOCALE = "en-US"
+_LOCALE_FALLBACK: Dict[str, str] = {
+    "com": "en-US",
+    "co.uk": "en-GB",
+    "at": "de-AT",
+    "be": "fr-BE",
+    "cz": "cs-CZ",
+    "de": "de-DE",
+    "dk": "da-DK",
+    "ee": "et-EE",
+    "es": "es-ES",
+    "fi": "fi-FI",
+    "fr": "fr-FR",
+    "gr": "el-GR",
+    "hr": "hr-HR",
+    "hu": "hu-HU",
+    "ie": "en-IE",
+    "it": "it-IT",
+    "lt": "lt-LT",
+    "lu": "fr-LU",
+    "nl": "nl-NL",
+    "pl": "pl-PL",
+    "pt": "pt-PT",
+    "ro": "ro-RO",
+    "se": "sv-SE",
+    "sk": "sk-SK",
+    "si": "sl-SI",
+}
 
 
 def url_validator(url: str) -> bool:
@@ -32,6 +65,13 @@ def url_validator(url: str) -> bool:
 def _split(base_url: str):
     """Split a base URL into ``(scheme, sep, host)`` via ``rpartition``."""
     return base_url.rpartition("://")
+
+
+def _strip_www(host: str) -> str:
+    """Return ``host`` without a leading ``www.`` prefix."""
+    if host.startswith(WWW_HOST_PREFIX):
+        return host[len(WWW_HOST_PREFIX) :]
+    return host
 
 
 def site_base_url(base_url: str) -> str:
@@ -69,9 +109,26 @@ def api_base_url(base_url: str) -> str:
         The API base URL (e.g. ``https://api.vinted.com``).
     """
     scheme, sep, host = _split(base_url)
-    if host.startswith(WWW_HOST_PREFIX):
-        host = host[len(WWW_HOST_PREFIX) :]
+    host = _strip_www(host)
     return f"{scheme}{sep}{API_HOST_PREFIX}{host}"
+
+
+def locale_from_base_url(base_url: str) -> str:
+    """Best-effort ``Locale`` value guessed from a base URL's top-level domain.
+
+    Args:
+        base_url: The site base URL, with or without ``www.``.
+
+    Returns:
+        The guessed ``Locale`` header value (e.g. ``"it-IT"``, ``"en-US"``).
+    """
+    _, _, host = _split(base_url)
+    labels = _strip_www(host).split(".")
+    # Check the compound TLD (e.g. "co.uk") before the single-label TLD.
+    compound = ".".join(labels[-2:])
+    if compound in _LOCALE_FALLBACK:
+        return _LOCALE_FALLBACK[compound]
+    return _LOCALE_FALLBACK.get(labels[-1], _DEFAULT_LOCALE)
 
 
 def format_cookie_header(cookies: Dict[str, str]) -> str:
@@ -86,12 +143,14 @@ def format_cookie_header(cookies: Dict[str, str]) -> str:
     return "; ".join(f"{k}={v}" for k, v in cookies.items())
 
 
-def get_cookie_headers(base_url: str, user_agent: str) -> Dict:
+def get_cookie_headers(base_url: str, user_agent: str, locale: str) -> Dict:
     """Generates browser-like HTTP headers for cookie fetching.
 
     Args:
         base_url: Base URL of the website.
         user_agent: User agent string.
+        locale: The ``Locale`` tag driving ``Accept-Language`` (e.g.
+            ``"it-IT"``).
 
     Returns:
         Dictionary of HTTP headers.
@@ -100,7 +159,7 @@ def get_cookie_headers(base_url: str, user_agent: str) -> Dict:
         "User-Agent": user_agent,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Language": f"{locale},en;q=0.5",
         "Connection": "keep-alive",
         "Upgrade-Insecure-Requests": "1",
         "DNT": "1",  # Do Not Track
@@ -113,12 +172,19 @@ def get_cookie_headers(base_url: str, user_agent: str) -> Dict:
     }
 
 
-def get_curl_headers(base_url: str, user_agent: str, session=None) -> Dict:
+def get_curl_headers(
+    base_url: str,
+    user_agent: str,
+    locale: str,
+    session=None,
+) -> Dict:
     """Generates HTTP headers for Vinted JSON API requests.
 
     Args:
         base_url: Base URL of the website.
         user_agent: User agent string.
+        locale: The ``Locale`` header value (e.g. ``"it-IT"``), which also
+            drives ``Accept-Language``.
         session: A ``VintedSession`` supplying cookies, CSRF token and anonymous
             id, or ``None`` when no identity is available yet.
 
@@ -129,12 +195,12 @@ def get_curl_headers(base_url: str, user_agent: str, session=None) -> Dict:
     headers = {
         "User-Agent": user_agent,
         "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Language": f"{locale},en;q=0.5",
         "Cache-Control": "no-cache",
         "Pragma": "no-cache",
         "Origin": base_url,
         "Referer": base_url,
-        "Locale": "en-US",
+        "Locale": locale,
         "Platform": "web",
         "X-Next-App": "marketplace-web",
         "Sec-Fetch-Dest": "empty",

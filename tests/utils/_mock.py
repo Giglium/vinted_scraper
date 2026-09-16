@@ -17,11 +17,14 @@ from src.vinted_scraper.utils import (
 BASE_URL: Final = "https://fakeurl.com"
 USER_AGENT: Final = get_random_user_agent()
 COOKIE_VALUE: Final = "valid_token-123456"
-# A valid CSRF token (UUID) and the HTML snippet the landing page embeds it in.
-# The cookie-stream mocks default to this so a "successful" fetch yields a
-# usable session (cookie + CSRF), matching what the wrapper now requires.
+# The landing-page HTML snippet the cookie-stream mocks stream by default. It
+# carries the ``<html lang>`` tag (so the fetched session picks up a locale) and
+# the CSRF marker, yielding a complete session and matching a real page.
 CSRF_UUID: Final = "11111111-2222-3333-4444-555555555555"
-CSRF_HTML: Final = f'{{"CSRF_TOKEN":"{CSRF_UUID}"}}'
+LOCALE_VALUE: Final = "en-US"
+CSRF_HTML: Final = (
+    f'<html lang="{LOCALE_VALUE}"><head></head>{{"CSRF_TOKEN":"{CSRF_UUID}"}}'
+)
 ANON_ID_VALUE: Final = "anon-123"
 
 

@@ -12,6 +12,7 @@ from src.vinted_scraper.utils import (
     get_cookie_headers,
     get_curl_headers,
     get_random_user_agent,
+    locale_from_base_url,
     parse_item_page,
     site_base_url,
     url_validator,
@@ -20,10 +21,17 @@ from src.vinted_scraper.utils._html import (
     ChunkAccumulator,
     _extract_og,
     extract_csrf_token,
+    extract_locale_from_html,
 )
 from src.vinted_scraper.utils._user_agent import _load_agents
 from tests.utils import read_html_from_file
 from tests.utils._mock import BASE_URL, COOKIE_VALUE, USER_AGENT, make_session
+
+# The ``Locale`` guessed for BASE_URL (a ``.com`` host) and the matching
+# ``Accept-Language`` the builders derive from it. Passed explicitly to the
+# header builders in these tests to keep them independent of the fallback table.
+LOCALE = "en-US"
+ACCEPT_LANGUAGE = "en-US,en;q=0.5"
 
 
 class TestMiscUtils(unittest.TestCase):
@@ -91,15 +99,16 @@ class TestMiscUtils(unittest.TestCase):
 
     def test_get_cookie_headers(self):
         """Test get_cookie_headers returns correct headers with User-Agent, Origin, and Referer."""
-        headers = get_cookie_headers(BASE_URL, USER_AGENT)
+        headers = get_cookie_headers(BASE_URL, USER_AGENT, LOCALE)
         self.assertIsInstance(headers, dict)
         self.assertEqual(headers["User-Agent"], USER_AGENT)
         self.assertEqual(headers["Origin"], BASE_URL)
         self.assertEqual(headers["Referer"], BASE_URL)
+        self.assertEqual(headers["Accept-Language"], ACCEPT_LANGUAGE)
 
     def test_get_curl_headers(self):
         """Test get_curl_headers returns the catalog-compatible header set."""
-        headers = get_curl_headers(BASE_URL, USER_AGENT, make_session())
+        headers = get_curl_headers(BASE_URL, USER_AGENT, LOCALE, make_session())
         self.assertIsInstance(headers, dict)
         self.assertEqual(headers["User-Agent"], USER_AGENT)
         self.assertEqual(headers["Origin"], BASE_URL)
@@ -109,6 +118,9 @@ class TestMiscUtils(unittest.TestCase):
         self.assertEqual(headers["X-Next-App"], "marketplace-web")
         self.assertEqual(headers["Sec-Fetch-Site"], "same-site")
         self.assertEqual(headers["Platform"], "web")
+        # the locale drives both the Locale header and Accept-Language
+        self.assertEqual(headers["Locale"], LOCALE)
+        self.assertEqual(headers["Accept-Language"], ACCEPT_LANGUAGE)
         # headers dropped from the previous lean set must not reappear
         self.assertNotIn("Accept-Encoding", headers)
         self.assertNotIn("Connection", headers)
@@ -116,9 +128,35 @@ class TestMiscUtils(unittest.TestCase):
         self.assertNotIn("X-Csrf-Token", headers)
         self.assertNotIn("X-Anon-Id", headers)
 
+    def test_get_curl_headers_emits_locale_and_derived_accept_language(self):
+        """The Locale is sent verbatim and Accept-Language is derived from it."""
+        headers = get_curl_headers("https://www.vinted.it", USER_AGENT, "it-IT", None)
+        self.assertEqual(headers["Locale"], "it-IT")
+        self.assertEqual(headers["Accept-Language"], "it-IT,en;q=0.5")
+
+    def test_get_cookie_headers_derives_accept_language(self):
+        """The cookie-fetch builder derives Accept-Language from the locale."""
+        headers = get_cookie_headers("https://www.vinted.fr", USER_AGENT, "fr-FR")
+        self.assertEqual(headers["Accept-Language"], "fr-FR,en;q=0.5")
+
+    def test_locale_from_base_url_country_tld(self):
+        """A country TLD maps to its full language-region fallback tag."""
+        self.assertEqual(locale_from_base_url("https://www.vinted.it"), "it-IT")
+        self.assertEqual(locale_from_base_url("https://vinted.fr"), "fr-FR")
+        self.assertEqual(locale_from_base_url("https://www.vinted.cz"), "cs-CZ")
+        self.assertEqual(locale_from_base_url("https://www.vinted.se"), "sv-SE")
+
+    def test_locale_from_base_url_compound_and_default(self):
+        """Compound TLDs use overrides; unknown domains fall back to en-US."""
+        self.assertEqual(locale_from_base_url("https://www.vinted.com"), "en-US")
+        self.assertEqual(locale_from_base_url("https://vinted.com"), "en-US")
+        self.assertEqual(locale_from_base_url("https://www.vinted.co.uk"), "en-GB")
+        # an unknown TLD defaults to en-US rather than guessing "locale == tld"
+        self.assertEqual(locale_from_base_url("https://www.example.xyz"), "en-US")
+
     def test_get_curl_headers_without_session(self):
         """A None session yields the base headers with no Cookie/token."""
-        headers = get_curl_headers(BASE_URL, USER_AGENT, None)
+        headers = get_curl_headers(BASE_URL, USER_AGENT, LOCALE, None)
         self.assertNotIn("Cookie", headers)
         self.assertNotIn("X-Csrf-Token", headers)
         self.assertNotIn("X-Anon-Id", headers)
@@ -128,6 +166,7 @@ class TestMiscUtils(unittest.TestCase):
         headers = get_curl_headers(
             BASE_URL,
             USER_AGENT,
+            LOCALE,
             make_session(csrf_token="the-csrf", anon_id="the-anon"),
         )
         self.assertEqual(headers["X-Csrf-Token"], "the-csrf")
@@ -138,6 +177,7 @@ class TestMiscUtils(unittest.TestCase):
         headers = get_curl_headers(
             BASE_URL,
             USER_AGENT,
+            LOCALE,
             make_session(csrf_token="the-csrf"),
         )
         self.assertEqual(headers["X-Csrf-Token"], "the-csrf")
@@ -148,11 +188,28 @@ class TestMiscUtils(unittest.TestCase):
         headers = get_curl_headers(
             BASE_URL,
             USER_AGENT,
+            LOCALE,
             make_session(cookie=False, csrf_token="the-csrf", anon_id="the-anon"),
         )
         self.assertNotIn("Cookie", headers)
         self.assertEqual(headers["X-Csrf-Token"], "the-csrf")
         self.assertEqual(headers["X-Anon-Id"], "the-anon")
+
+    def test_extract_locale_from_html_reads_html_lang(self):
+        """extract_locale_from_html reads the <html lang> tag value."""
+        self.assertEqual(
+            extract_locale_from_html('<!doctype html><html lang="cs-CZ">'), "cs-CZ"
+        )
+        # single quotes and extra attributes before lang are handled
+        self.assertEqual(
+            extract_locale_from_html("<html dir='ltr' lang='en-US'>"), "en-US"
+        )
+        # a bare language (no region) is still accepted
+        self.assertEqual(extract_locale_from_html('<html lang="it">'), "it")
+
+    def test_extract_locale_from_html_absent(self):
+        """extract_locale_from_html returns None when <html lang> is missing."""
+        self.assertIsNone(extract_locale_from_html("<html><head></head></html>"))
 
     def test_extract_csrf_token(self):
         """extract_csrf_token pulls the UUID next to the CSRF_TOKEN marker."""

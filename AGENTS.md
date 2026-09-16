@@ -150,22 +150,26 @@ Runs [Super Linter](https://github.com/super-linter/super-linter) v8.6.0 inside 
    - Alternatively, users can pass a prefetched `session=VintedSession(...)`
 
 5. **Session management and retry logic**
-   - The identity (cookies + anonymous ID, plus an optional CSRF token) is a single `VintedSession` object (`models/_session.py`), passed to the constructor as `session=` and stored on the wrapper as `self.session`
+   - The identity (cookies + anonymous ID, plus an optional CSRF token, plus the market `locale`) is a single `VintedSession` object (`models/_session.py`), passed to the constructor as `session=` and stored on the wrapper as `self.session`
    - `fetch_session()` reads the identity from one landing-page request and returns a `VintedSession`
    - `refresh_session()` calls it, replaces `self.session` with the fetched one, and returns it (a refresh fully replaces the identity rather than merging)
    - A fetch happens only when `_needs_session()` is true, i.e. no session was passed or `VintedSession.is_empty()`; passing any identity part skips it
    - A landing-page fetch only accepts a `200` response whose resulting session `is_usable()` (has both cookies and an anonymous ID). A `200` that hands over an unusable identity is treated as a failure: it falls through to the backoff/retry loop rather than being returned, so an anti-bot page that returns `200` without them does not silently produce a broken wrapper
    - **CSRF token is not auto-fetched.** The API currently accepts calls without it, so `build_session()` skips parsing it out of the page HTML. It stays a supported `VintedSession` field (sent when set, and a caller may supply one), and the extraction machinery (`utils/_html.py::extract_csrf_token`, `CSRF_MARKER`) is kept so it can be re-enabled by a one-line change in `build_session()`
-   - `build_session()` (in `utils/_session.py`) is the single place that assembles a `VintedSession` from a landing-page response and logs a `warning` for each **fetched** part the page did not hand over (cookies, anon ID). The `VintedSession` model itself is silent on construction, so a caller-supplied partial session (allowed to be incomplete) does not warn
+   - `build_session()` (in `utils/_session.py`) is the single place that assembles a `VintedSession` from a landing-page response and logs a `warning` for each **fetched** part the page did not hand over (cookies, anon ID, and the `locale` read from `<html lang>`). The `VintedSession` model itself is silent on construction, so a caller-supplied partial session (allowed to be incomplete) does not warn
+   - **Market locale.** Vinted serves one host per market and stamps that market's `language-REGION` tag on the landing page's `<html lang>` (e.g. `nl-NL`, `cs-CZ`); that tag is exactly the value the APIs `Locale` header expects.
+     `build_session()` reads it (`utils/_html.py::extract_locale_from_html`) into `VintedSession.locale`, so it round-trips when a caller reuses `session=previous.session`.
+     The `Locale` sent on each request is resolved by `BaseVintedWrapper._locale()`, most specific first: the constructor `locale=` override → the current session's `locale` → a best-effort guess from the base URL (`utils/_headers.py::locale_from_base_url`, full tags, defaulting to `en-US`). Resolved per call, so a session refresh is reflected immediately.
+     `locale` is metadata, not a credential: it is deliberately ignored by `is_empty()`/`is_usable()` (a session carrying only a locale still triggers a real fetch), and a page with no `<html lang>` still yields a usable session — it just warns and falls back to the URL guess
    - **Intentional design:** `VintedSession` keeps its `cookies`, `csrf_token` and `anon_id` in its `repr` even though they are secrets. This is deliberate: the library exists to expose the identity so callers can inspect, persist and reuse it (`session=previous.session`). Hiding the values would work against that. Callers are responsible for not leaking a session `repr` into untrusted logs
    - Automatic on construction (sync) or via `create()` (async)
    - On HTTP 401, the wrapper transparently refreshes the session and retries
    - Exponential backoff on failures (`RETRY_BASE_SLEEP ** attempt`)
 
-6. **Streamed page reads (OpenGraph + CSRF)**
+6. **Streamed page reads (OpenGraph, locale + CSRF)**
    - The JSON item endpoint (`/api/v2/items/{id}/details`) is blocked by anti-bot protection, so `item()` reads OpenGraph `<meta>` tags from the public item page `<head>`
    - `_stream_until(client, url, headers, stop_marker)` reads a page chunk by chunk and stops at `stop_marker`, so the full body is never downloaded: `item()` stops at `</head>`; the session fetch stops at the `CSRF_TOKEN` marker, which can sit after the `<head>`
-   - The session fetch keeps streaming to the `CSRF_TOKEN` marker even though the token is not currently parsed (see section 5): cookies and the anon ID come from the response object/headers, not the body, so this read is only needed if CSRF extraction is re-enabled. It is left in place so that re-enabling is a one-line change
+   - The session fetch's streamed fragment has a live use: it parses the market `locale` from the `<html lang>` tag (see section 5), which sits at the very start of the document. Cookies and the anon ID come from the response object/headers, not the body. The read keeps going to the `CSRF_TOKEN` marker even though the token is not currently parsed, so re-enabling CSRF extraction stays a one-line change
    - The chunk-boundary bookkeeping (marker spanning two chunks, case-insensitive, chunks shorter than the marker) lives once in `utils/_html.py::ChunkAccumulator`, reused by both wrappers
 
 7. **Two hosts, two httpx clients**
@@ -174,6 +178,7 @@ Runs [Super Linter](https://github.com/super-linter/super-linter) v8.6.0 inside 
    - Endpoints stay **relative**: `curl(endpoint, params, *, api_endpoint=False)` concatenates the endpoint against the chosen client's `base_url` — the `api.` client when `api_endpoint=True`, the site client otherwise. The `api_endpoint` flag is part of the public `curl` API, so callers can target either host; `search()` uses it internally. `_search_endpoint()` returns the relative `/svc-catalogue/items`
    - `baseurl` may be passed with or without `www.`; `_validate_and_init()` normalizes it to the `www.` site form via `site_base_url()` and derives the `api.` host via `api_base_url()` (both handle `www.`/bare input)
    - The API needs an anonymous ID (returned as the `X-Anon-Id` response header), stored on the wrapper and refreshed together with the cookie. A CSRF token is sent as `X-Csrf-Token` when the session has one, but it is not auto-fetched and the API currently accepts calls without it (see section 5)
+   - The `Locale` header selects the market (currency, listings) and is **not** hardcoded: it is resolved per request by `_locale()` (see section 5). `get_curl_headers`/`get_cookie_headers` take the resolved `locale` as a **required** argument and derive `Accept-Language` from it; deriving the fallback from a base URL is the caller's job (`locale_from_base_url`), not the builders'
    - `search()` and `curl()` deliberately share one header set (`get_curl_headers`) so every API call is sent with identical headers
 
 8. **Private module convention**
@@ -203,12 +208,12 @@ src/vinted_scraper/
 │   ├── _image.py            # VintedImage
 │   ├── _media.py            # VintedMedia
 │   ├── _high_resolution.py  # VintedHighResolution
-│   └── _session.py           # VintedSession (cookies + anon id; optional CSRF token)
+│   └── _session.py           # VintedSession (cookies + anon id + market locale; optional CSRF token)
 ├── utils/
 │   ├── __init__.py          # Utility exports
 │   ├── _constants.py        # API paths, hosts, timeouts, status codes
 │   ├── _headers.py          # URL validation, host routing, HTTP headers
-│   ├── _html.py             # HTML head parsing (OpenGraph tags, CSRF token)
+│   ├── _html.py             # HTML head parsing (OpenGraph tags, <html lang> locale, CSRF token)
 │   ├── _httpx.py            # httpx config, cookie and anon-id extraction
 │   ├── _log.py              # Structured logging helpers
 │   ├── _user_agent.py       # User agent loading and selection
