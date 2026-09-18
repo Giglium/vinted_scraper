@@ -177,9 +177,10 @@ class VintedWrapper(BaseVintedWrapper):
                 - price_from (float): Minimum price
                 - price_to (float): Maximum price
                 - order (str): Sort order
-                - catalog_ids (str): Category IDs
-                - brand_ids (str): Brand IDs
-                - size_ids (str): Size IDs
+                - attribute_ids[catalog] (str): Category IDs (comma-separated;
+                - attribute_ids[status] (str): Condition IDs (comma-separated;
+                - attribute_ids[brand] (str): Brand IDs (comma-separated;
+                - attribute_ids[size] (str): Size IDs (comma-separated;
 
         Returns:
             Dictionary containing JSON response with search results.

@@ -219,9 +219,10 @@ class AsyncVintedWrapper(BaseVintedWrapper):
                 - price_from: Minimum price
                 - price_to: Maximum price
                 - order: Sort order
-                - catalog_ids: Category IDs
-                - brand_ids: Brand IDs
-                - size_ids: Size IDs
+                - attribute_ids[catalog]: Category IDs (comma-separated;
+                - attribute_ids[status]: Condition IDs (comma-separated;
+                - attribute_ids[brand]: Brand IDs (comma-separated;
+                - attribute_ids[size]: Size IDs (comma-separated;
 
         Returns:
             Dictionary containing JSON response with search results.
