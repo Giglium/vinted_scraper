@@ -1,6 +1,6 @@
 [project]
 name = "vinted_scraper"
-version = "5.0.2"
+version = "5.0.3"
 description = "A very simple Python package for scraping Vinted. Supports both synchronous and asynchronous operations with automatic cookie management and typed responses."
 readme = "README.md"
 requires-python = ">= 3.8"
@@ -21,7 +21,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "httpx[brotli]>=0.20.0 ; python_full_version >= '3.8'",
+    "httpx[brotli]>=0.28.1 ; python_full_version >= '3.8'",
 ]
 
 [tool.isort]
