@@ -62,6 +62,6 @@ jobs:
         # yamllint disable-line rule:line-length
         if: ${{ github.event_name == 'pull_request' && env.HAS_CODECOV != 'true' && env.HAS_CODACY != 'true' }}
         # yamllint disable-line rule:line-length
-        uses: py-cov-action/python-coverage-comment-action@a05be3d2e8a6272d3ef5fb2840ab20368bb2eb71 # v4.3
+        uses: py-cov-action/python-coverage-comment-action@e5fb2218463c3377f3504b0c5b5646ed53da7a2f # v4.5
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
