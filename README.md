@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/pypi/l/vinted_scraper.svg)](https://github.com/Giglium/vinted_scraper/blob/main/LICENSE)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FGiglium%2Fvinted_scraper.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FGiglium%2Fvinted_scraper?ref=badge_shield)
 
-A very simple Python package for scraping Vinted. Supports both synchronous and asynchronous operations with automatic cookie management and typed responses.
+A very simple Python package for scraping Vinted. Supports both synchronous and asynchronous operations with automatic session management and typed responses.
 
 📖 **[Full Documentation](https://giglium.github.io/vinted_scraper/vinted_scraper.html)** | 💡 **[Examples](https://github.com/Giglium/vinted_scraper/tree/main/examples)** | 📝 **[Changelog](https://github.com/Giglium/vinted_scraper/releases)**
 
