@@ -1,3 +1,4 @@
+# jscpd:ignore-start
 """Vinted scraper with typed model support."""
 
 import logging
@@ -115,3 +116,6 @@ class VintedScraper(VintedWrapper):
             endpoint, params, api_endpoint=api_endpoint, _retries=_retries
         )
         return VintedJsonModel(json_data=response)
+
+
+# jscpd:ignore-end

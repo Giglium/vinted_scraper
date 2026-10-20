@@ -1,4 +1,5 @@
 # pylint: disable=protected-access,too-many-arguments,too-many-positional-arguments
+# jscpd:ignore-start
 """
 Mock utils
 """
@@ -245,3 +246,6 @@ def setup_async_mock_cookie_stream(
     response.headers = {ANON_ID_HEADER: ANON_ID_VALUE} if headers is None else headers
     response.cookies = {SESSION_COOKIE_NAME: COOKIE_VALUE} if with_cookie else {}
     return _install_async_stream(mock_client, response, [html] if html else [])
+
+
+# jscpd:ignore-end

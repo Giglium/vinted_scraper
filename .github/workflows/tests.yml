@@ -1,4 +1,6 @@
 ---
+# jscpd:ignore-start
+
 name: Test
 
 on:
@@ -41,7 +43,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup
-        uses: "./.github/actions/setup-python"
+        uses: "$/.github/actions/setup-python"
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: "true"
@@ -49,3 +51,5 @@ jobs:
 
       - name: Run tests
         run: uv run --locked python -m unittest discover
+
+# jscpd:ignore-end

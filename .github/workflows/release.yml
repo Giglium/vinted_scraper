@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup
-        uses: "./.github/actions/setup-python"
+        uses: "$/.github/actions/setup-python"
 
       - name: Build the package
         run: make build
@@ -56,15 +56,16 @@ jobs:
 
       - name: Upload whl file to release
         if: ${{ !env.ACT }}
-        # yamllint disable-line rule:line-length
-        uses: svenstaro/upload-release-action@29e53e917877a24fad85510ded594ab3c9ca12de # v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ env.FILE_PATH }}
-          asset_name: ${{ env.FILE_NAME }}.whl
-          tag: ${{ github.ref }}
-          body: ${{ steps.git-cliff.outputs.content }}
-          overwrite: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          ASSET_NAME: ${{ env.FILE_NAME }}.whl
+          BODY: ${{ steps.git-cliff.outputs.content }}
+        run: |
+          ASSET_PATH="$(dirname "$FILE_PATH")/$ASSET_NAME"
+          cp "$FILE_PATH" "$ASSET_PATH"
+          gh release edit "$TAG" --notes "$BODY"
+          gh release upload "$TAG" "$ASSET_PATH" --clobber
 
       # yamllint disable-line rule:line-length
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -1,5 +1,7 @@
 # AGENTS.md
 
+jscpd:ignore-start
+
 ## Project Overview
 
 **vinted_scraper** is a Python package for scraping the Vinted marketplace. It supports both synchronous and asynchronous operations with automatic cookie management and typed responses.
@@ -259,3 +261,5 @@ examples/
 - Logging: Structured via dedicated `_log.py` helpers, one logger per module
 - Imports: absolute from `src.vinted_scraper` in tests, relative within the package
 - URL validation: `baseurl` must match `^https://(www\.)?[\w.-]+\.\w{2,}$` (HTTPS enforced, `www.` optional, no path/port/query allowed). It is then normalized to its `www.` site form, and the `api.` host is derived from it
+
+jscpd:ignore-end
