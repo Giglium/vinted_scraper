@@ -3,10 +3,10 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from ._wrapper import VintedWrapper
-from .models import OgField, VintedItem, VintedJsonModel
+from .models import OgField, VintedItem, VintedJsonModel, VintedUser
 
 _log = logging.getLogger(__name__)
 
@@ -68,6 +68,24 @@ class VintedScraper(VintedWrapper):
         """
         data = super().item(item_id, fields)
         return VintedItem(json_data=data)
+
+    def get_user(self, user_id: Union[int, str]) -> VintedUser:
+        """Read a user's profile and return it as a VintedUser.
+
+        Only the attributes defined on ``VintedUser`` are populated (``id``,
+        ``login``, ``business``, ``profile_url``, ``photo``). Use
+        :meth:`get_raw_user` for the full profile.
+
+        Args:
+            user_id: The unique identifier of the user.
+
+        Returns:
+            A VintedUser built from the profile. Always contains ``id``.
+
+        Raises:
+            RuntimeError: If the profile cannot be fetched.
+        """
+        return VintedUser(json_data=super().get_raw_user(user_id))
 
     def enrich(self, item: VintedItem) -> VintedItem:
         """Enrich an existing VintedItem with description from the item page.

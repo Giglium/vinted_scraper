@@ -5,7 +5,7 @@
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
 
@@ -187,6 +187,31 @@ class VintedWrapper(BaseVintedWrapper):
         """
         log_search(_log, params)
         return self.curl(self._search_endpoint(), params=params, api_endpoint=True)
+
+    def get_raw_user(self, user_id: Union[int, str]) -> Dict[str, Any]:
+        """Read a user's profile as returned by the API, without parsing.
+
+        Calls the public profile endpoint (``/api/v2/users/{id}``) on the site
+        host and returns the ``user`` object of the response. No session is
+        required for public profiles.
+
+        Args:
+            user_id: The unique identifier of the user.
+
+        Returns:
+            Dictionary with the profile fields returned by the API (for example
+            ``id``, ``login``, ``feedback_reputation``, ``item_count``). Contains
+            personal data when the user exposes it: review the fields before
+            storing or publishing them.
+
+        Raises:
+            RuntimeError: If the request fails or the response has no ``user``.
+        """
+        # Llamada explícita a VintedWrapper.curl: VintedScraper.curl devuelve un modelo tipado, no un dict.
+        response = VintedWrapper.curl(self, f"/api/v2/users/{user_id}")
+        if "user" not in response:
+            raise RuntimeError(f"Unexpected response for user {user_id}: no 'user' key")
+        return response["user"]
 
     def item(self, item_id: str, fields: Optional[List[str]] = None) -> Dict[str, Any]:
         """Read item metadata from the public item page (HTML).
