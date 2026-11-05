@@ -10,6 +10,7 @@ from ._constants import (
     API_CATALOG_ITEMS,
     API_HOST_PREFIX,
     API_ITEM_PAGE,
+    API_USER,
     CSRF_MARKER,
     DEFAULT_RETRIES,
     DEFAULT_TIMEOUT,
@@ -53,6 +54,7 @@ from ._log import (
     log_search,
     log_session_fetched,
     log_sleep,
+    log_user,
 )
 from ._session import build_session, handle_session_failure, raise_session_error
 from ._user_agent import get_random_user_agent
@@ -66,6 +68,7 @@ __all__ = [
     "HTTP_UNAUTHORIZED",
     "API_CATALOG_ITEMS",
     "API_ITEM_PAGE",
+    "API_USER",
     "WWW_HOST_PREFIX",
     "API_HOST_PREFIX",
     "ANON_ID_HEADER",
@@ -92,6 +95,7 @@ __all__ = [
     "log_refresh_cookie",
     "log_search",
     "log_sleep",
+    "log_user",
     "build_session",
     "handle_session_failure",
     "raise_session_error",

@@ -15,6 +15,7 @@ HTTP_UNAUTHORIZED: Final = 401
 
 API_CATALOG_ITEMS: Final = "/svc-catalogue/items"
 API_ITEM_PAGE: Final = "/items/{item_id}"
+API_USER: Final = "/api/v2/users/{user_id}"
 
 WWW_HOST_PREFIX: Final = "www."
 API_HOST_PREFIX: Final = "api."
@@ -34,6 +35,7 @@ __all__ = [
     "HTTP_UNAUTHORIZED",
     "API_CATALOG_ITEMS",
     "API_ITEM_PAGE",
+    "API_USER",
     "WWW_HOST_PREFIX",
     "API_HOST_PREFIX",
     "ANON_ID_HEADER",

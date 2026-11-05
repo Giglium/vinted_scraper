@@ -53,6 +53,19 @@ The package offers the following methods:
 </details>
 
 <details>
+ <summary><code>get_user</code> - <code>Reads a user's profile.</code></summary>
+
+**Parameters**
+
+> | name    | type     | data type       | description                       |
+> | ------- | -------- | --------------- | --------------------------------- |
+> | user_id | required | Union[int, str] | The unique identifier of the user |
+
+**Returns:** `VintedUser` (VintedScraper) or `Dict[str, Any]` (VintedWrapper)
+
+</details>
+
+<details>
  <summary><code>curl</code> - <code>Perform an HTTP GET request to the given relative endpoint.</code></summary>
 
 **Parameters**

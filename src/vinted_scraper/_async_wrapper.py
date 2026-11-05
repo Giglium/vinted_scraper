@@ -5,7 +5,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
 
@@ -28,6 +28,7 @@ from .utils import (
     log_item,
     log_refresh_cookie,
     log_search,
+    log_user,
     parse_item_page,
     raise_session_error,
 )
@@ -231,6 +232,18 @@ class AsyncVintedWrapper(BaseVintedWrapper):
         return await self.curl(
             self._search_endpoint(), params=params, api_endpoint=True
         )
+
+    async def get_raw_user(self, user_id: Union[int, str]) -> Dict[str, Any]:
+        """Read a user's profile.
+
+        Args:
+            user_id: The unique identifier of the user.
+
+        Returns:
+            Dictionary containing JSON response of the user.
+        """
+        log_user(_log, user_id)
+        return await self.curl(self._user_endpoint(user_id), api_endpoint=False)
 
     async def item(
         self, item_id: str, fields: Optional[List[str]] = None

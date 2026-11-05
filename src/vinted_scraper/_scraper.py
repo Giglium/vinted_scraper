@@ -70,22 +70,15 @@ class VintedScraper(VintedWrapper):
         return VintedItem(json_data=data)
 
     def get_user(self, user_id: Union[int, str]) -> VintedUser:
-        """Read a user's profile and return it as a VintedUser.
-
-        Only the attributes defined on ``VintedUser`` are populated (``id``,
-        ``login``, ``business``, ``profile_url``, ``photo``). Use
-        :meth:`get_raw_user` for the full profile.
+        """Read a user's profile.
 
         Args:
             user_id: The unique identifier of the user.
 
         Returns:
-            A VintedUser built from the profile. Always contains ``id``.
-
-        Raises:
-            RuntimeError: If the profile cannot be fetched.
+            VintedUser built from the profile.
         """
-        return VintedUser(json_data=super().get_raw_user(user_id))
+        return VintedUser(json_data=super().get_raw_user(user_id)["user"])
 
     def enrich(self, item: VintedItem) -> VintedItem:
         """Enrich an existing VintedItem with description from the item page.
