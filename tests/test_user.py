@@ -1,6 +1,6 @@
 # jscpd:ignore-start
 # pylint: disable=protected-access,duplicate-code
-"""Tests for get_raw_user and get_user (sync and async)."""
+"""Tests for get_user (sync and async)."""
 
 import unittest
 from unittest.mock import patch
@@ -28,27 +28,27 @@ USER_RESPONSE = read_data_from_file("user_dummy")
 PROFILE = USER_RESPONSE["user"]
 
 
-class TestGetRawUser(unittest.TestCase):
-    """Test VintedWrapper.get_raw_user against the user_dummy fixture."""
+class TestWrapperGetUser(unittest.TestCase):
+    """Test VintedWrapper.get_user against the user_dummy fixture."""
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_returns_user_object(self, mock_client):
-        """get_raw_user unwraps and returns the 'user' object."""
+        """get_user unwraps and returns the 'user' object."""
         setup_mock_get(mock_client, USER_RESPONSE)
 
         wrapper = VintedWrapper(BASE_URL, make_session())
-        result = wrapper.get_raw_user(TEST_USER_ID)
+        result = wrapper.get_user(TEST_USER_ID)
 
         self.assertEqual(result, USER_RESPONSE)
         self.assertEqual(result["user"], PROFILE)
 
     @patch("src.vinted_scraper._wrapper.httpx.Client")
     def test_uses_site_client_and_profile_endpoint(self, mock_client):
-        """get_raw_user routes to the site client and the profile endpoint."""
+        """get_user routes to the site client and the profile endpoint."""
         site, api = setup_two_clients(mock_client, USER_RESPONSE)
 
         wrapper = VintedWrapper("https://www.fakeurl.com", make_session())
-        wrapper.get_raw_user(TEST_USER_ID)
+        wrapper.get_user(TEST_USER_ID)
 
         site.get.assert_called_once()
         api.get.assert_not_called()
@@ -99,17 +99,17 @@ class TestGetUser(unittest.TestCase):
             scraper.get_user(TEST_USER_ID)
 
 
-class TestAsyncGetRawUser(unittest.IsolatedAsyncioTestCase):
-    """Async counterpart: AsyncVintedWrapper.get_raw_user."""
+class TestAsyncWrapperGetUser(unittest.IsolatedAsyncioTestCase):
+    """Async counterpart: AsyncVintedWrapper.get_user."""
 
     @patch("src.vinted_scraper._async_wrapper.httpx.AsyncClient")
     async def test_returns_user_object(self, mock_client):
-        """get_raw_user unwraps and returns the 'user' object."""
+        """get_user unwraps and returns the 'user' object."""
         setup_async_mock_cookie_stream(mock_client)
         setup_async_mock_get(mock_client, USER_RESPONSE)
 
         wrapper = await AsyncVintedWrapper.create(BASE_URL, session=make_session())
-        result = await wrapper.get_raw_user(TEST_USER_ID)
+        result = await wrapper.get_user(TEST_USER_ID)
 
         self.assertEqual(result, USER_RESPONSE)
         self.assertEqual(result["user"], PROFILE)

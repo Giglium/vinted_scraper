@@ -78,7 +78,7 @@ class VintedScraper(VintedWrapper):
         Returns:
             VintedUser built from the profile.
         """
-        return VintedUser(json_data=super().get_raw_user(user_id)["user"])
+        return VintedUser(json_data=super().get_user(user_id)["user"])
 
     def enrich(self, item: VintedItem) -> VintedItem:
         """Enrich an existing VintedItem with description from the item page.

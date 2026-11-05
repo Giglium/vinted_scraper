@@ -92,13 +92,13 @@ def log_search(log: Logger, params: Optional[Dict]) -> None:
 
 
 def log_user(log: Logger, user_id: Any) -> None:
-    """Logs get_raw_user() method call with the user id.
+    """Logs get_user() method call with the user id.
 
     Args:
         log: Logger instance.
         user_id: User identifier.
     """
-    log.debug("Calling get_raw_user(user_id=%s)", user_id)
+    log.debug("Calling get_user(user_id=%s)", user_id)
 
 
 def log_item(log: Logger, item_id: str, fields: Optional[List[str]]) -> None:

@@ -13,7 +13,7 @@ class VintedUser(VintedJsonModel):
     """Represents a Vinted user/seller.
 
     The first fields come from a search response; the rest come from the full
-    profile (:meth:`VintedScraper.get_user` / :meth:`VintedWrapper.get_raw_user`).
+    profile (:meth:`VintedScraper.get_user` / :meth:`VintedWrapper.get_user`).
 
     Note:
         Some attributes may be `None` if not present in the API response.

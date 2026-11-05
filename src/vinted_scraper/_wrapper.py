@@ -189,7 +189,7 @@ class VintedWrapper(BaseVintedWrapper):
         log_search(_log, params)
         return self.curl(self._search_endpoint(), params=params, api_endpoint=True)
 
-    def get_raw_user(self, user_id: Union[int, str]) -> Dict[str, Any]:
+    def get_user(self, user_id: Union[int, str]) -> Dict[str, Any]:
         """Read a user's profile.
 
         Args:

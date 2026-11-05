@@ -136,7 +136,7 @@ Runs [Super Linter](https://github.com/super-linter/super-linter) v8.6.0 inside 
    - `VintedScraper` / `AsyncVintedScraper` inherit from the wrappers and return **typed dataclass models** (`VintedItem`, `VintedJsonModel`)
    - This lets consumers choose their preferred abstraction level
    - **Four-client parity:** every public method must exist in all four clients — `VintedWrapper`, `AsyncVintedWrapper`, `VintedScraper`, `AsyncVintedScraper`.
-     The raw-JSON method lives on the wrapper (sync in `_wrapper.py`, async in `_async_wrapper.py`); the typed override lives on the scraper (sync in `_scraper.py`, async in `_async_scraper.py`). Adding a feature to only one or two of them is incomplete. See `search` / `item` / `get_raw_user` + `get_user` for the pattern
+     The raw-JSON method lives on the wrapper (sync in `_wrapper.py`, async in `_async_wrapper.py`); the typed override lives on the scraper (sync in `_scraper.py`, async in `_async_scraper.py`). Adding a feature to only one or two of them is incomplete. See `search` / `item` / `get_user` for the pattern
 
 2. **Shared base class (`BaseVintedWrapper`)**
    - All non-I/O logic (URL validation, header building, cookie response processing, retry/sleep calculation, response parsing) lives in the base class

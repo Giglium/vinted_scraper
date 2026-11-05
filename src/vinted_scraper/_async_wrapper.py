@@ -233,7 +233,7 @@ class AsyncVintedWrapper(BaseVintedWrapper):
             self._search_endpoint(), params=params, api_endpoint=True
         )
 
-    async def get_raw_user(self, user_id: Union[int, str]) -> Dict[str, Any]:
+    async def get_user(self, user_id: Union[int, str]) -> Dict[str, Any]:
         """Read a user's profile.
 
         Args:
