@@ -19,18 +19,18 @@ test: ## Run all the unit test.
 	@uv run python -m unittest discover
 
 .PHONY: act.test
-act.test: #! Run the tests github actions
+act.test: ## Run the tests github actions
 	@act -W '.github/workflows/tests.yml'
 
 .PHONY: quickstarts
-quickstarts: #! Run the quickstarts
+quickstarts: ## Run the quickstarts
 	@uv run -m examples.async_wrapper
 	@uv run -m examples.async_scraper
 	@uv run -m examples.wrapper
 	@uv run -m examples.scraper
 
 .PHONY: act.quickstarts
-act.quickstarts: #! Run the quickstarts github actions
+act.quickstarts: ## Run the quickstarts github actions
 	@act -W '.github/workflows/quickstarts.yml'
 
 .PHONY: build
@@ -38,7 +38,7 @@ build: ## Compile the library
 	@uv build
 
 .PHONY: act.build
-act.build: #! Run the release github action
+act.build: ## Run the release github action
 	@act -W '.github/workflows/release.yml'
 
 .PHONY: update.user.agent
@@ -46,7 +46,7 @@ update.user.agent: ## Update the user agent file
 	curl -s "https://www.useragents.me/" | grep --color=never -A 20 'id="most-common-mobile-useragents-json-csv"' | grep --color=never -A 15 'class="col-lg-6"' | grep --color=never -o '<textarea class="form-control" rows="8">.*</textarea>' | sed -E 's/<textarea class="form-control" rows="8">//;s/<\/textarea>//' | python3 -c "import json,sys;data=json.load(sys.stdin);print(json.dumps(data,indent=2))" > $(PROJECT_FOLDER)/$(MODULE_NAME)/utils/agents.json
 
 .PHONY: act.update.user.agent
-act.update.user.agent: #! Run the Update user agent github action
+act.update.user.agent: ## Run the Update user agent github action
 	@act workflow_dispatch -W '.github/workflows/update-user-agents.yml'
 
 .PHONY: coverage
@@ -65,7 +65,7 @@ lint: ## Run the static analysis tool to scan the codebase
 	@docker run --rm --name=vinter-scraper-linter -e SHELL=/bin/bash -e IGNORE_GITIGNORED_FILES=true -e RUN_LOCAL=true -e DEFAULT_BRANCH=main $(SUPER_LINTER_FMT) --mount type=bind,src=$(ROOT),dst=/tmp/lint/ --mount type=volume,dst=/tmp/lint/.venv --platform linux/amd64 ghcr.io/super-linter/super-linter:v9.0.0
 
 .PHONY: act.lint
-act.lint: #! Run the linter github action
+act.lint: ## Run the linter github action
 	@act -W '.github/workflows/linter.yml'
 
 .PHONY: docs
@@ -73,7 +73,7 @@ docs: ## Run pdoc to auto-generates API documentation
 	@uv run pdoc --footer-text $(MODULE_NAME)-$(VERSION) --output-dir $(DOC_FOLDER) $(MODULE_NAME)
 
 .PHONY: act.docs
-act.docs: #! Run the linter github action
+act.docs: ## Run the linter github action
 	@act -W '.github/workflows/docs.yml'
 
 .PHONY: clean
@@ -96,4 +96,4 @@ help: ## Show the basic command help.
 
 .PHONY: help.all
 act.help: ## Show the act command help.
-	@sed -ne '/@sed/!s/#! //p' $(MAKEFILE_LIST)
+	@sed -ne '/@sed/!s/## //p' $(MAKEFILE_LIST)
