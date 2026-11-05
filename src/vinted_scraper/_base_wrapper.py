@@ -8,6 +8,7 @@ from .models import VintedSession
 from .utils import (
     API_CATALOG_ITEMS,
     API_ITEM_PAGE,
+    API_USER,
     SESSION_COOKIE_NAME,
     api_base_url,
     format_cookie_header,
@@ -201,6 +202,15 @@ class BaseVintedWrapper:
             item_id: The unique identifier of the item.
         """
         return API_ITEM_PAGE.format(item_id=item_id)
+
+    @staticmethod
+    def _user_endpoint(user_id: Any) -> str:
+        """Return the public user profile endpoint (relative path).
+
+        Args:
+            user_id: The unique identifier of the user.
+        """
+        return API_USER.format(user_id=user_id)
 
     def _get_cookie_headers(self) -> Dict:
         """Build headers for the cookie-fetch request.

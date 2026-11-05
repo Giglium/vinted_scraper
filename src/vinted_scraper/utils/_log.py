@@ -12,6 +12,7 @@ __all__ = [
     "log_sleep",
     "log_refresh_cookie",
     "log_search",
+    "log_user",
     "log_item",
     "log_curl_request",
     "log_curl_response",
@@ -88,6 +89,16 @@ def log_search(log: Logger, params: Optional[Dict]) -> None:
         params: Search parameters dictionary.
     """
     log.debug("Calling search() with params: %s", params)
+
+
+def log_user(log: Logger, user_id: Any) -> None:
+    """Logs get_raw_user() method call with the user id.
+
+    Args:
+        log: Logger instance.
+        user_id: User identifier.
+    """
+    log.debug("Calling get_raw_user(user_id=%s)", user_id)
 
 
 def log_item(log: Logger, item_id: str, fields: Optional[List[str]]) -> None:

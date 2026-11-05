@@ -5,7 +5,7 @@
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
 
@@ -28,6 +28,7 @@ from .utils import (
     log_item,
     log_refresh_cookie,
     log_search,
+    log_user,
     parse_item_page,
     raise_session_error,
 )
@@ -187,6 +188,18 @@ class VintedWrapper(BaseVintedWrapper):
         """
         log_search(_log, params)
         return self.curl(self._search_endpoint(), params=params, api_endpoint=True)
+
+    def get_raw_user(self, user_id: Union[int, str]) -> Dict[str, Any]:
+        """Read a user's profile.
+
+        Args:
+            user_id: The unique identifier of the user.
+
+        Returns:
+            Dictionary containing JSON response of the user.
+        """
+        log_user(_log, user_id)
+        return self.curl(self._user_endpoint(user_id), api_endpoint=False)
 
     def item(self, item_id: str, fields: Optional[List[str]] = None) -> Dict[str, Any]:
         """Read item metadata from the public item page (HTML).
